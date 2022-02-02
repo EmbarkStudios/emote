@@ -1,0 +1,7 @@
+__pycache__/
+.vscode
+.dir-locals.el
+*.egg-info
+*.onnx
+.coverage
+docs/_build

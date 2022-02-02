@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "shoggoth"
+version = "0.1.0"
+description = ""
+authors = [
+    "Martin Singh-Blom <martin.singh-blom@embark-studios.com>",
+    "Tom Solberg <tom.solberg@embark-studios.com>",
+    "Jack Harmer <jack.harmer@embark-studios.com>",
+    "Jorge Del Val <jorge.delval@embark-studios.com>",
+    "Riley Miladi <riley.miladi@embark-studios.com>",
+]
+
+[tool.poetry.dependencies]
+python = "3.9"
+torch = "1.10.2"
+tensorboard = "2.8.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "5.2"
+Sphinx = "4.4.0"
+sphinx-rtd-theme = "1.0.0"
+gym = {extras = ["atari", "classic_control", "box2d"], version = "0.21.0"}
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
