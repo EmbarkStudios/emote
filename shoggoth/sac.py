@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
 
 from .callbacks import LoggingCallback, LossCallback
 
@@ -12,14 +11,8 @@ def soft_update_from_to(source, target, tau):  # From rlkit
 
 
 class QLoss(LossCallback):
-    def __init__(
-        self,
-        optimizer: optim.Optimizer,
-        name: str,
-        q_forward: nn.Module,
-        max_grad_norm: float,
-    ):
-        super().__init__(optimizer, max_grad_norm, name)
+    def __init__(self, name: str, q_forward: nn.Module, max_grad_norm: float):
+        super().__init__(max_grad_norm, name)
         self.q_forward = q_forward
         self.mse = nn.MSELoss()
 
@@ -43,7 +36,7 @@ class QTarget(LoggingCallback):
         self.q1_target_vars = self.net.q1_target.parameters()
         self.q2_target_vars = self.net.q2_target.parameters()
 
-    def begin_backward(self, next_obs, rewards, masks, **kwargs):
+    def begin_batch(self, next_obs, rewards, masks, **kwargs):
         bsz, *_ = next_obs[0].shape
         next_p_sample, next_logp_pi = self.net.policy(next_obs)
         next_q1_target = self.net.q1_target(next_obs, next_p_sample)
@@ -64,20 +57,14 @@ class QTarget(LoggingCallback):
 
         return {"q_target": q_target}
 
-    def end_backward(self, **kwargs):
+    def end_batch(self, **kwargs):
         soft_update_from_to(self.net.q1, self.net.q1_target, self.tau)
         soft_update_from_to(self.net.q2, self.net.q2_target, self.tau)
 
 
 class PolicyLoss(LossCallback):
-    def __init__(
-        self,
-        optimizer,
-        name: str,
-        net,
-        max_grad_norm: float,
-    ):
-        super().__init__(optimizer, max_grad_norm, name)
+    def __init__(self, name: str, net, max_grad_norm: float):
+        super().__init__(max_grad_norm, name)
         self.net = net
         self._log_alpha_vars = self.net.log_alpha_vars
 
@@ -85,13 +72,13 @@ class PolicyLoss(LossCallback):
         assert isinstance(obs, tuple) and len(obs) > 0
         p_sample, logp_pi = self.net.policy(obs)
         q_pi_min = torch.min(self.net.q1(obs, p_sample), self.net.q2(obs, p_sample))
-        self.scalar_log(f"policy/q_pi_min", torch.mean(q_pi_min))
-        self.scalar_log(f"policy/logp_pi", torch.mean(logp_pi))
         # using reparameterization trick
         alpha = torch.exp(self._log_alpha_vars[0].detach())
-        self.scalar_log(f"policy/alpha", torch.mean(alpha))
         policy_loss = alpha * logp_pi - q_pi_min
         policy_loss = torch.mean(policy_loss)
+        self.scalar_log(f"policy/q_pi_min", torch.mean(q_pi_min))
+        self.scalar_log(f"policy/logp_pi", torch.mean(logp_pi))
+        self.scalar_log(f"policy/alpha", torch.mean(alpha))
         assert policy_loss.dim() == 0
         return policy_loss
 
@@ -99,7 +86,6 @@ class PolicyLoss(LossCallback):
 class AlphaLoss(LossCallback):
     def __init__(
         self,
-        optimizer: torch.optim.Optimizer,
         name: str,
         net,
         n_actions: int,
@@ -107,7 +93,7 @@ class AlphaLoss(LossCallback):
         max_alpha: float,
         max_grad_norm: float,
     ):
-        super().__init__(optimizer, max_grad_norm, name)
+        super().__init__(max_grad_norm, name)
         self.net = net
         self._max_log_alpha = np.log(max_alpha)
         # TODO(singhblom) Check number of actions
@@ -128,9 +114,9 @@ class AlphaLoss(LossCallback):
         self.scalar_log("loss/alpha_loss", alpha_loss)
         return alpha_loss
 
-    def end_backward(self, **kwargs):
+    def end_batch(self, **kwargs):
         self.vars[0].requires_grad_(False)
         self.vars[0] = torch.clamp_max_(self.vars[0], self._max_log_alpha)
         self.vars[0].requires_grad_(True)
         self.scalar_log("training/alpha_value", torch.exp(self.vars[0]).item())
-        super().end_backward(**kwargs)
+        super().end_batch(**kwargs)

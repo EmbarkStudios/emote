@@ -47,16 +47,14 @@ class LossCallback(LoggingCallback):
     #     self._lr_schedule.setup(total_timesteps)
 
     def backward(self, *args, **kwargs):
-        self.optimizer.zero_grad()
         loss = self.loss(*args, **kwargs)
         loss.backward()
         grad_norm = nn.utils.clip_grad_norm_(self.parameters, self._max_grad_norm)
-        self.optimizer.step()
 
         self.scalar_log(f"loss/{self.name}_loss", loss)
         self.scalar_log(f"loss/{self.name}_gradient_norm", grad_norm)
 
-    def end_backward(self, **kwargs):
+    def end_batch(self, **kwargs):
         self.scalar_log(
             f"training/{self.name}_learning_rate", self.optimizer.param_groups[0]["lr"]
         )

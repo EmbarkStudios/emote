@@ -3,6 +3,8 @@ from typing import Any, Callable, Iterable, List, MutableMapping
 from weakref import ref
 from itertools import count
 
+from torch.optim import Optimizer
+
 from .callback import Callback
 from .utils import WeakReference
 
@@ -36,10 +38,12 @@ class Trainer:
     def __init__(
         self,
         callbacks: List[Callback],
+        optimizer: Optimizer,
         dataloader: Iterable,
         cycle_length: int,
     ):
         self.callbacks = sorted(callbacks, key=lambda cb: cb._order)
+        self.optimizer = optimizer
         self.dataloader = dataloader
         self.cycle_length = cycle_length
 
@@ -73,9 +77,9 @@ class Trainer:
                         raise TrainingShutdownException
 
                     self.begin_batch(batch)
-                    self.begin_backward()
+                    self.optimizer.zero_grad()
                     self.backward()
-                    self.end_backward()
+                    self.optimizer.step()
                     self.end_batch()
 
                     bp_step += 1
@@ -102,19 +106,9 @@ class Trainer:
             if updated_state := cb.begin_batch(**self.state):
                 self.state.update(updated_state)
 
-    def begin_backward(self):
-        for cb in self.callbacks:
-            if updated_state := cb.begin_backward(**self.state):
-                self.state.update(updated_state)
-
     def backward(self):
         for cb in self.callbacks:
             if updated_state := cb.backward(**self.state):
-                self.state.update(updated_state)
-
-    def end_backward(self):
-        for cb in self.callbacks:
-            if updated_state := cb.end_backward(**self.state):
                 self.state.update(updated_state)
 
     def end_batch(self):

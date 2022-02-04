@@ -118,9 +118,7 @@ class CallbackMeta(ABCMeta):
                     "begin_training",
                     "begin_cycle",
                     "begin_batch",
-                    "begin_backward",
                     "backward",
-                    "end_backward",
                     "end_batch",
                     "end_cycle",
                     "end_training",
@@ -186,13 +184,7 @@ class Callback(metaclass=CallbackMeta):
     def begin_batch(self, *args, **kwargs):
         pass
 
-    def begin_backward(self, *args, **kwargs):
-        pass
-
     def backward(self, *args, **kwargs):
-        pass
-
-    def end_backward(self, *args, **kwargs):
         pass
 
     def end_batch(self, *args, **kwargs):
