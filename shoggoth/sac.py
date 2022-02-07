@@ -1,18 +1,12 @@
 from dataclasses import dataclass
 from tkinter.messagebox import NO
 import numpy as np
-from pyparsing import Opt
 import torch
 from torch import nn
 from torch import optim
 
 from .callbacks import LoggingCallback, LossCallback
 
-OPTIMIZER_PARAMETERS = {
-    "lr": 1e-4,
-}
-
-optim.Adam()
 
 @dataclass
 class SACNetwork:
@@ -30,7 +24,13 @@ def soft_update_from_to(source, target, tau):  # From rlkit
 
 
 class QLoss(LossCallback):
-    def __init__(self, name: str, optimizer: optim.Optimizer, max_grad_norm: float, q_forward: nn.Module):
+    def __init__(
+        self,
+        name: str,
+        optimizer: optim.Optimizer,
+        q_forward: nn.Module,
+        max_grad_norm: float = 10.0,
+    ):
         super().__init__(name, optimizer, max_grad_norm)
         self.q_forward = q_forward
         self.mse = nn.MSELoss()
@@ -42,12 +42,18 @@ class QLoss(LossCallback):
 
 
 class QTarget(LoggingCallback):
-    def __init__(self, net: SACNetwork, gamma_np, reward_scale, target_q_tau):
+    def __init__(
+        self,
+        net: SACNetwork,
+        gamma: float = 0.99,
+        reward_scale: float = 1.0,
+        target_q_tau: float = 0.005,
+    ):
         super().__init__()
         self.net = net
         self.reward_scale = reward_scale
         self.tau = target_q_tau
-        self.gamma = torch.tensor(gamma_np)
+        self.gamma = torch.tensor(gamma)
 
     def begin_batch(self, next_obs, rewards, masks, **kwargs):
         bsz, *_ = next_obs[0].shape
@@ -76,7 +82,13 @@ class QTarget(LoggingCallback):
 
 
 class PolicyLoss(LossCallback):
-    def __init__(self, name: str, optimizer: optim.Optimizer, max_grad_norm: float, net: SACNetwork):
+    def __init__(
+        self,
+        name: str,
+        optimizer: optim.Optimizer,
+        net: SACNetwork,
+        max_grad_norm: float = 10.0,
+    ):
         super().__init__(name, optimizer, max_grad_norm)
         self.net = net
         self._log_alpha_vars = self.net.log_alpha_vars
@@ -103,9 +115,9 @@ class AlphaLoss(LossCallback):
         optimizer: optim.Optimizer,
         net: SACNetwork,
         n_actions: int,
-        entropy_eps: float,
-        max_alpha: float,
-        max_grad_norm: float,
+        max_grad_norm: float = 10.0,
+        entropy_eps: float = 0.089,
+        max_alpha: float = 0.2,
     ):
         super().__init__(name, optimizer, max_grad_norm)
         self.net = net
