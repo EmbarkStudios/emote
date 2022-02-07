@@ -1,8 +1,27 @@
+from dataclasses import dataclass
+from tkinter.messagebox import NO
 import numpy as np
+from pyparsing import Opt
 import torch
-import torch.nn as nn
+from torch import nn
+from torch import optim
 
 from .callbacks import LoggingCallback, LossCallback
+
+OPTIMIZER_PARAMETERS = {
+    "lr": 1e-4,
+}
+
+optim.Adam()
+
+@dataclass
+class SACNetwork:
+    q1: nn.Module
+    q2: nn.Module
+    q1_target: nn.Module
+    q2_target: nn.Module
+    policy: nn.Module
+    log_alpha_vars: nn.ParameterList
 
 
 def soft_update_from_to(source, target, tau):  # From rlkit
@@ -11,30 +30,24 @@ def soft_update_from_to(source, target, tau):  # From rlkit
 
 
 class QLoss(LossCallback):
-    def __init__(self, name: str, q_forward: nn.Module, max_grad_norm: float):
-        super().__init__(max_grad_norm, name)
+    def __init__(self, name: str, optimizer: optim.Optimizer, max_grad_norm: float, q_forward: nn.Module):
+        super().__init__(name, optimizer, max_grad_norm)
         self.q_forward = q_forward
         self.mse = nn.MSELoss()
 
     def loss(self, obs, actions, q_target, **kwargs):
         q_value = self.q_forward(obs, actions)
-        self.scalar_log(f"training/{self.name}_prediction", torch.mean(q_value))
+        self.log_scalar(f"training/{self.name}_prediction", torch.mean(q_value))
         return self.mse(q_value, q_target)
 
 
 class QTarget(LoggingCallback):
-    def __init__(self, net, gamma_np, reward_scale, target_q_tau):
+    def __init__(self, net: SACNetwork, gamma_np, reward_scale, target_q_tau):
         super().__init__()
         self.net = net
         self.reward_scale = reward_scale
         self.tau = target_q_tau
         self.gamma = torch.tensor(gamma_np)
-
-    def begin_training(self, **kwargs):
-        self.q1_vars = self.net.q1.parameters()
-        self.q2_vars = self.net.q2.parameters()
-        self.q1_target_vars = self.net.q1_target.parameters()
-        self.q2_target_vars = self.net.q2_target.parameters()
 
     def begin_batch(self, next_obs, rewards, masks, **kwargs):
         bsz, *_ = next_obs[0].shape
@@ -50,10 +63,10 @@ class QTarget(LoggingCallback):
         q_target = (scaled_reward + self.gamma * masks * next_value).detach()
         assert q_target.shape == (bsz, 1)
 
-        self.scalar_log("training/next_logp_pi", torch.mean(next_logp_pi))
-        self.scalar_log("training/min_next_q_target", torch.mean(min_next_q_target))
-        self.scalar_log("training/scaled_reward", torch.mean(scaled_reward))
-        self.scalar_log("training/q_target", torch.mean(q_target))
+        self.log_scalar("training/next_logp_pi", torch.mean(next_logp_pi))
+        self.log_scalar("training/min_next_q_target", torch.mean(min_next_q_target))
+        self.log_scalar("training/scaled_reward", torch.mean(scaled_reward))
+        self.log_scalar("training/q_target", torch.mean(q_target))
 
         return {"q_target": q_target}
 
@@ -63,8 +76,8 @@ class QTarget(LoggingCallback):
 
 
 class PolicyLoss(LossCallback):
-    def __init__(self, name: str, net, max_grad_norm: float):
-        super().__init__(max_grad_norm, name)
+    def __init__(self, name: str, optimizer: optim.Optimizer, max_grad_norm: float, net: SACNetwork):
+        super().__init__(name, optimizer, max_grad_norm)
         self.net = net
         self._log_alpha_vars = self.net.log_alpha_vars
 
@@ -76,9 +89,9 @@ class PolicyLoss(LossCallback):
         alpha = torch.exp(self._log_alpha_vars[0].detach())
         policy_loss = alpha * logp_pi - q_pi_min
         policy_loss = torch.mean(policy_loss)
-        self.scalar_log(f"policy/q_pi_min", torch.mean(q_pi_min))
-        self.scalar_log(f"policy/logp_pi", torch.mean(logp_pi))
-        self.scalar_log(f"policy/alpha", torch.mean(alpha))
+        self.log_scalar(f"policy/q_pi_min", torch.mean(q_pi_min))
+        self.log_scalar(f"policy/logp_pi", torch.mean(logp_pi))
+        self.log_scalar(f"policy/alpha", torch.mean(alpha))
         assert policy_loss.dim() == 0
         return policy_loss
 
@@ -87,13 +100,14 @@ class AlphaLoss(LossCallback):
     def __init__(
         self,
         name: str,
-        net,
+        optimizer: optim.Optimizer,
+        net: SACNetwork,
         n_actions: int,
         entropy_eps: float,
         max_alpha: float,
         max_grad_norm: float,
     ):
-        super().__init__(max_grad_norm, name)
+        super().__init__(name, optimizer, max_grad_norm)
         self.net = net
         self._max_log_alpha = np.log(max_alpha)
         # TODO(singhblom) Check number of actions
@@ -111,12 +125,12 @@ class AlphaLoss(LossCallback):
             self.vars[0] * (logp_pi + self._target_entropy).detach()
         )
         assert alpha_loss.dim() == 0
-        self.scalar_log("loss/alpha_loss", alpha_loss)
+        self.log_scalar("loss/alpha_loss", alpha_loss)
         return alpha_loss
 
     def end_batch(self, **kwargs):
         self.vars[0].requires_grad_(False)
         self.vars[0] = torch.clamp_max_(self.vars[0], self._max_log_alpha)
         self.vars[0].requires_grad_(True)
-        self.scalar_log("training/alpha_value", torch.exp(self.vars[0]).item())
+        self.log_scalar("training/alpha_value", torch.exp(self.vars[0]).item())
         super().end_batch(**kwargs)

@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import torch
 from torch import Tensor, nn, optim
@@ -15,13 +15,18 @@ class LoggingCallback(Callback):
 
     def __init__(self):
         super().__init__()
-        self.scalar_logs: Dict[str, float] = {}
+        self.scalar_logs: Dict[str, Union[float, torch.Tensor]] = {}
+        self.hist_logs: Dict[str, Union[float, torch.Tensor]] = {}
 
-    def scalar_log(self, key, value):
+    def log_scalar(self, key: str, value: Union[float, torch.Tensor]):
         if isinstance(value, torch.Tensor):
+            assert value.shape == (1,), "Wrong shape for scalar log tensor."
             self.scalar_logs[key] = value.detach()
         else:
             self.scalar_logs[key] = value
+
+    def log_histogram(self, key: str, value: torch.Tensor):
+        self.hist_logs[key] = value.detach()
 
 
 class LossCallback(LoggingCallback):
@@ -31,9 +36,9 @@ class LossCallback(LoggingCallback):
 
     def __init__(
         self,
+        name: str,
         optimizer: optim.Optimizer,
         max_grad_norm: float,
-        name: str,
     ):
         super().__init__()
         self.name = name
@@ -47,15 +52,17 @@ class LossCallback(LoggingCallback):
     #     self._lr_schedule.setup(total_timesteps)
 
     def backward(self, *args, **kwargs):
+        self.optimizer.zero_grad()
         loss = self.loss(*args, **kwargs)
         loss.backward()
         grad_norm = nn.utils.clip_grad_norm_(self.parameters, self._max_grad_norm)
+        self.optimizer.step()
 
-        self.scalar_log(f"loss/{self.name}_loss", loss)
-        self.scalar_log(f"loss/{self.name}_gradient_norm", grad_norm)
+        self.log_scalar(f"loss/{self.name}_loss", loss)
+        self.log_scalar(f"loss/{self.name}_gradient_norm", grad_norm)
 
     def end_batch(self, **kwargs):
-        self.scalar_log(
+        self.log_scalar(
             f"training/{self.name}_learning_rate", self.optimizer.param_groups[0]["lr"]
         )
 
