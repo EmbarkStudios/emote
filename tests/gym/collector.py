@@ -5,23 +5,25 @@ Collectors for running OpenAI gym environments
 from collections import deque, defaultdict
 import threading
 
-import gym
+from gym.vector import VectorEnv
 import numpy as np
 
 from shoggoth.callback import Callback
+from shoggoth.proxies import AgentProxy, Observations, Responses
 
 
 class GymCollector(Callback):
     MAX_NUMBER_REWARDS = 1000
 
-    def __init__(self, env: gym.vector.VectorEnv, agent_proxy, render=True):
+    def __init__(self, env: VectorEnv, agent_proxy: AgentProxy, render: bool = True):
+        super().__init__()
         self._agent_proxy = agent_proxy
         self._env = env
         self._n_steps = env.num_envs
         self._render = render
         self._last_environment_rewards = deque(maxlen=1000)
         self._rollouts = 0
-        self._generations = defaultdict(int)
+        self._generations = {i: 0 for i in range(env.num_envs)}
 
     def _reset_obs(self, obs_space, observations):
         obs = np.zeros(
@@ -30,50 +32,28 @@ class GymCollector(Callback):
         obs[:] = observations
         return {"obs": obs}
 
+    def gym_to_shoggoth(self, data: np.array) -> Observations:
+        print(data)
+        return {
+            f"{env + self._generations[env] * self._n_steps}": data[env]
+            for env in range(self._env.num_envs)
+        }
+
+    def shoggoth_to_gym(self, data: Responses):
+        return np.array([action["action"] for _, action in data.items()])
+
     def _step(self, ep_infos):
-        actions, post_actions, actionvalue_avg = self._agent_proxy.evaluate(self._obs)
-        next_obs, rewards, dones, infos = self._env.step(post_actions)
+        actions = self._agent_proxy(self.gym_to_shoggoth(self._obs))
+        next_obs, rewards, dones, infos = self._env.step(actions)
 
         if self._render:
-            self._env.venv.render_idx(0)
-            # self.env.venv.render()  # TODO, we should really be calling this.
+            self._env.envs[0].render()
 
-        datas_1 = {}
-        datas_2 = {}
-        for id, (o, a, r, d) in enumerate(
-            zip(self._obs["obs"], actions, rewards, dones)
-        ):
-            datas_1[id + self._generations[id] * self._n_steps] = {
-                "obs": o[None][0],
-                "actions": a,
-                "rewards": r,
-            }
-            if d:
-                datas_2[id + self._generations[id] * self._n_steps] = {
-                    "obs": next_obs[id][None][0]
-                }
-                self._generations[id] += 1
-
-        self._agent_proxy.push_training_data(
-            datas_1,
-            datas_2,
-        )
-
-        completed_episodes = 0
-        for info in infos:
-            # TODO[tsolberg]: if we want to support /instant/ in collector-based
-            # games, this should probably use an 'agent-metrics' key as well,
-            # but all games have to change then.
-            maybe_ep_info = info.get("episode")
-            self._last_environment_rewards.extend(rewards)
-            if maybe_ep_info is not None:
-                completed_episodes += 1
-                ep_infos["agent_metrics"].append(
-                    {f"episode/{k}": v for k, v in maybe_ep_info.items()}
-                )
+        for env_id, done in enumerate(dones):
+            if done:
+                self._generations[env_id] += 1
 
         self._obs = {"obs": next_obs}
-        return next_obs[0].shape[0], completed_episodes
 
     def collect_data(self):
         """Collect a single rollout"""
@@ -85,14 +65,6 @@ class GymCollector(Callback):
             new_inference_steps, new_completed_episodes = self._step(ep_infos)
             inference_steps += new_inference_steps
             completed_episodes += new_completed_episodes
-
-        self._rollouts += 1
-        ep_infos["episode/completed"] = completed_episodes
-        ep_infos["rollout/completed"] = self._rollouts
-        ep_infos["env/reward"] = sum(self._last_environment_rewards) / len(
-            self._last_environment_rewards
-        )
-        self._agent_proxy.report(ep_infos, {})
 
     def collect_multiple(self, count: int):
         """Collect multiple rollouts
@@ -106,15 +78,14 @@ class GymCollector(Callback):
         "Runs through the init, step cycle once on main thread to make sure all envs work."
         observations = self._env.reset()
         self._obs = self._reset_obs(self._env.observation_space, observations)
-        _actions, post_actions, _actionvalue_avg = self._agent_proxy.evaluate(self._obs)
-        self._env.step(post_actions)
+        actions = self._agent_proxy(self.gym_to_shoggoth(self._obs))
+        _ = self._env.step(actions)
 
         observations = self._env.reset()
         self._obs = self._reset_obs(self._env.observation_space, observations)
 
 
 class ThreadedGymCollector(GymCollector):
-
     def __init__(self, env, agent_proxy, render=True):
         super().__init__(env, agent_proxy, render)
         self._stop = False
@@ -154,8 +125,14 @@ class ThreadedGymCollector(GymCollector):
 
 
 class SimpleGymCollector(GymCollector):
-
-    def __init__(self, env: gym.vector.VectorEnv, agent_proxy, render=True, bp_steps_per_inf=10, warmup_steps=0):
+    def __init__(
+        self,
+        env: VectorEnv,
+        agent_proxy,
+        render=True,
+        bp_steps_per_inf=10,
+        warmup_steps=0,
+    ):
         super().__init__(env, agent_proxy, render)
         self._warmup_steps = warmup_steps
         self._bp_steps_per_inf = bp_steps_per_inf

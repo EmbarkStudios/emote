@@ -173,6 +173,7 @@ class CallbackMeta(ABCMeta):
 
 class Callback(metaclass=CallbackMeta):
     def __init__(self):
+        super().__init__()
         self._order = 0
 
     def begin_training(self, *args, **kwargs):

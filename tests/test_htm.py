@@ -1,12 +1,25 @@
-from torch.nn import ParameterList
+import torch
 from torch.optim import Adam
+from gym.vector import SyncVectorEnv
 
 from shoggoth import Trainer
 from shoggoth.nn import ActionValue, GaussianMLPPolicy
-from shoggoth.sac import QLoss, QTarget, PolicyLoss, AlphaLoss, SACNetwork
+from shoggoth.sac import (
+    QLoss,
+    QTarget,
+    PolicyLoss,
+    AlphaLoss,
+    SACNetwork,
+    SACAgentProxy,
+)
+
+from .gym import SimpleGymCollector, HitTheMiddle, ReplayMemory
 
 
 def test_htm():
+
+    env = SyncVectorEnv([HitTheMiddle, HitTheMiddle])
+    memory = ReplayMemory(10000, 1000)
 
     network = SACNetwork(
         ActionValue(2, 1, [10, 10]),
@@ -14,8 +27,9 @@ def test_htm():
         ActionValue(2, 1, [10, 10]),
         ActionValue(2, 1, [10, 10]),
         GaussianMLPPolicy(2, 1, [10, 10]),
-        ParameterList([1.0]),
+        torch.tensor(1.0),
     )
+    agent_proxy = SACAgentProxy(network, memory)
 
     callbacks = [
         QLoss(
@@ -33,14 +47,15 @@ def test_htm():
             Adam(network.policy.parameters()),
             network,
         ),
-        AlphaLoss("alpha", Adam(network.log_alpha_vars), network, 1),
+        AlphaLoss("alpha", Adam([network.log_alpha_vars]), network, 1),
         QTarget(
             network,
             0.99,
             1.0,
             0.005,
         ),
+        SimpleGymCollector(env, agent_proxy),
     ]
 
-    trainer = Trainer(callbacks)
+    trainer = Trainer(callbacks, memory, 200)
     trainer.train()

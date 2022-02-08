@@ -5,6 +5,8 @@ import torch
 from torch import nn
 from torch import optim
 
+from shoggoth.proxies import AgentProxy, Observations, Rewards, Responses
+
 from .callbacks import LoggingCallback, LossCallback
 
 
@@ -15,7 +17,7 @@ class SACNetwork:
     q1_target: nn.Module
     q2_target: nn.Module
     policy: nn.Module
-    log_alpha_vars: nn.ParameterList
+    log_alpha_vars: torch.TensorType
 
 
 def soft_update_from_to(source, target, tau):  # From rlkit
@@ -35,7 +37,7 @@ class QLoss(LossCallback):
         self.q_forward = q_forward
         self.mse = nn.MSELoss()
 
-    def loss(self, obs, actions, q_target, **kwargs):
+    def loss(self, obs, actions, q_target):
         q_value = self.q_forward(obs, actions)
         self.log_scalar(f"training/{self.name}_prediction", torch.mean(q_value))
         return self.mse(q_value, q_target)
@@ -55,7 +57,7 @@ class QTarget(LoggingCallback):
         self.tau = target_q_tau
         self.gamma = torch.tensor(gamma)
 
-    def begin_batch(self, next_obs, rewards, masks, **kwargs):
+    def begin_batch(self, next_obs, rewards, masks):
         bsz, *_ = next_obs[0].shape
         next_p_sample, next_logp_pi = self.net.policy(next_obs)
         next_q1_target = self.net.q1_target(next_obs, next_p_sample)
@@ -76,7 +78,8 @@ class QTarget(LoggingCallback):
 
         return {"q_target": q_target}
 
-    def end_batch(self, **kwargs):
+    def end_batch(self):
+        super().end_batch()
         soft_update_from_to(self.net.q1, self.net.q1_target, self.tau)
         soft_update_from_to(self.net.q2, self.net.q2_target, self.tau)
 
@@ -93,7 +96,7 @@ class PolicyLoss(LossCallback):
         self.net = net
         self._log_alpha_vars = self.net.log_alpha_vars
 
-    def loss(self, obs, **kwargs):
+    def loss(self, obs):
         assert isinstance(obs, tuple) and len(obs) > 0
         p_sample, logp_pi = self.net.policy(obs)
         q_pi_min = torch.min(self.net.q1(obs, p_sample), self.net.q2(obs, p_sample))
@@ -129,7 +132,7 @@ class AlphaLoss(LossCallback):
         )
         self.vars = self.net.log_alpha_vars  # This is log(alpha)
 
-    def loss(self, obs, **kwargs):
+    def loss(self, obs):
         assert isinstance(obs, tuple) and len(obs) > 0
         bsz, *_others = obs[0].shape
         _p_sample, logp_pi = self.net.policy(obs)
@@ -140,9 +143,37 @@ class AlphaLoss(LossCallback):
         self.log_scalar("loss/alpha_loss", alpha_loss)
         return alpha_loss
 
-    def end_batch(self, **kwargs):
+    def end_batch(self):
+        super().end_batch()
         self.vars[0].requires_grad_(False)
         self.vars[0] = torch.clamp_max_(self.vars[0], self._max_log_alpha)
         self.vars[0].requires_grad_(True)
         self.log_scalar("training/alpha_value", torch.exp(self.vars[0]).item())
-        super().end_batch(**kwargs)
+
+
+class SACAgentProxy(object):
+    def __init__(self, network: SACNetwork, memory):
+        super().__init__()
+        self.network = network
+        self.memory = memory
+
+    def __call__(
+        self, dict_obs: Observations, last_rewards: Rewards, save_to_memory: bool = True
+    ) -> Responses:
+        # The network takes observations of size batch x obs for each observation space.
+        assert len(dict_obs) > 0, "Observations are empty."
+        observation_spaces = dict_obs.values()[0].keys()
+        observations = {
+            space_id: torch.tensor(obs[space_id] for _, obs in dict_obs)
+            for space_id in observation_spaces
+        }
+        actions = self.network.policy(observations)
+
+        if save_to_memory:
+            # TODO(singhblom) ADD MEMORY FILLING HERE!
+            pass
+
+        return {
+            agent_id: {"action": actions[i]}
+            for i, agent_id in enumerate(dict_obs.keys())
+        }

@@ -38,16 +38,15 @@ class Trainer:
     def __init__(
         self,
         callbacks: List[Callback],
-        optimizer: Optimizer,
         dataloader: Iterable,
         cycle_length: int,
     ):
         self.callbacks = sorted(callbacks, key=lambda cb: cb._order)
-        self.optimizer = optimizer
         self.dataloader = dataloader
         self.cycle_length = cycle_length
+        self.state = StateDict()
 
-    def train(self, shutdown_signal: Callable):
+    def train(self, shutdown_signal: Callable = None):
         """The main training loop.
 
         This method will wait until the memory is full enough to start sampling, and then start
@@ -57,17 +56,14 @@ class Trainer:
         """
         shutdown_signal = shutdown_signal or (lambda: False)
 
-        while not self.dataloader.is_ready():
-            time.sleep(0.1)
-
         bp_step = 0
 
-        self.begin_training()
+        self._begin_training()
 
         try:
             for cycle_index in count():
                 self.state["cycle_index"] = cycle_index
-                self.begin_cycle()
+                self._begin_cycle()
 
                 for cycle_step, batch in zip(range(self.cycle_length), self.dataloader):
                     self.state["cycle_step"] = cycle_step
@@ -76,52 +72,50 @@ class Trainer:
                     if shutdown_signal():
                         raise TrainingShutdownException
 
-                    self.begin_batch(batch)
-                    self.optimizer.zero_grad()
-                    self.backward()
-                    self.optimizer.step()
-                    self.end_batch()
+                    self._begin_batch(batch)
+                    self._backward()
+                    self._end_batch()
 
                     bp_step += 1
-                self.end_cycle()
+                self._end_cycle()
         except TrainingShutdownException as ex:
-            self.end_training(ex)
+            self._end_training(ex)
         except Exception as ex:
-            self.end_training(ex)
+            self._end_training(ex)
             raise ex
 
-    def begin_training(self):
+    def _begin_training(self):
         for cb in self.callbacks:
             if updated_state := cb.begin_training(**self.state):
                 self.state.update(updated_state)
 
-    def begin_cycle(self):
+    def _begin_cycle(self):
         for cb in self.callbacks:
             if updated_state := cb.begin_cycle(**self.state):
                 self.state.update(updated_state)
 
-    def begin_batch(self, batch):
+    def _begin_batch(self, batch):
         self.state.update(batch)
         for cb in self.callbacks:
             if updated_state := cb.begin_batch(**self.state):
                 self.state.update(updated_state)
 
-    def backward(self):
+    def _backward(self):
         for cb in self.callbacks:
             if updated_state := cb.backward(**self.state):
                 self.state.update(updated_state)
 
-    def end_batch(self):
+    def _end_batch(self):
         for cb in self.callbacks:
             if updated_state := cb.end_batch(**self.state):
                 self.state.update(updated_state)
 
-    def end_cycle(self):
+    def _end_cycle(self):
         for cb in self.callbacks:
             if updated_state := cb.end_cycle(**self.state):
                 self.state.update(updated_state)
 
-    def end_training(self, exception: Exception):
+    def _end_training(self, exception: Exception):
         for cb in self.callbacks:
             if updated_state := cb.end_training(exception, **self.state):
                 self.state.update(updated_state)

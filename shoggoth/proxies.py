@@ -23,7 +23,7 @@ Episodes = Mapping[AgentId, Episode]
 class AgentProxy(Protocol):
     """The interface between the agent in the game and the network used during training."""
 
-    def infer(
+    def __call__(
         self, dict_obs: Observations, last_rewards: Rewards, save_to_memory: bool = True
     ) -> Responses:
         """Infer takes observations for the active agents and returns the relevant network output."""
