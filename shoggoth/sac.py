@@ -157,21 +157,15 @@ class SACAgentProxy(object):
         self.network = network
         self.memory = memory
 
-    def __call__(
-        self, dict_obs: Observations, last_rewards: Rewards, save_to_memory: bool = True
-    ) -> Responses:
+    def __call__(self, dict_obs: Observations) -> Responses:
         # The network takes observations of size batch x obs for each observation space.
         assert len(dict_obs) > 0, "Observations are empty."
-        observation_spaces = dict_obs.values()[0].keys()
+        observation_spaces = next(iter(dict_obs.values())).keys()
         observations = {
             space_id: torch.tensor(obs[space_id] for _, obs in dict_obs)
             for space_id in observation_spaces
         }
         actions = self.network.policy(observations)
-
-        if save_to_memory:
-            # TODO(singhblom) ADD MEMORY FILLING HERE!
-            pass
 
         return {
             agent_id: {"action": actions[i]}

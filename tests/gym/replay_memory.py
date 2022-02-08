@@ -6,10 +6,9 @@ Taken from the `Pytorch documentation`__.
 
 
 import random
-from collections import deque, namedtuple
+from collections import deque
 
-
-Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
+from shoggoth.proxies import Transitions
 
 
 class ReplayMemory(object):
@@ -19,7 +18,7 @@ class ReplayMemory(object):
 
     def push(self, *args):
         """Save a transition"""
-        self.memory.append(Transition(*args))
+        self.memory.append(Transitions(*args))
 
     def __next__(self):
         return random.sample(self.memory, self.batch_size)

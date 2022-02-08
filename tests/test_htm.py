@@ -1,6 +1,8 @@
 import torch
 from torch.optim import Adam
 from gym.vector import SyncVectorEnv
+from gym.wrappers import TransformObservation
+from gym import spaces
 
 from shoggoth import Trainer
 from shoggoth.nn import ActionValue, GaussianMLPPolicy
@@ -16,9 +18,15 @@ from shoggoth.sac import (
 from .gym import SimpleGymCollector, HitTheMiddle, ReplayMemory
 
 
+def make_htm():
+    env = TransformObservation(HitTheMiddle(), lambda obs: {"obs": obs})
+    env.observation_space = spaces.Dict({"obs": env.env.observation_space})
+    return env
+
+
 def test_htm():
 
-    env = SyncVectorEnv([HitTheMiddle, HitTheMiddle])
+    env = SyncVectorEnv([make_htm, make_htm, make_htm])
     memory = ReplayMemory(10000, 1000)
 
     network = SACNetwork(
@@ -54,7 +62,7 @@ def test_htm():
             1.0,
             0.005,
         ),
-        SimpleGymCollector(env, agent_proxy),
+        SimpleGymCollector(env, agent_proxy, memory),
     ]
 
     trainer = Trainer(callbacks, memory, 200)

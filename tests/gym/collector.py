@@ -2,38 +2,50 @@
 Collectors for running OpenAI gym environments
 """
 
-from collections import deque, defaultdict
 import threading
-
+from collections import deque
 from gym.vector import VectorEnv
+from gym import spaces
 import numpy as np
 
 from shoggoth.callback import Callback
-from shoggoth.proxies import AgentProxy, Observations, Responses
+from shoggoth.proxies import (
+    AgentProxy,
+    Transitions,
+    TransitionMemoryProxy,
+    Observations,
+    Responses,
+)
 
 
 class GymCollector(Callback):
     MAX_NUMBER_REWARDS = 1000
 
-    def __init__(self, env: VectorEnv, agent_proxy: AgentProxy, render: bool = True):
+    def __init__(
+        self,
+        env: VectorEnv,
+        agent: AgentProxy,
+        memory: TransitionMemoryProxy,
+        render: bool = True,
+    ):
         super().__init__()
-        self._agent_proxy = agent_proxy
+        self._agent = agent
+        self._memory = memory
         self._env = env
+        assert isinstance(env.observation_space, spaces.Dict), (
+            "Observation spaces in shoggoth _must_ be of Dict type,\n"
+            f"but the current env has observations of type\n{env.observation_space}."
+        )
         self._n_steps = env.num_envs
         self._render = render
         self._last_environment_rewards = deque(maxlen=1000)
         self._rollouts = 0
         self._generations = {i: 0 for i in range(env.num_envs)}
 
-    def _reset_obs(self, obs_space, observations):
-        obs = np.zeros(
-            (self._env.num_envs,) + obs_space.shape, dtype=obs_space.dtype.name
-        )
-        obs[:] = observations
-        return {"obs": obs}
-
     def gym_to_shoggoth(self, data: np.array) -> Observations:
-        print(data)
+        import pdb
+
+        pdb.set_trace()
         return {
             f"{env + self._generations[env] * self._n_steps}": data[env]
             for env in range(self._env.num_envs)
@@ -42,9 +54,10 @@ class GymCollector(Callback):
     def shoggoth_to_gym(self, data: Responses):
         return np.array([action["action"] for _, action in data.items()])
 
-    def _step(self, ep_infos):
-        actions = self._agent_proxy(self.gym_to_shoggoth(self._obs))
-        next_obs, rewards, dones, infos = self._env.step(actions)
+    def _step(self):
+        actions = self._agent(self.gym_to_shoggoth(self._obs))
+        next_obs, rewards, dones, _ = self._env.step(actions)
+        self._memory.push(Transitions(self._obs, actions["action"], rewards))
 
         if self._render:
             self._env.envs[0].render()
@@ -57,14 +70,8 @@ class GymCollector(Callback):
 
     def collect_data(self):
         """Collect a single rollout"""
-        ep_infos = {"agent_metrics": []}
-
-        inference_steps = 0
-        completed_episodes = 0
         for _ in range(self._n_steps):
-            new_inference_steps, new_completed_episodes = self._step(ep_infos)
-            inference_steps += new_inference_steps
-            completed_episodes += new_completed_episodes
+            self._step()
 
     def collect_multiple(self, count: int):
         """Collect multiple rollouts
@@ -76,18 +83,15 @@ class GymCollector(Callback):
 
     def begin_training(self):
         "Runs through the init, step cycle once on main thread to make sure all envs work."
-        observations = self._env.reset()
-        self._obs = self._reset_obs(self._env.observation_space, observations)
-        actions = self._agent_proxy(self.gym_to_shoggoth(self._obs))
+        self._obs = self._env.reset()
+        actions = self._agent(self.gym_to_shoggoth(self._obs))
         _ = self._env.step(actions)
-
-        observations = self._env.reset()
-        self._obs = self._reset_obs(self._env.observation_space, observations)
+        self._obs = self._env.reset()
 
 
 class ThreadedGymCollector(GymCollector):
-    def __init__(self, env, agent_proxy, render=True):
-        super().__init__(env, agent_proxy, render)
+    def __init__(self, env, agent, render=True):
+        super().__init__(env, agent, render)
         self._stop = False
         self._thread = None
 
@@ -128,12 +132,13 @@ class SimpleGymCollector(GymCollector):
     def __init__(
         self,
         env: VectorEnv,
-        agent_proxy,
+        agent: AgentProxy,
+        memory: TransitionMemoryProxy,
         render=True,
         bp_steps_per_inf=10,
         warmup_steps=0,
     ):
-        super().__init__(env, agent_proxy, render)
+        super().__init__(env, agent, memory, render)
         self._warmup_steps = warmup_steps
         self._bp_steps_per_inf = bp_steps_per_inf
 
