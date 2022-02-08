@@ -61,7 +61,7 @@ class LossCallback(LoggingCallback):
         self.log_scalar(f"loss/{self.name}_loss", loss)
         self.log_scalar(f"loss/{self.name}_gradient_norm", grad_norm)
 
-    def end_batch(self, **kwargs):
+    def end_batch(self):
         self.log_scalar(
             f"training/{self.name}_learning_rate", self.optimizer.param_groups[0]["lr"]
         )
@@ -101,7 +101,7 @@ class Logger(Callback):
                     k = "/".join(k_split)
                 self._writer.add_scalar(k, v, step)
 
-    def end_batch(self, should_bp_log, bp_step, bp_samples, **kwargs):
+    def end_batch(self, should_bp_log, bp_step, bp_samples):
         if should_bp_log and self._step:
             self.log_scalars(bp_step, suffix="bp_step")
         if should_bp_log and self._samples:

@@ -9,7 +9,8 @@ class HitTheMiddle(Env):
     def __init__(self):
         high = np.array([10, np.finfo(np.float32).max], dtype=np.float32)
         self.observation_space = spaces.Box(-high, high, dtype=np.float32)
-        self.action_space = spaces.Box(-np.ones(1), np.ones(1), dtype=np.float32)
+        ones = np.ones(1, dtype=np.float32)
+        self.action_space = spaces.Box(-ones, ones)
         self._pos = None
         self._vel = None
         self._step = None

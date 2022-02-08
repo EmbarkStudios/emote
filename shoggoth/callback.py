@@ -83,7 +83,9 @@ def _make_group_unpack(func, group, arg_names, complex_kwargs):
 
 def _wrap_callback_function(obj, func, *, group: str = None, use_group: bool = True):
     args = inspect.getfullargspec(func)
-    if args.varargs or args.varkw:
+    # backward needs to pass things to loss so treated specially.
+    # TODO(singhblom) Figure out if this is the nicest way to do it.
+    if (args.varargs or args.varkw) and func.__name__ != "backward":
         warnings.warn(
             f"Deprecated: {func.__qualname__} uses *args or **kwargs, this is deprecated",
             UserWarning,
