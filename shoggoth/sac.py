@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from tkinter.messagebox import NO
 import numpy as np
 import torch
 from torch import nn
 from torch import optim
 
-from shoggoth.proxies import AgentProxy, Observations, Rewards, Responses
+from shoggoth.proxies import Observations, Responses
 
 from .callbacks import LoggingCallback, LossCallback
 
@@ -151,23 +150,19 @@ class AlphaLoss(LossCallback):
         self.log_scalar("training/alpha_value", torch.exp(self.vars[0]).item())
 
 
-class SACAgentProxy(object):
-    def __init__(self, network: SACNetwork, memory):
+class FeatureAgentProxy(object):
+    def __init__(self, network: SACNetwork):
         super().__init__()
         self.network = network
-        self.memory = memory
 
-    def __call__(self, dict_obs: Observations) -> Responses:
+    def __call__(self, observations: Observations) -> Responses:
         # The network takes observations of size batch x obs for each observation space.
-        assert len(dict_obs) > 0, "Observations are empty."
-        observation_spaces = next(iter(dict_obs.values())).keys()
-        observations = {
-            space_id: torch.tensor(obs[space_id] for _, obs in dict_obs)
-            for space_id in observation_spaces
-        }
-        actions = self.network.policy(observations)
+        assert "obs" in observations, "Observations must have key 'obs'"
+        assert len(observations["obs"]) > 0, "Observations are empty."
+        a2o = observations["obs"]  # Agent to Observation
+        obs = (torch.stack([torch.tensor(data) for _, data in a2o]),)
+        actions = self.network.policy(obs)
 
         return {
-            agent_id: {"action": actions[i]}
-            for i, agent_id in enumerate(dict_obs.keys())
+            "action": {agent_id: actions[i]} for i, agent_id in enumerate(a2o.keys())
         }
