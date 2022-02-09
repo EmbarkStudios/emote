@@ -3,21 +3,20 @@ Proxies are bridges between the world the agent acts in and the algorithm traini
 """
 
 from dataclasses import dataclass
-from typing import List, Mapping, Protocol, Tuple
-from collections import namedtuple
+from typing import OrderedDict, Protocol
 from numpy.typing import ArrayLike
 
 
 AgentId = str  # Each agent must have its own unique agent id.
 ObservationSpace = str  # A name associated with this group of observations.
-AgentObservation = Mapping[AgentId, ArrayLike]
-Observations = Mapping[ObservationSpace, AgentObservation]
+AgentObservation = OrderedDict[AgentId, ArrayLike]
+Observations = OrderedDict[ObservationSpace, AgentObservation]
 RewardSpace = str
-AgentReward = Mapping[AgentId, float]
-Rewards = Mapping[RewardSpace, AgentReward]
+AgentReward = OrderedDict[AgentId, float]
+Rewards = OrderedDict[RewardSpace, AgentReward]
 ResponseSpace = str  # E.g. "actions", "q-value", etc. Not called actions because we also respond with q-values etc.
-AgentResponse = Mapping[AgentId, ArrayLike]
-Responses = Mapping[ResponseSpace, AgentResponse]
+AgentResponse = OrderedDict[AgentId, ArrayLike]
+Responses = OrderedDict[ResponseSpace, AgentResponse]
 
 
 @dataclass

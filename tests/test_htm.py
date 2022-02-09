@@ -12,7 +12,7 @@ from shoggoth.sac import (
     PolicyLoss,
     AlphaLoss,
     SACNetwork,
-    SACAgentProxy,
+    FeatureAgentProxy,
 )
 
 from .gym import SimpleGymCollector, HitTheMiddle, ReplayMemory
@@ -37,7 +37,7 @@ def test_htm():
         GaussianMLPPolicy(2, 1, [10, 10]),
         torch.tensor(1.0),
     )
-    agent_proxy = SACAgentProxy(network, memory)
+    agent_proxy = FeatureAgentProxy(network)
 
     callbacks = [
         QLoss(

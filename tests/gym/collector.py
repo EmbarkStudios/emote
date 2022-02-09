@@ -42,20 +42,8 @@ class GymCollector(Callback):
         self._rollouts = 0
         self._generations = {i: 0 for i in range(env.num_envs)}
 
-    def gym_to_shoggoth(self, data: np.array) -> Observations:
-        import pdb
-
-        pdb.set_trace()
-        return {
-            f"{env + self._generations[env] * self._n_steps}": data[env]
-            for env in range(self._env.num_envs)
-        }
-
-    def shoggoth_to_gym(self, data: Responses):
-        return np.array([action["action"] for _, action in data.items()])
-
     def _step(self):
-        actions = self._agent(self.gym_to_shoggoth(self._obs))
+        actions = self._agent(self._obs)
         next_obs, rewards, dones, _ = self._env.step(actions)
         self._memory.push(Transitions(self._obs, actions["action"], rewards))
 
@@ -84,7 +72,7 @@ class GymCollector(Callback):
     def begin_training(self):
         "Runs through the init, step cycle once on main thread to make sure all envs work."
         self._obs = self._env.reset()
-        actions = self._agent(self.gym_to_shoggoth(self._obs))
+        actions = self._agent(self._obs)
         _ = self._env.step(actions)
         self._obs = self._env.reset()
 
