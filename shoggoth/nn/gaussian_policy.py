@@ -116,10 +116,6 @@ class GaussianMLPPolicy(BasePolicy):
         self.head = GaussianPolicyHead(hidden_dims[-1], action_dim)
 
     def forward(self, observation):
-        assert isinstance(observation, tuple)
-        assert len(observation) == 1
-        observation = observation[0]
-        bsz, obs_dim = observation.shape
         x = self.seq(observation)
         pre_actions, neg_log_probs = self.head(x)
         return pre_actions, neg_log_probs

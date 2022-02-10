@@ -27,7 +27,8 @@ def make_htm():
 def test_htm():
 
     env = SyncVectorEnv([make_htm, make_htm, make_htm])
-    memory = ReplayMemory(10000, 1000)
+    batch_size = 1000
+    memory = ReplayMemory(10000, batch_size)
 
     network = SACNetwork(
         ActionValue(2, 1, [10, 10]),
@@ -62,7 +63,7 @@ def test_htm():
             1.0,
             0.005,
         ),
-        SimpleGymCollector(env, agent_proxy, memory),
+        SimpleGymCollector(env, agent_proxy, memory, warmup_steps=batch_size),
     ]
 
     trainer = Trainer(callbacks, memory, 200)

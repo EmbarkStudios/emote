@@ -6,16 +6,9 @@ import threading
 from collections import deque
 from gym.vector import VectorEnv
 from gym import spaces
-import numpy as np
 
 from shoggoth.callback import Callback
-from shoggoth.proxies import (
-    AgentProxy,
-    Transitions,
-    TransitionMemoryProxy,
-    Observations,
-    Responses,
-)
+from shoggoth.proxies import AgentProxy, Transitions, TransitionMemoryProxy
 
 
 class GymCollector(Callback):
@@ -36,30 +29,30 @@ class GymCollector(Callback):
             "Observation spaces in shoggoth _must_ be of Dict type,\n"
             f"but the current env has observations of type\n{env.observation_space}."
         )
-        self._n_steps = env.num_envs
+        self.num_envs = env.num_envs
         self._render = render
         self._last_environment_rewards = deque(maxlen=1000)
         self._rollouts = 0
-        self._generations = {i: 0 for i in range(env.num_envs)}
+        self._id_offset = {i: 0 for i in range(env.num_envs)}
 
     def _step(self):
         actions = self._agent(self._obs)
         next_obs, rewards, dones, _ = self._env.step(actions)
-        self._memory.push(Transitions(self._obs, actions["action"], rewards))
+        agents = [env_id + self._id_offset[env_id] for env_id in range(self.num_envs)]
+        self._memory.push(Transitions(self._obs, actions, rewards, agents, dones))
 
         if self._render:
             self._env.envs[0].render()
 
         for env_id, done in enumerate(dones):
             if done:
-                self._generations[env_id] += 1
+                self._id_offset[env_id] += self.num_envs
 
         self._obs = {"obs": next_obs}
 
     def collect_data(self):
         """Collect a single rollout"""
-        for _ in range(self._n_steps):
-            self._step()
+        self._step()
 
     def collect_multiple(self, count: int):
         """Collect multiple rollouts
@@ -132,11 +125,11 @@ class SimpleGymCollector(GymCollector):
 
     def begin_training(self):
         super().begin_training()
-        iterations_required = self._warmup_steps // self._n_steps
+        iterations_required = self._warmup_steps // self.num_envs
         self.collect_multiple(iterations_required)
         return {"inf_step": self._warmup_steps}
 
     def begin_batch(self, inf_step, bp_step):
         if bp_step % self._bp_steps_per_inf == 0:
             self.collect_data()
-        return {"inf_step": inf_step + self._n_steps}
+        return {"inf_step": inf_step + self.num_envs}

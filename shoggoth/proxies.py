@@ -3,33 +3,30 @@ Proxies are bridges between the world the agent acts in and the algorithm traini
 """
 
 from dataclasses import dataclass
-from typing import OrderedDict, Protocol
+from typing import Iterable, OrderedDict, Protocol
 from numpy.typing import ArrayLike
 
 
 AgentId = str  # Each agent must have its own unique agent id.
 ObservationSpace = str  # A name associated with this group of observations.
-AgentObservation = OrderedDict[AgentId, ArrayLike]
-Observations = OrderedDict[ObservationSpace, AgentObservation]
-RewardSpace = str
-AgentReward = OrderedDict[AgentId, float]
-Rewards = OrderedDict[RewardSpace, AgentReward]
-ResponseSpace = str  # E.g. "actions", "q-value", etc. Not called actions because we also respond with q-values etc.
-AgentResponse = OrderedDict[AgentId, ArrayLike]
-Responses = OrderedDict[ResponseSpace, AgentResponse]
+Observations = OrderedDict[ObservationSpace, ArrayLike]
+Actions = ArrayLike
+Rewards = ArrayLike
 
 
 @dataclass
 class Transitions:
     state: Observations
-    actions: ArrayLike
+    actions: Actions
     rewards: Rewards
+    agents: Iterable[AgentId]
+    dones: Iterable[bool]
 
 
 class AgentProxy(Protocol):
     """The interface between the agent in the game and the network used during training."""
 
-    def __call__(self, dict_obs: Observations) -> Responses:
+    def __call__(self, dict_obs: Observations) -> ArrayLike:
         """Infer takes observations for the active agents and returns the relevant network output."""
         ...
 

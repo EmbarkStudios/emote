@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch import optim
 
-from shoggoth.proxies import Observations, Responses
+from shoggoth.proxies import Observations, Actions
 
 from .callbacks import LoggingCallback, LossCallback
 
@@ -155,14 +155,13 @@ class FeatureAgentProxy(object):
         super().__init__()
         self.network = network
 
-    def __call__(self, observations: Observations) -> Responses:
+    def __call__(self, observations: Observations) -> Actions:
+        """Runs the policy and returns the actions.
+
+        Both the input and output to this AgentProxy are numpy arrays."""
         # The network takes observations of size batch x obs for each observation space.
         assert "obs" in observations, "Observations must have key 'obs'"
         assert len(observations["obs"]) > 0, "Observations are empty."
-        a2o = observations["obs"]  # Agent to Observation
-        obs = (torch.stack([torch.tensor(data) for _, data in a2o]),)
-        actions = self.network.policy(obs)
-
-        return {
-            "action": {agent_id: actions[i]} for i, agent_id in enumerate(a2o.keys())
-        }
+        tensor_obs = torch.tensor(observations["obs"])
+        actions, _ = self.network.policy(tensor_obs)
+        return actions.detach().numpy()
