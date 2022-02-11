@@ -5,11 +5,13 @@ import numpy as np
 import torch
 
 
+@dataclass
 class BoxSpace:
     dtype: Union[torch.dtype, np.dtype]
     shape: Tuple[int]
 
 
+@dataclass
 class DictSpace:
     spaces: Dict[str, BoxSpace]
 
