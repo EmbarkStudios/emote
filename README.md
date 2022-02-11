@@ -16,3 +16,10 @@ average shoggoth.
 
 From [this](https://ealizadeh.com/blog/guide-to-python-env-pkg-dependency-using-conda-poetry) for
 information on how to install conda and poetry.
+
+## Installation on Windows
+
+Some of the development dependencies require a working compiler. Install 
+[https://www.msys2.org/], then install `mingw-64` and `swig` using `pacman`.
+After that you will probably have to invoke `poetry install` from inside the
+`MSYS2 MINGW 64` shell.
