@@ -48,7 +48,7 @@ class GymCollector(Callback):
             if done:
                 self._id_offset[env_id] += self.num_envs
 
-        self._obs = {"obs": next_obs}
+        self._obs = next_obs
 
     def collect_data(self):
         """Collect a single rollout"""
@@ -125,7 +125,7 @@ class SimpleGymCollector(GymCollector):
 
     def begin_training(self):
         super().begin_training()
-        iterations_required = self._warmup_steps // self.num_envs
+        iterations_required = self._warmup_steps
         self.collect_multiple(iterations_required)
         return {"inf_step": self._warmup_steps}
 
