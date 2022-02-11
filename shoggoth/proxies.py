@@ -31,10 +31,10 @@ class AgentProxy(Protocol):
         ...
 
 
-class TransitionMemoryProxy(Protocol):
+class MemoryProxy(Protocol):
     """The MemoryProxy allows the world to populate the memory buffer that the algorithm trains from."""
 
-    def push(self, transition: Transitions):
+    def add(self, transition: Transitions):
         """Store episodes in the memory buffer used for training.
 
         This is useful e.g. if the data collection is running from a checkpointed model running on

@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch.optim import Adam
 from gym.vector import SyncVectorEnv
@@ -6,6 +7,7 @@ from gym import spaces
 
 from shoggoth import Trainer
 from shoggoth.nn import ActionValue, GaussianMLPPolicy
+from shoggoth.memory.builder import MemoryConfiguration, create_memory
 from shoggoth.sac import (
     QLoss,
     QTarget,
@@ -14,8 +16,10 @@ from shoggoth.sac import (
     SACNetwork,
     FeatureAgentProxy,
 )
+from shoggoth.sequence_builder import SequenceBuilder
+from shoggoth.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
-from .gym import SimpleGymCollector, HitTheMiddle, ReplayMemory
+from .gym import SimpleGymCollector, HitTheMiddle
 
 
 def make_htm():
@@ -28,7 +32,14 @@ def test_htm():
 
     env = SyncVectorEnv([make_htm, make_htm, make_htm])
     batch_size = 1000
-    memory = ReplayMemory(10000, batch_size)
+    mem_conf = MemoryConfiguration(10, 1000)
+    spaces = MDPSpace(
+        BoxSpace(np.float32, (1,)),
+        BoxSpace(env.action_space.dtype, env.action_space.shape),
+        DictSpace(env.observation_space.spaces),
+    )
+    memory = create_memory(spaces, mem_conf)
+    sb = SequenceBuilder(memory)
 
     network = SACNetwork(
         ActionValue(2, 1, [10, 10]),
@@ -63,7 +74,7 @@ def test_htm():
             1.0,
             0.005,
         ),
-        SimpleGymCollector(env, agent_proxy, memory, warmup_steps=batch_size),
+        SimpleGymCollector(env, agent_proxy, sb, warmup_steps=batch_size),
     ]
 
     trainer = Trainer(callbacks, memory, 200)

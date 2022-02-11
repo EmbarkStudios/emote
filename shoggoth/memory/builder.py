@@ -115,7 +115,7 @@ def create_dict_obs_memory(spaces: MDPSpace, config: MemoryConfiguration):
             ]
         )
 
-    return create_dict_table_from_columns(config, spaces, columns, obs_keys)
+    return create_dict_table_from_columns(config, columns, obs_keys)
 
 
 def create_dict_obs_nstep_memory(spaces: MDPSpace, config: MemoryConfiguration):

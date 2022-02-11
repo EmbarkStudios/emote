@@ -4,11 +4,11 @@ Collectors for running OpenAI gym environments
 
 import threading
 from collections import deque
-from gym.vector import VectorEnv
+from gym.vector import SyncVectorEnv
 from gym import spaces
 
 from shoggoth.callback import Callback
-from shoggoth.proxies import AgentProxy, Transitions, TransitionMemoryProxy
+from shoggoth.proxies import AgentProxy, Transitions, MemoryProxy
 
 
 class GymCollector(Callback):
@@ -16,9 +16,9 @@ class GymCollector(Callback):
 
     def __init__(
         self,
-        env: VectorEnv,
+        env: SyncVectorEnv,
         agent: AgentProxy,
-        memory: TransitionMemoryProxy,
+        memory: MemoryProxy,
         render: bool = True,
     ):
         super().__init__()
@@ -39,7 +39,7 @@ class GymCollector(Callback):
         actions = self._agent(self._obs)
         next_obs, rewards, dones, _ = self._env.step(actions)
         agents = [env_id + self._id_offset[env_id] for env_id in range(self.num_envs)]
-        self._memory.push(Transitions(self._obs, actions, rewards, agents, dones))
+        self._memory.add(Transitions(self._obs, actions, rewards, agents, dones))
 
         if self._render:
             self._env.envs[0].render()
@@ -112,7 +112,7 @@ class ThreadedGymCollector(GymCollector):
 class SimpleGymCollector(GymCollector):
     def __init__(
         self,
-        env: VectorEnv,
+        env: SyncVectorEnv,
         agent: AgentProxy,
         memory: TransitionMemoryProxy,
         render=True,
