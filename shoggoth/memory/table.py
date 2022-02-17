@@ -176,9 +176,12 @@ class Table(BaseTable):
                         self._eject_count(size_after_add - self._maxlen)
 
                     for name, value in sequence.items():
-                        self._data[name][identity] = np.array(
-                            value, dtype=self._columns[name].dtype
-                        ).reshape(-1, *self._columns[name].shape)
+                        try:
+                            self._data[name][identity] = np.array(
+                                value, dtype=self._columns[name].dtype
+                            ).reshape(-1, *self._columns[name].shape)
+                        except:
+                            print("foo")
 
                     self._total_length += sequence_length
                     self._lengths[identity] = sequence_length

@@ -2,7 +2,7 @@
 
 """
 
-from .memory import Table, BaseTable
+from .table import Table, BaseTable
 from .column import Column, TagColumn, VirtualColumn
 from .storage import NextElementMapper, SyntheticDones, BaseStorage
 from .fifo_strategy import FifoEjectionStrategy, FifoSampleStrategy
