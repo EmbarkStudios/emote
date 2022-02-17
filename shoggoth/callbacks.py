@@ -1,4 +1,4 @@
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union
 import os
 import logging
 import time
@@ -44,8 +44,10 @@ class LossCallback(LoggingCallback):
         name: str,
         optimizer: optim.Optimizer,
         max_grad_norm: float,
+        data_group: str,
     ):
         super().__init__()
+        self.data_group = data_group
         self.name = name
         self.optimizer = optimizer
         self.parameters = [
@@ -81,7 +83,7 @@ class LossCallback(LoggingCallback):
         raise NotImplementedError
 
 
-class Logger(Callback):
+class TensorboardLogger(Callback):
     def __init__(
         self,
         callbacks: List[LoggingCallback],

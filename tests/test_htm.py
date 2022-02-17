@@ -2,8 +2,6 @@ import numpy as np
 import torch
 from torch.optim import Adam
 from gym.vector import SyncVectorEnv
-from gym.wrappers import TransformObservation
-from gym import spaces
 
 from shoggoth import Trainer
 from shoggoth.nn import ActionValue, GaussianMLPPolicy
@@ -16,30 +14,19 @@ from shoggoth.sac import (
     SACNetwork,
     FeatureAgentProxy,
 )
-from shoggoth.sequence_builder import SequenceBuilder
-from shoggoth.utils.spaces import BoxSpace, DictSpace, MDPSpace
+from shoggoth.memory import TableMemoryProxy, MemoryLoader
 
-from .gym import SimpleGymCollector, HitTheMiddle
-
-
-def make_htm():
-    env = TransformObservation(HitTheMiddle(), lambda obs: {"obs": obs})
-    env.observation_space = spaces.Dict({"obs": env.env.observation_space})
-    return env
+from .gym import SimpleGymCollector, HitTheMiddle, HiveGymWrapper
 
 
 def test_htm():
 
-    env = SyncVectorEnv([make_htm, make_htm, make_htm])
+    env = HiveGymWrapper(SyncVectorEnv(3 * [HitTheMiddle]))
     batch_size = 1000
     mem_conf = MemoryConfiguration(10, 1000)
-    spaces = MDPSpace(
-        BoxSpace(np.float32, (1,)),
-        BoxSpace(env.action_space.dtype, env.action_space.shape),
-        DictSpace(env.observation_space.spaces),
-    )
-    memory = create_memory(spaces, mem_conf)
-    sb = SequenceBuilder(memory)
+    table = create_memory(env.hive_space, mem_conf)
+    sb = TableMemoryProxy(table)
+    memory = MemoryLoader(table, 20, 2, 500, "batch_size")
 
     network = SACNetwork(
         ActionValue(2, 1, [10, 10]),

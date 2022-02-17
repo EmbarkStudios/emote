@@ -11,11 +11,10 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Tuple
 
-from .memory import Table
-from .memory.core_types import Matrix
-
-Observations = Mapping[int, Mapping[str, Matrix]]
-Terminals = Mapping[int, Mapping[str, Matrix]]
+from shoggoth.memory import Table
+from shoggoth.memory.core_types import Matrix
+from shoggoth.typing import HiveResponse, HiveObservation, AgentId, EpisodeState
+from shoggoth.utils import TimedBlock
 
 
 @dataclass
@@ -42,62 +41,135 @@ class Episode:
 ################################################################################
 
 
-class SequenceBuilder:
+class TableMemoryProxy:
     """The sequence builder wraps a sequence-based memory to build full episodes
     from [identity, observation] data. Not thread safe.
     """
 
     def __init__(
-        self, memory: Table, *, minimum_length_threshold: Optional[int] = None
+        self,
+        table: Table,
+        minimum_length_threshold: Optional[int] = None,
+        use_terminal: bool = False,
     ):
-        self._store: Dict[int, Episode] = dict()
-        self._memory = memory
+        self._store: dict[AgentId, Episode] = {}
+        self._table = table
         if minimum_length_threshold is None:
             self._min_length_filter = lambda _: True
         else:
-            key = memory._length_key
+            key = table._length_key
             self._min_length_filter = (
                 lambda ep: len(ep[key]) >= minimum_length_threshold
             )
 
-        self._completed_episodes = set()
+        self._completed_episodes: set[AgentId] = set()
+        self._term_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
+        self._use_terminal = use_terminal
 
     def is_initial(self, identity):
         """Returns true if identity is not already used in a partial sequence. Does not
         validate if the identity is associated with a complete episode."""
         return identity not in self._store
 
-    def add(self, observations: Observations, terminals: Terminals):
-        """Adds a set of data to episode builder.
-
-        :param observations: Dictionary from agent_id to the data associated with timepoint one
-        :param results: Dictionary from agent_id to the data associated with timepoint two, completing transitions"""
+    def add(
+        self,
+        observations: dict[AgentId, HiveObservation],
+        responses: dict[AgentId, HiveResponse],
+    ):
         completed_episodes = {}
+        for agent_id, observation in observations.items():
+            data = {space: feature for space, feature in observation.array_data.items()}
+            if observation.episode_state != EpisodeState.INITIAL:
+                data["rewards"] = observation.rewards[
+                    "reward"
+                ]  # TODO(singhblom) Check how Table handles rewards
 
-        for identity, observation in observations.items():
-            if identity not in self._store:
-                self._store[identity] = Episode.from_initial(observation)
-
-            else:
-                self._store[identity].append(observation)
-
-        for identity, observation in terminals.items():
-            if identity not in self._store:
-                if identity in self._completed_episodes:
-                    logging.warning("identity has already been completed: %d", identity)
-                else:
-                    logging.warning(
-                        "identity completed with no previous sequence: %d", identity
+            if observation.episode_state in self._term_states:
+                if self._use_terminal:
+                    # The terminal value assigned here is the terminal _mask_ value,
+                    # not whether it is terminal. In this case, our legacy code
+                    # treated all terminals as fatal, i.e., truncated bootstrap.
+                    # Since this is the terminal mask value, an interrupted
+                    # episode should be 1.0 or "infinite boostrap horizon"
+                    data["terminal"] = float(
+                        observation.episode_state == EpisodeState.INTERRUPTED
                     )
 
-            self._completed_episodes.add(identity)
+                if agent_id not in self._store:
+                    # First warn that this is a new agent id:
+                    if agent_id in self._completed_episodes:
+                        logging.warning(
+                            "agent_id has already been completed: %d", agent_id
+                        )
+                    else:
+                        logging.warning(
+                            "agent_id completed with no previous sequence: %d", agent_id
+                        )
 
-            if identity not in self._store:
-                continue
+                self._completed_episodes.add(agent_id)
 
-            ep = self._store.pop(identity).complete(observation)
-            if self._min_length_filter(ep):  # else discard
-                completed_episodes[identity] = ep
+                if agent_id not in self._store:
+                    # Then continue without sending an empty episode to the table.
+                    continue
 
-        for identity, sequence in completed_episodes.items():
-            self._memory.add_sequence(identity, sequence)
+                ep = self._store.pop(agent_id).complete(data)
+                if self._min_length_filter(ep):  # else discard
+                    completed_episodes[agent_id] = ep
+
+            else:
+                assert (
+                    agent_id in responses
+                ), "Mismatch between observations and responses!"
+                response = responses[agent_id]
+                data.update(response.list_data)
+                data.update(response.scalar_data)
+
+                if agent_id not in self._store:
+                    self._store[agent_id] = Episode.from_initial(data)
+
+                else:
+                    self._store[agent_id].append(data)
+
+        for agent_id, sequence in completed_episodes.items():
+            self._table.add_sequence(agent_id, sequence)
+
+
+class MemoryLoader(object):
+    def __init__(
+        self,
+        table: Table,
+        rollout_count: int,
+        rollout_length: int,
+        iterations: int,
+        size_key: str,
+        data_group: str = "default",
+    ):
+        super().__init__()
+        self.data_group = data_group
+        self.table = table
+        self.rollout_count = rollout_count
+        self.rollout_length = rollout_length
+        self.iterations = iterations
+        self.size_key = size_key
+        self.timer = TimedBlock()
+
+    def is_ready(self):
+        """True if the data loader has enough data to start providing data"""
+        return self.table.size() >= (self.rollout_count * self.rollout_length)
+
+    def __iter__(self):
+        if not self.is_ready():
+            raise Exception(
+                "Data loader does not have enough data.\
+                 Check `is_ready()` before trying to iterate over data."
+            )
+
+        for _ in range(self.iterations):
+            with self.timer:
+                data = self.table.sample(self.rollout_count, self.rollout_length)
+
+            data[self.size_key] = self.rollout_count * self.rollout_length
+            yield {self.data_group: data, self.size_key: data[self.size_key]}
+
+    def __len__(self):
+        return len(self.table)

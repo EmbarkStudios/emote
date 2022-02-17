@@ -7,6 +7,7 @@ from .column import Column, TagColumn, VirtualColumn
 from .storage import NextElementMapper, SyntheticDones, BaseStorage
 from .fifo_strategy import FifoEjectionStrategy, FifoSampleStrategy
 from .uniform_strategy import UniformEjectionStrategy, UniformSampleStrategy
+from .memory import TableMemoryProxy, MemoryLoader
 
 __all__ = [
     "BaseStorage",
@@ -21,4 +22,6 @@ __all__ = [
     "FifoSampleStrategy",
     "UniformEjectionStrategy",
     "UniformSampleStrategy",
+    "TableMemoryProxy",
+    "MemoryLoader",
 ]

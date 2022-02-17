@@ -1,9 +1,9 @@
 from .hit_the_middle import HitTheMiddle
 from .collector import SimpleGymCollector
-from .replay_memory import ReplayMemory
+from .hive_gym_wrapper import HiveGymWrapper
 
 __all__ = [
     "HitTheMiddle",
     "SimpleGymCollector",
-    "ReplayMemory",
+    "HiveGymWrapper",
 ]

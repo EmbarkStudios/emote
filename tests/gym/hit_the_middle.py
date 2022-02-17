@@ -11,29 +11,28 @@ class HitTheMiddle(Env):
         self.observation_space = spaces.Box(-high, high, dtype=np.float32)
         ones = np.ones(1, dtype=np.float32)
         self.action_space = spaces.Box(-ones, ones)
-        self._pos = None
-        self._vel = None
+        self._state = None
         self._step = None
         self.viewer = None
 
     def step(self, action):
-        self._vel += action
-        self._pos += self._vel
+        self._state[1] += action
+        self._state[0] += self._state[1]
         self._step += 1
-        if self._pos > 10.0:
-            self._pos = 10.0
-            self._vel *= -1
-        elif self._pos < -10.0:
-            self.pos = -10.0
-            self._vel *= -1
+        if self._state[0] > 10.0:
+            self._state[0] = 10.0
+            self._state[1] *= -1
+        elif self._state[0] < -10.0:
+            self._state[0] = -10.0
+            self._state[1] *= -1
         done = False
         if self._step > 30:
             self._step = 0
             done = True
 
         return (
-            np.array((self._pos, self._vel), dtype=np.float32).flatten(),
-            float(-self._pos**2),
+            self._state,
+            float(-self._state[0] ** 2),
             done,
             {},
         )
@@ -43,10 +42,11 @@ class HitTheMiddle(Env):
         return [seed]
 
     def reset(self):
-        self._pos = random.random() * 20 - 10
-        self._vel = random.random() * 0.5 - 0.25
+        pos = random.random() * 20 - 10
+        vel = random.random() * 0.5 - 0.25
+        self._state = np.array([pos, vel])
         self._step = 0
-        return np.array((self._pos, self._vel), dtype=np.float32).flatten()
+        return self._state
 
     def render(self, mode="human"):
         screen_width = 600
@@ -70,10 +70,10 @@ class HitTheMiddle(Env):
             self.track.set_color(0, 0, 0)
             self.viewer.add_geom(self.track)
 
-        if self._pos is None:
+        if self._state is None:
             return None
 
-        x = self._pos
+        x = self._state[0]
         ballx = x * scale + screen_width / 2.0  # MIDDLE OF BALL
         self.balltrans.set_translation(ballx, bally)
 

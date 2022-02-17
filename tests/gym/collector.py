@@ -4,11 +4,10 @@ Collectors for running OpenAI gym environments
 
 import threading
 from collections import deque
-from gym.vector import SyncVectorEnv
-from gym import spaces
 
 from shoggoth.callback import Callback
-from shoggoth.proxies import AgentProxy, Transitions, MemoryProxy
+from shoggoth.proxies import AgentProxy, MemoryProxy
+from tests.gym.hive_gym_wrapper import HiveGymWrapper
 
 
 class GymCollector(Callback):
@@ -16,7 +15,7 @@ class GymCollector(Callback):
 
     def __init__(
         self,
-        env: SyncVectorEnv,
+        env: HiveGymWrapper,
         agent: AgentProxy,
         memory: MemoryProxy,
         render: bool = True,
@@ -25,34 +24,15 @@ class GymCollector(Callback):
         self._agent = agent
         self._memory = memory
         self._env = env
-        assert isinstance(env.observation_space, spaces.Dict), (
-            "Observation spaces in shoggoth _must_ be of Dict type,\n"
-            f"but the current env has observations of type\n{env.observation_space}."
-        )
-        self.num_envs = env.num_envs
         self._render = render
         self._last_environment_rewards = deque(maxlen=1000)
-        self._rollouts = 0
-        self._id_offset = {i: 0 for i in range(env.num_envs)}
-
-    def _step(self):
-        actions = self._agent(self._obs)
-        next_obs, rewards, dones, _ = self._env.step(actions)
-        agents = [env_id + self._id_offset[env_id] for env_id in range(self.num_envs)]
-        self._memory.add(Transitions(self._obs, actions, rewards, agents, dones))
-
-        if self._render:
-            self._env.envs[0].render()
-
-        for env_id, done in enumerate(dones):
-            if done:
-                self._id_offset[env_id] += self.num_envs
-
-        self._obs = next_obs
 
     def collect_data(self):
         """Collect a single rollout"""
-        self._step()
+        actions = self._agent(self._obs)
+        next_obs = self._env.hive_step(actions)
+        self._memory.add(self._obs, actions)
+        self._obs = next_obs
 
     def collect_multiple(self, count: int):
         """Collect multiple rollouts
@@ -64,15 +44,21 @@ class GymCollector(Callback):
 
     def begin_training(self):
         "Runs through the init, step cycle once on main thread to make sure all envs work."
-        self._obs = self._env.reset()
+        self._obs = self._env.hive_reset()
         actions = self._agent(self._obs)
         _ = self._env.step(actions)
-        self._obs = self._env.reset()
+        self._obs = self._env.hive_reset()
 
 
 class ThreadedGymCollector(GymCollector):
-    def __init__(self, env, agent, render=True):
-        super().__init__(env, agent, render)
+    def __init__(
+        self,
+        env: HiveGymWrapper,
+        agent: AgentProxy,
+        memory: MemoryProxy,
+        render=True,
+    ):
+        super().__init__(env, agent, memory, render)
         self._stop = False
         self._thread = None
 
@@ -112,9 +98,9 @@ class ThreadedGymCollector(GymCollector):
 class SimpleGymCollector(GymCollector):
     def __init__(
         self,
-        env: SyncVectorEnv,
+        env: HiveGymWrapper,
         agent: AgentProxy,
-        memory: TransitionMemoryProxy,
+        memory: MemoryProxy,
         render=True,
         bp_steps_per_inf=10,
         warmup_steps=0,
