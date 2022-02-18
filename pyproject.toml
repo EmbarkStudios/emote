@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "shoggoth"
 version = "0.1.0"
-description = ""
+description = "A modular reinforcement learning library."
 authors = [
     "Martin Singh-Blom <martin.singh-blom@embark-studios.com>",
     "Tom Solberg <tom.solberg@embark-studios.com>",
@@ -9,6 +9,8 @@ authors = [
     "Jorge Del Val <jorge.delval@embark-studios.com>",
     "Riley Miladi <riley.miladi@embark-studios.com>",
 ]
+license = "MIT"
+repository = "https://github.com/EmbarkStudios/shoggoth"
 
 [tool.poetry.dependencies]
 python = "^3.9"
