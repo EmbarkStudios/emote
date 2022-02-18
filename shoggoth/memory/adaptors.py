@@ -2,15 +2,14 @@
 
 """
 
-from typing import List
-from .memory import ArrayTable
 import torch
+from .table import ArrayTable
 
 
 def DictObsAdaptor(
     memory: ArrayTable,
-    keys: List[str],
-    output_keys: List[str] = None,
+    keys: list[str],
+    output_keys: list[str] = None,
     with_next: bool = True,
 ):
     """

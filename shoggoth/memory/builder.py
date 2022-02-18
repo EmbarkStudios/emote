@@ -9,14 +9,10 @@ import logging
 import numpy as np
 
 from ..utils import MDPSpace
-from . import (
-    ArrayTable,
-    Column,
-    FifoEjectionStrategy,
-    UniformSampleStrategy,
-    TagColumn,
-    VirtualColumn,
-)
+from .table import ArrayTable
+from .column import Column, TagColumn, VirtualColumn
+from .fifo_strategy import FifoEjectionStrategy
+from .uniform_strategy import UniformSampleStrategy
 from .storage import NextElementMapper, SyntheticDones
 from .loading import fill_table_from_legacy_file
 from .adaptors import DictObsAdaptor, TerminalAdaptor
@@ -199,7 +195,7 @@ def create_intrinsic_memory(spaces: MDPSpace, config: MemoryConfiguration):
         ),
         VirtualColumn(
             name="dones",
-            dtype=np.bool88,
+            dtype=np.bool8,
             shape=(1,),
             target_name="actions",
             mapper=SyntheticDones,

@@ -6,7 +6,7 @@ import pickle
 
 import numpy as np
 
-from . import ArrayTable
+from .table import ArrayTable
 
 
 def fill_table_from_legacy_file(

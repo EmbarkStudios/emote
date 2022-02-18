@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Tuple
 
 from shoggoth.memory.core_types import Matrix
-from shoggoth.memory.table import Table
+from shoggoth.memory import Table
 from shoggoth.typing import HiveResponse, HiveObservation, AgentId, EpisodeState
 from shoggoth.utils import TimedBlock
 
@@ -80,9 +80,7 @@ class TableMemoryProxy:
         for agent_id, observation in observations.items():
             data = {space: feature for space, feature in observation.array_data.items()}
             if observation.episode_state != EpisodeState.INITIAL:
-                data["rewards"] = observation.rewards[
-                    "reward"
-                ]  # TODO(singhblom) Check how ArrayTable handles rewards
+                data["rewards"] = observation.rewards["reward"]
 
             if observation.episode_state in self._term_states:
                 if self._use_terminal:
@@ -137,7 +135,7 @@ class TableMemoryProxy:
 class MemoryLoader:
     def __init__(
         self,
-        table: ArrayTable,
+        table: Table,
         rollout_count: int,
         rollout_length: int,
         iterations: int,
