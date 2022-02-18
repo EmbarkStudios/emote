@@ -25,8 +25,7 @@ class LoggingCallback(Callback):
 
     def log_scalar(self, key: str, value: Union[float, torch.Tensor]):
         if isinstance(value, torch.Tensor):
-            assert value.shape == (1,), "Wrong shape for scalar log tensor."
-            self.scalar_logs[key] = value.detach()
+            self.scalar_logs[key] = value.item()
         else:
             self.scalar_logs[key] = value
 
@@ -79,6 +78,7 @@ class LossCallback(LoggingCallback):
     def load_state(self, state):
         self.optimizer.load_state_dict(state["optimizer_state_dict"])
 
+    @Callback.extend
     def loss(self, *args, **kwargs) -> Tensor:
         raise NotImplementedError
 
@@ -113,6 +113,32 @@ class TensorboardLogger(Callback):
             self.log_scalars(bp_step, suffix="bp_step")
         if should_bp_log and self._samples:
             self.log_scalars(bp_samples, suffix="bp_samples")
+
+
+class TerminalLogger(Callback):
+    def __init__(
+        self,
+        callbacks: List[LoggingCallback],
+        bp_log_interval: int,
+    ):
+        super().__init__()
+        self._callbacks = callbacks
+        self._bp_log_interval = bp_log_interval
+
+    def log_scalars(self, step, suffix=None):
+        """Logs scalar logs adding optional suffix on the first level.
+        E.g. If k='training/loss' and suffix='bp_step', k will be renamed to 'training_bp_step/loss'."""
+        for cb in self._callbacks:
+            for k, v in cb.scalar_logs.items():
+                if suffix:
+                    k_split = k.split("/")
+                    k_split[0] = k_split[0] + "_" + suffix
+                    k = "/".join(k_split)
+                logging.info("%s@%s:\t%.4f", k, step, v)
+
+    def end_batch(self, bp_step):
+        if bp_step % self._bp_log_interval == 0:
+            self.log_scalars(bp_step)
 
 
 class Checkpointer(Callback):

@@ -26,6 +26,7 @@ class GymCollector(Callback):
         self._env = env
         self._render = render
         self._last_environment_rewards = deque(maxlen=1000)
+        self.num_envs = env.num_envs
 
     def collect_data(self):
         """Collect a single rollout"""

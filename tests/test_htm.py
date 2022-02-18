@@ -1,9 +1,9 @@
-import numpy as np
 import torch
 from torch.optim import Adam
 from gym.vector import SyncVectorEnv
 
 from shoggoth import Trainer
+from shoggoth.callbacks import TerminalLogger
 from shoggoth.nn import ActionValue, GaussianMLPPolicy
 from shoggoth.memory.builder import MemoryConfiguration, create_memory
 from shoggoth.sac import (
@@ -34,11 +34,11 @@ def test_htm():
         ActionValue(2, 1, [10, 10]),
         ActionValue(2, 1, [10, 10]),
         GaussianMLPPolicy(2, 1, [10, 10]),
-        torch.tensor(1.0),
+        torch.tensor(1.0, requires_grad=True),
     )
     agent_proxy = FeatureAgentProxy(network)
 
-    callbacks = [
+    logged_cbs = [
         QLoss(
             "q1",
             Adam(network.q1.parameters()),
@@ -55,6 +55,9 @@ def test_htm():
             network,
         ),
         AlphaLoss("alpha", Adam([network.log_alpha_vars]), network, 1),
+    ]
+
+    callbacks = logged_cbs + [
         QTarget(
             network,
             0.99,
@@ -62,6 +65,7 @@ def test_htm():
             0.005,
         ),
         SimpleGymCollector(env, agent_proxy, sb, warmup_steps=batch_size),
+        TerminalLogger(logged_cbs, 500),
     ]
 
     trainer = Trainer(callbacks, memory, 200)

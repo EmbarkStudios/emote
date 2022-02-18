@@ -85,11 +85,12 @@ def _wrap_callback_function(obj, func, *, group: str = None, use_group: bool = T
     args = inspect.getfullargspec(func)
     # backward needs to pass things to loss so treated specially.
     # TODO(singhblom) Figure out if this is the nicest way to do it.
-    if (args.varargs or args.varkw) and func.__name__ != "backward":
-        warnings.warn(
-            f"Deprecated: {func.__qualname__} uses *args or **kwargs, this is deprecated",
-            UserWarning,
-        )
+    if args.varargs or args.varkw:
+        if func.__name__ != "backward":
+            warnings.warn(
+                f"Deprecated: {func.__qualname__} uses *args or **kwargs, this is deprecated",
+                UserWarning,
+            )
         return func
 
     arg_names = args.args + args.kwonlyargs
