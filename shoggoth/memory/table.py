@@ -2,7 +2,7 @@
 
 
 from threading import Lock
-from typing import Sequence, List, Tuple
+from typing import Sequence, List, Tuple, Protocol
 
 import torch
 import numpy as np
@@ -14,30 +14,36 @@ from .storage import BaseStorage, TagStorage, VirtualStorage
 from ..utils.timed_call import BlockTimers
 
 
-class BaseTable:
+class Table(Protocol):
     def sample(self, count: int, sequence_length: int) -> SampleResult:
         """sample COUNT traces from the memory, each consisting of SEQUENCE_LENGTH
         frames. The data is transposed in a SoA fashion (since this is
         both easier to store and easier to consume).
         """
+        ...
 
     def size(self) -> int:
         """query the number of elements currently in the memory"""
+        ...
 
     def full(self) -> bool:
         """query whether the memory is filled"""
+        ...
 
     def add_sequence(self, identity: int, sequence):
         """add a fully terminated sequence to the memory"""
+        ...
 
     def store(self, path: str) -> bool:
         """Persist the whole table and all metadata into the designated name"""
+        ...
 
     def restore(self, path: str) -> bool:
         """Restore the data table from the provided path. This currently implies a "clear" of the data stores."""
+        ...
 
 
-class Table(BaseTable):
+class ArrayTable:
     def __init__(
         self,
         columns: Sequence[Column],

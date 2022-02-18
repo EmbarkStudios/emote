@@ -3,7 +3,7 @@
 This directory contains all the major building blocks for our memory
 implementation.  The memory is borrowing from Reverb nomenclature, which in turn
 is borrowing from databases. What is not alike Reverb is that we do not have the
-RateSamplers (but it can be added). We also do not share data between Tables.
+RateSamplers (but it can be added). We also do not share data between ArrayTables.
 
 The goal of the memory is to provide a unified interface for all types of
 machine learning tasks. This is achieved by focusing on configuration and
@@ -17,7 +17,7 @@ Currently, there are three main points of customization:
 
 ## High-level parts
 
-### Table
+### ArrayTable
 A table is a datastructure containing a specific type of data that shares the same high-level structure.
 
 ### Column

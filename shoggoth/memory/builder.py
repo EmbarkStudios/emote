@@ -10,7 +10,7 @@ import numpy as np
 
 from ..utils import MDPSpace
 from . import (
-    Table,
+    ArrayTable,
     Column,
     FifoEjectionStrategy,
     UniformSampleStrategy,
@@ -49,7 +49,7 @@ def create_dict_table_from_columns(
             )
         )
 
-    table = Table(
+    table = ArrayTable(
         columns,
         config.memory_max_size,
         UniformSampleStrategy(),
@@ -251,7 +251,7 @@ def create_gail_reference_memory(
     ]
 
     memory = DictObsAdaptor(
-        Table(
+        ArrayTable(
             columns,
             config.memory_max_size,
             UniformSampleStrategy(),
@@ -298,7 +298,7 @@ def create_vd_reference_memory(
     ]
 
     memory = DictObsAdaptor(
-        Table(
+        ArrayTable(
             columns,
             config.memory_max_size,
             UniformSampleStrategy(),
@@ -339,7 +339,7 @@ def create_bc_reference_memory(
     ]
 
     memory = DictObsAdaptor(
-        Table(
+        ArrayTable(
             columns,
             config.memory_max_size,
             UniformSampleStrategy(),

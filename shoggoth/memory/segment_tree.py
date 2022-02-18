@@ -1,7 +1,7 @@
 import operator
 
 
-class SegmentTree(object):
+class SegmentTree:
     def __init__(self, capacity, operation, neutral_element):
         """
         Build a Segment Tree data structure.

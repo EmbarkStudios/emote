@@ -152,11 +152,10 @@ class AlphaLoss(LossCallback):
         self.log_scalar("training/alpha_value", torch.exp(self.vars).item())
 
 
-class FeatureAgentProxy(object):
+class FeatureAgentProxy:
     """This AgentProxy assumes that the observations will contain flat array of observations names 'obs'"""
 
     def __init__(self, network: SACNetwork):
-        super().__init__()
         self.network = network
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
 

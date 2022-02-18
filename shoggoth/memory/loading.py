@@ -6,11 +6,11 @@ import pickle
 
 import numpy as np
 
-from . import Table
+from . import ArrayTable
 
 
 def fill_table_from_legacy_file(
-    table: Table,
+    table: ArrayTable,
     path: str,
     *,
     read_obs: bool = False,

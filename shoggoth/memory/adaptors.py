@@ -3,12 +3,12 @@
 """
 
 from typing import List
-from .memory import Table
+from .memory import ArrayTable
 import torch
 
 
 def DictObsAdaptor(
-    memory: Table,
+    memory: ArrayTable,
     keys: List[str],
     output_keys: List[str] = None,
     with_next: bool = True,
@@ -50,7 +50,7 @@ def DictObsAdaptor(
 
 
 def IntrinsicRewardAdaptor(
-    memory: Table,
+    memory: ArrayTable,
     pure: bool,
     reward_key: str = "rewards",
     intrinsic_reward_key: str = "intrinsic_rewards",
@@ -85,7 +85,7 @@ def IntrinsicRewardAdaptor(
     return memory
 
 
-def KeyScaleAdaptor(memory: Table, key: str, scale: float):
+def KeyScaleAdaptor(memory: ArrayTable, key: str, scale: float):
     """An adaptor to apply scaling to a specified sampled key.
 
     :param memory: The table to adapt
@@ -105,7 +105,7 @@ def KeyScaleAdaptor(memory: Table, key: str, scale: float):
     return memory
 
 
-def KeyCastAdaptor(memory: Table, key: str, dtype: type):
+def KeyCastAdaptor(memory: ArrayTable, key: str, dtype: type):
     """An adaptor to cast a specified sampled key.
 
     :param memory: The table to adapt
@@ -122,7 +122,7 @@ def KeyCastAdaptor(memory: Table, key: str, dtype: type):
     return memory
 
 
-def TerminalAdaptor(memory: Table, value_key: str, target_key: str) -> Table:
+def TerminalAdaptor(memory: ArrayTable, value_key: str, target_key: str) -> ArrayTable:
     """An adaptor to apply tags from detailed terminal tagging.
 
     :param memory: The table to adapt

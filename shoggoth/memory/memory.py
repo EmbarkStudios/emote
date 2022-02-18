@@ -11,8 +11,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Tuple
 
-from shoggoth.memory import Table
 from shoggoth.memory.core_types import Matrix
+from shoggoth.memory.table import Table
 from shoggoth.typing import HiveResponse, HiveObservation, AgentId, EpisodeState
 from shoggoth.utils import TimedBlock
 
@@ -82,7 +82,7 @@ class TableMemoryProxy:
             if observation.episode_state != EpisodeState.INITIAL:
                 data["rewards"] = observation.rewards[
                     "reward"
-                ]  # TODO(singhblom) Check how Table handles rewards
+                ]  # TODO(singhblom) Check how ArrayTable handles rewards
 
             if observation.episode_state in self._term_states:
                 if self._use_terminal:
@@ -134,17 +134,16 @@ class TableMemoryProxy:
             self._table.add_sequence(agent_id, sequence)
 
 
-class MemoryLoader(object):
+class MemoryLoader:
     def __init__(
         self,
-        table: Table,
+        table: ArrayTable,
         rollout_count: int,
         rollout_length: int,
         iterations: int,
         size_key: str,
         data_group: str = "default",
     ):
-        super().__init__()
         self.data_group = data_group
         self.table = table
         self.rollout_count = rollout_count
