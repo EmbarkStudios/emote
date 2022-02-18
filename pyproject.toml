@@ -16,7 +16,7 @@ torch = "^1.10.2"
 tensorboard = "^2.8.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^6.0"
 Sphinx = "^4.4.0"
 sphinx-rtd-theme = "^1.0.0"
 gym = {extras = ["atari", "classic_control", "box2d"], version = "^0.21.0"}
@@ -25,3 +25,10 @@ black = "^22.1.0"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+log_cli = true
+log_cli_level = "INFO"
+log_format = "%(asctime)s:\t%(message)s"
+log_date_format = "%H:%M:%S"
