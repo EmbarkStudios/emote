@@ -9,10 +9,12 @@ from .callback import Callback
 
 
 class LoggingCallback(Callback):
-    """A Callback that accept logging calls.
+    """A Callback that accepts logging calls.
 
     Logged data is saved on this object and gets written
-    by the Logger callback."""
+    by a Logger callback. LoggingCallback therefore doesn't
+    care how the data is logged, it only provides a standard
+    interface for storing the data to be handled by a Logger."""
 
     def __init__(self):
         super().__init__()
@@ -20,6 +22,7 @@ class LoggingCallback(Callback):
         self.hist_logs: Dict[str, Union[float, torch.Tensor]] = {}
 
     def log_scalar(self, key: str, value: Union[float, torch.Tensor]):
+        """Use log_scalar to periodically log scalar data."""
         if isinstance(value, torch.Tensor):
             self.scalar_logs[key] = value.item()
         else:
@@ -30,9 +33,7 @@ class LoggingCallback(Callback):
 
 
 class LossCallback(LoggingCallback):
-    """Losses are callbacks that implement a *loss function*.
-
-    Loss functions must return a Tensor a batch x scalar dimensions."""
+    """Losses are callbacks that implement a *loss function*."""
 
     def __init__(
         self,
@@ -76,6 +77,9 @@ class LossCallback(LoggingCallback):
 
     @Callback.extend
     def loss(self, *args, **kwargs) -> Tensor:
+        """The loss method needs to be overwritten to implement a loss.
+
+        :return: A PyTorch tensor of shape (batch,)."""
         raise NotImplementedError
 
 
