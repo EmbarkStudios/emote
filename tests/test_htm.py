@@ -11,7 +11,6 @@ from shoggoth.sac import (
     QTarget,
     PolicyLoss,
     AlphaLoss,
-    SACNetwork,
     FeatureAgentProxy,
 )
 from shoggoth.memory import TableMemoryProxy, MemoryLoader
@@ -22,51 +21,31 @@ from .gym import SimpleGymCollector, HitTheMiddle, HiveGymWrapper
 def test_htm():
 
     env = HiveGymWrapper(SyncVectorEnv(3 * [HitTheMiddle]))
-    batch_size = 1000
     mem_conf = MemoryConfiguration(10, 1000)
     table = create_memory(env.hive_space, mem_conf)
-    sb = TableMemoryProxy(table)
-    memory = MemoryLoader(table, 20, 2, 500, "batch_size")
+    memory_proxy = TableMemoryProxy(table)
+    dataloader = MemoryLoader(table, 20, 2, 500, "batch_size")
 
-    network = SACNetwork(
-        ActionValue(2, 1, [10, 10]),
-        ActionValue(2, 1, [10, 10]),
-        ActionValue(2, 1, [10, 10]),
-        ActionValue(2, 1, [10, 10]),
-        GaussianMLPPolicy(2, 1, [10, 10]),
-        torch.tensor(1.0, requires_grad=True),
-    )
-    agent_proxy = FeatureAgentProxy(network)
+    q1 = ActionValue(2, 1, [10, 10])
+    q2 = ActionValue(2, 1, [10, 10])
+    q1t = ActionValue(2, 1, [10, 10])
+    q2t = ActionValue(2, 1, [10, 10])
+    policy = GaussianMLPPolicy(2, 1, [10, 10])
+    ln_alpha = torch.tensor(1.0, requires_grad=True)
+    agent_proxy = FeatureAgentProxy(policy)
 
-    logged_cbs = [
-        QLoss(
-            "q1",
-            Adam(network.q1.parameters()),
-            network.q1,
-        ),
-        QLoss(
-            "q2",
-            Adam(network.q2.parameters()),
-            network.q2,
-        ),
-        PolicyLoss(
-            "policy",
-            Adam(network.policy.parameters()),
-            network,
-        ),
-        AlphaLoss("alpha", Adam([network.log_alpha_vars]), network, 1),
+    callbacks = [
+        QLoss("q1", q1, Adam(q1.parameters())),
+        QLoss("q2", q2, Adam(q2.parameters())),
+        PolicyLoss(policy, ln_alpha, q1, q2, Adam(policy.parameters())),
+        AlphaLoss(policy, ln_alpha, Adam([ln_alpha]), 1),
+        QTarget(policy, q1t, q2t, ln_alpha, q1, q2),
     ]
 
-    callbacks = logged_cbs + [
-        QTarget(
-            network,
-            0.99,
-            1.0,
-            0.005,
-        ),
-        SimpleGymCollector(env, agent_proxy, sb, warmup_steps=batch_size),
-        TerminalLogger(logged_cbs, 500),
+    callbacks += [
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=1000),
+        TerminalLogger(callbacks, 500),
     ]
 
-    trainer = Trainer(callbacks, memory, 200)
+    trainer = Trainer(callbacks, dataloader, 200)
     trainer.train()

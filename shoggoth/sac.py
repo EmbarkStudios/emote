@@ -9,16 +9,6 @@ from shoggoth.typing import AgentId, EpisodeState, HiveObservation, HiveResponse
 from .callbacks import LoggingCallback, LossCallback
 
 
-@dataclass
-class SACNetwork:
-    q1: nn.Module
-    q2: nn.Module
-    q1_target: nn.Module
-    q2_target: nn.Module
-    policy: nn.Module
-    log_alpha_vars: torch.Tensor
-
-
 def soft_update_from_to(source, target, tau):  # From rlkit
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
@@ -28,8 +18,8 @@ class QLoss(LossCallback):
     def __init__(
         self,
         name: str,
-        optimizer: optim.Optimizer,
         q_forward: nn.Module,
+        optimizer: optim.Optimizer,
         max_grad_norm: float = 10.0,
         data_group: str = "default",
     ):
@@ -46,7 +36,12 @@ class QLoss(LossCallback):
 class QTarget(LoggingCallback):
     def __init__(
         self,
-        net: SACNetwork,
+        policy: nn.Module,
+        q1_target: nn.Module,
+        q2_target: nn.Module,
+        ln_alpha: torch.tensor,
+        q1: nn.Module,
+        q2: nn.Module,
         gamma: float = 0.99,
         reward_scale: float = 1.0,
         target_q_tau: float = 0.005,
@@ -54,19 +49,24 @@ class QTarget(LoggingCallback):
     ):
         super().__init__()
         self.data_group = data_group
-        self.net = net
+        self.policy = policy
+        self.q1_target = q1_target
+        self.q2_target = q2_target
+        self.ln_alpha = ln_alpha
+        self.q1 = q1
+        self.q2 = q2
         self.reward_scale = reward_scale
         self.tau = target_q_tau
         self.gamma = torch.tensor(gamma)
 
     def begin_batch(self, next_observation, rewards, masks):
-        next_p_sample, next_logp_pi = self.net.policy(**next_observation)
-        next_q1_target = self.net.q1_target(next_p_sample, **next_observation)
-        next_q2_target = self.net.q2_target(next_p_sample, **next_observation)
+        next_p_sample, next_logp_pi = self.policy(**next_observation)
+        next_q1_target = self.q1_target(next_p_sample, **next_observation)
+        next_q2_target = self.q2_target(next_p_sample, **next_observation)
         min_next_q_target = torch.min(next_q1_target, next_q2_target)
         bsz = next_p_sample.shape[0]
 
-        alpha = torch.exp(self.net.log_alpha_vars)
+        alpha = torch.exp(self.ln_alpha)
         next_value = min_next_q_target - alpha * next_logp_pi
 
         scaled_reward = self.reward_scale * rewards
@@ -82,30 +82,35 @@ class QTarget(LoggingCallback):
 
     def end_batch(self):
         super().end_batch()
-        soft_update_from_to(self.net.q1, self.net.q1_target, self.tau)
-        soft_update_from_to(self.net.q2, self.net.q2_target, self.tau)
+        soft_update_from_to(self.q1, self.q1_target, self.tau)
+        soft_update_from_to(self.q2, self.q2_target, self.tau)
 
 
 class PolicyLoss(LossCallback):
     def __init__(
         self,
-        name: str,
+        policy: nn.Module,
+        ln_alpha: torch.tensor,
+        q1: nn.Module,
+        q2: nn.Module,
         optimizer: optim.Optimizer,
-        net: SACNetwork,
         max_grad_norm: float = 10.0,
+        name: str = "policy",
         data_group: str = "default",
     ):
         super().__init__(name, optimizer, max_grad_norm, data_group)
-        self.net = net
-        self._log_alpha_vars = self.net.log_alpha_vars
+        self.policy = policy
+        self._ln_alpha = ln_alpha
+        self.q1 = q1
+        self.q2 = q2
 
     def loss(self, observation):
-        p_sample, logp_pi = self.net.policy(**observation)
+        p_sample, logp_pi = self.policy(**observation)
         q_pi_min = torch.min(
-            self.net.q1(p_sample, **observation), self.net.q2(p_sample, **observation)
+            self.q1(p_sample, **observation), self.q2(p_sample, **observation)
         )
         # using reparameterization trick
-        alpha = torch.exp(self._log_alpha_vars).detach()
+        alpha = torch.exp(self._ln_alpha).detach()
         policy_loss = alpha * logp_pi - q_pi_min
         policy_loss = torch.mean(policy_loss)
         self.log_scalar(f"policy/q_pi_min", torch.mean(q_pi_min))
@@ -118,45 +123,48 @@ class PolicyLoss(LossCallback):
 class AlphaLoss(LossCallback):
     def __init__(
         self,
-        name: str,
+        policy: nn.Module,
+        ln_alpha: torch.tensor,
         optimizer: optim.Optimizer,
-        net: SACNetwork,
         n_actions: int,
         max_grad_norm: float = 10.0,
         entropy_eps: float = 0.089,
         max_alpha: float = 0.2,
+        name: str = "alpha",
         data_group: str = "default",
     ):
         super().__init__(name, optimizer, max_grad_norm, data_group)
-        self.net = net
-        self._max_log_alpha = np.log(max_alpha)
+        self.policy = policy
+        self._max_ln_alpha = torch.log(max_alpha)
         # TODO(singhblom) Check number of actions
         # self._target_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
         self._target_entropy = (
             n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
         )
-        self.vars = self.net.log_alpha_vars  # This is log(alpha)
+        self.ln_alpha = ln_alpha  # This is log(alpha)
 
     def loss(self, observation):
-        _p_sample, logp_pi = self.net.policy(**observation)
-        alpha_loss = -torch.mean(self.vars * (logp_pi + self._target_entropy).detach())
+        _p_sample, logp_pi = self.policy(**observation)
+        alpha_loss = -torch.mean(
+            self.ln_alpha * (logp_pi + self._target_entropy).detach()
+        )
         assert alpha_loss.dim() == 0
         self.log_scalar("loss/alpha_loss", alpha_loss)
         return alpha_loss
 
     def end_batch(self):
         super().end_batch()
-        self.vars.requires_grad_(False)
-        self.vars = torch.clamp_max_(self.vars, self._max_log_alpha)
-        self.vars.requires_grad_(True)
-        self.log_scalar("training/alpha_value", torch.exp(self.vars).item())
+        self.ln_alpha.requires_grad_(False)
+        self.ln_alpha = torch.clamp_max_(self.ln_alpha, self._max_ln_alpha)
+        self.ln_alpha.requires_grad_(True)
+        self.log_scalar("training/alpha_value", torch.exp(self.ln_alpha).item())
 
 
 class FeatureAgentProxy:
     """This AgentProxy assumes that the observations will contain flat array of observations names 'obs'"""
 
-    def __init__(self, network: SACNetwork):
-        self.network = network
+    def __init__(self, policy: nn.Module):
+        self.policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
 
     def __call__(
@@ -164,7 +172,7 @@ class FeatureAgentProxy:
     ) -> dict[AgentId, HiveResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
-        assert len(observations) > 0, "Obsercations must not be empty."
+        assert len(observations) > 0, "Observations must not be empty."
         active_agents = [
             agent_id
             for agent_id, obs in observations.items()
@@ -175,8 +183,7 @@ class FeatureAgentProxy:
                 [observations[agent_id].array_data["obs"] for agent_id in active_agents]
             )
         )
-        actions, _ = self.network.policy(tensor_obs)
-        actions = actions.detach().numpy()
+        actions = self.policy(tensor_obs)[0].detach().numpy()
         return {
             agent_id: HiveResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
