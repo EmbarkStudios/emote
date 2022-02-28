@@ -2,150 +2,144 @@
 
 """
 
+from typing import Callable, Optional
 import torch
-from .table import ArrayTable
+
+from shoggoth.memory.core_types import SampleResult
 
 
-def DictObsAdaptor(
-    memory: ArrayTable,
-    keys: list[str],
-    output_keys: list[str] = None,
-    with_next: bool = True,
-):
+Adaptor = Callable[[SampleResult, int, int], SampleResult]
+
+
+class DictObsAdaptor:
     """
     Converts multiple observation columns to a single dict observation.
 
-    :param memory: The table to adapt
     :param keys: The dictionary keys to extract
-    :param output_keys: The output names for the extracted keys. Defaults to the same name.
+    :param output_keys: The output names for the extracted keys. Defaults to the same
+        name.
+    :param with_next: If True, adds an extra column called "next_{key}" for each key
+        in keys.
     """
-    assert (
-        "dict_obs_adaptor" not in memory.unique_adaptors
-    ), "only one dict adaptor can be used per memory"
-    memory.unique_adaptors.add("dict_obs_adaptor")
-    original_sample = memory.sample
 
-    if output_keys is None:
-        output_keys = keys
-    else:
-        assert len(keys) == len(output_keys)
+    def __init__(
+        self,
+        keys: list[str],
+        output_keys: Optional[list[str]] = None,
+        with_next: bool = True,
+    ):
+        if output_keys is None:
+            output_keys = keys
+        else:
+            assert len(keys) == len(output_keys)
+        self.key_map = list(zip(keys, output_keys))
+        self.with_next = with_next
 
-    def _sample(point, length):
-        result = original_sample(point, length)
-
+    def __call__(
+        self, result: SampleResult, count: int, sequence_length: int
+    ) -> SampleResult:
         obs_dict = {}
         next_obs_dict = {}
-        for (key, out_key) in zip(keys, output_keys):
+        for (key, out_key) in self.key_map:
             obs_dict[out_key] = result.pop(key)
-            if with_next:
+            if self.with_next:
                 next_obs_dict[f"{out_key}"] = result.pop("next_" + key)
 
         result["observation"] = obs_dict
         result["next_observation"] = next_obs_dict
         return result
 
-    memory.sample = _sample
-    return memory
 
-
-def IntrinsicRewardAdaptor(
-    memory: ArrayTable,
-    pure: bool,
-    reward_key: str = "rewards",
-    intrinsic_reward_key: str = "intrinsic_rewards",
-):
+class PureIntrinsicRewardAdaptor:
     """The intrinsic reward adaptor can be used to sum two sampled arrays elementwise.
 
-    :param memory: The table to adapt
     :param pure: Whether to sum or replace the original reward
     :param reward_key: The reward key to update
-    :param intrinsic_reward_key: The key containing the intrinsic reward to read from"""
-    assert (
-        "intrinsic_reward_adaptor" not in memory.unique_adaptors
-    ), "only one intrinsic reward adaptor can be used per memory"
-    memory.unique_adaptors.add("intrinsic_reward_adaptor")
-    original_sample = memory.sample
+    :param intrinsic_reward_key: The key containing the intrinsic reward to read from.
+    """
 
-    if pure:
+    def __init__(
+        self,
+        pure: bool,
+        reward_key: str = "rewards",
+        intrinsic_reward_key: str = "intrinsic_rewards",
+    ):
+        self.intrinsic_reward_key = intrinsic_reward_key
+        self.reward_key = reward_key
+        self.pure = pure
 
-        def _sample(point, length):
-            result = original_sample(point, length)
-            result[reward_key] = result[intrinsic_reward_key]
-            return result
-
-    else:
-
-        def _sample(point, length):
-            result = original_sample(point, length)
-            result[reward_key] = result[reward_key] + result[intrinsic_reward_key]
-            return result
-
-    memory.sample = _sample
-    return memory
+    def __call__(
+        self, result: SampleResult, count: int, sequence_length: int
+    ) -> SampleResult:
+        if self.pure:
+            result[self.reward_key] = (
+                result[self.reward_key] + result[self.intrinsic_reward_key]
+            )
+        else:
+            result[self.reward_key] = result[self.intrinsic_reward_key]
+        return result
 
 
-def KeyScaleAdaptor(memory: ArrayTable, key: str, scale: float):
+class KeyScaleAdaptor:
     """An adaptor to apply scaling to a specified sampled key.
 
-    :param memory: The table to adapt
     :param key: The key for which to scale data
     :param scale: The scale factor to apply
-
     """
-    scale = torch.tensor(scale)
-    original_sample = memory.sample
 
-    def _sample(point, length):
-        result = original_sample(point, length)
-        result[key] *= scale
+    def __init__(self, scale, key):
+        self.key = key
+        self.scale = torch.tensor(scale)
+
+    def __call__(
+        self, result: SampleResult, count: int, sequence_length: int
+    ) -> SampleResult:
+        result[self.key] *= self.scale
         return result
 
-    memory.sample = _sample
-    return memory
 
-
-def KeyCastAdaptor(memory: ArrayTable, key: str, dtype: type):
+class KeyCastAdaptor:
     """An adaptor to cast a specified sampled key.
 
-    :param memory: The table to adapt
     :param key: The key for which to cast data
-    :param scale: The scale factor to apply
+    :param dtype: The dtype to cast to.
     """
-    original_sample = memory.sample
 
-    def _sample(point, length):
-        result = original_sample(point, length).type(dtype)
+    def __init__(self, dtype, key):
+        self.key = key
+        self.dtype = dtype
+
+    def __call__(
+        self, result: SampleResult, count: int, sequence_length: int
+    ) -> SampleResult:
+        result[self.key].to(self.dtype)
         return result
 
-    memory.sample = _sample
-    return memory
 
-
-def TerminalAdaptor(memory: ArrayTable, value_key: str, target_key: str) -> ArrayTable:
+class TerminalAdaptor:
     """An adaptor to apply tags from detailed terminal tagging.
 
     :param memory: The table to adapt
     :param value_key: the key containing the terminal mask value to apply
     :param target_key: the default mask data to override
     """
-    assert (
-        "terminal_adaptor" not in memory.unique_adaptors
-    ), "only one terminal adaptor can be used per memory"
-    memory.unique_adaptors.add("terminal_adaptor")
 
-    original_sample = memory.sample
+    def __init__(self, target_key: str, value_key: str) -> None:
+        self.target_key = target_key
+        self.value_key = value_key
 
-    # Note: The below code assumes that both terminal tags and the masks are
-    # always 1.0 or 0.0.
-    def _sample(point, length):
-        result = original_sample(point, length)
+    def __call__(
+        self, result: SampleResult, count: int, sequence_length: int
+    ) -> SampleResult:
+        # Note: The below code assumes that both terminal tags and the masks are
+        # always 1.0 or 0.0.
 
         # reshapes the input data to [batch_size, time_dimension, ...]  so we
         # can correctly overlay the terminal tags - otherwise we get a dimension
         # mismatch.
-        result_shape = result[target_key].shape
-        new_result_shape = (-1, length, *result_shape[1:])
-        result_reshaped = torch.reshape(result[target_key], new_result_shape)
+        result_shape = result[self.target_key].shape
+        new_result_shape = (-1, sequence_length, *result_shape[1:])
+        result_reshaped = torch.reshape(result[self.target_key], new_result_shape)
 
         # compute a selection mask which is true for every non-end-of-episode step
         indice_mask = result_reshaped == 1.0
@@ -155,12 +149,9 @@ def TerminalAdaptor(memory: ArrayTable, value_key: str, target_key: str) -> Arra
         result_reshaped = torch.where(
             indice_mask,
             result_reshaped,
-            torch.unsqueeze(torch.unsqueeze(result[value_key], -1), -1),
+            torch.unsqueeze(torch.unsqueeze(result[self.value_key], -1), -1),
         )
 
         # reshape back
-        result[target_key] = torch.reshape(result_reshaped, result_shape)
+        result[self.target_key] = torch.reshape(result_reshaped, result_shape)
         return result
-
-    memory.sample = _sample
-    return memory

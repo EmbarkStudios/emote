@@ -6,7 +6,7 @@ from gym.vector import SyncVectorEnv
 from shoggoth import Trainer
 from shoggoth.callbacks import TerminalLogger
 from shoggoth.nn import GaussianPolicyHead
-from shoggoth.memory.builder import create_dict_obs_table
+from shoggoth.memory.builder import DictObsTable
 from shoggoth.sac import (
     QLoss,
     QTarget,
@@ -53,7 +53,7 @@ class Policy(nn.Module):
 def test_htm():
 
     env = HiveGymWrapper(SyncVectorEnv(3 * [HitTheMiddle]))
-    table = create_dict_obs_table(env.hive_space, max_size=1000)
+    table = DictObsTable(spaces=env.hive_space, maxlen=1000)
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(table, 20, 2, 500, "batch_size")
 
