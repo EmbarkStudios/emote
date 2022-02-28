@@ -180,20 +180,24 @@ class PolicyLoss(LossCallback):
 
 
 class AlphaLoss(LossCallback):
-    r"""Maximize the soft Q-value for the policy.
+    r"""Tweaks the alpha so that a specific target entropy is kept.
 
-    This loss modifies the policy to select the action that gives the highest soft q-value.
+    The target entropy is scaled with the number of actions and a provided entropy
+    scaling factor.
 
     :param pi (torch.nn.Module): A deep neural net that outputs actions and their log
         probability given a state.
     :param ln_alpha (torch.tensor): The current weight for the entropy part of the
         soft Q.
     :param opt (torch.optim.Optimizer): An optimizer for ln_alpha.
-    :param n_actions (int): The dimension of the action space. Scales the target entropy.
-    :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
+    :param n_actions (int): The dimension of the action space. Scales the target
+        entropy.
+    :param max_grad_norm (float): Clip the norm of the gradient during backprop using
+        this value.
     :param entropy_eps (float): Scaling value for the target entropy.
     :param name (str): The name of the module. Used e.g. while logging.
-    :param data_group (str): The name of the data group from which this Loss takes its data.
+    :param data_group (str): The name of the data group from which this Loss takes its
+        data.
     """
 
     def __init__(
