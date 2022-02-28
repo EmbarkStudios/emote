@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+import copy
+from typing import Optional
 import numpy as np
 import torch
 from torch import nn
@@ -15,30 +16,63 @@ def soft_update_from_to(source, target, tau):  # From rlkit
 
 
 class QLoss(LossCallback):
+    r"""A MSE loss between the action value net and the target q.
+
+    The target q values are not calculated here and need to be added
+    to the state before the loss of this module runs.
+
+    :param name (str): The name of the module. Used e.g. while logging.
+    :param q (torch.nn.Module): A deep neural net that outputs the discounted loss
+        given the current observations and a given action.
+    :param opt (torch.optim.Optimizer): An optimizer for q.
+    :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
+    :param data_group (str): The name of the data group from which this Loss takes its data.
+    """
+
     def __init__(
         self,
+        *,
         name: str,
-        q_forward: nn.Module,
-        optimizer: optim.Optimizer,
+        q: nn.Module,
+        opt: optim.Optimizer,
         max_grad_norm: float = 10.0,
         data_group: str = "default",
     ):
-        super().__init__(name, optimizer, max_grad_norm, data_group)
-        self.q_forward = q_forward
+        super().__init__(name, opt, max_grad_norm, data_group)
+        self.q_network = q
         self.mse = nn.MSELoss()
 
     def loss(self, observation, actions, q_target):
-        q_value = self.q_forward(actions, **observation)
+        q_value = self.q_network(actions, **observation)
         self.log_scalar(f"training/{self.name}_prediction", torch.mean(q_value))
         return self.mse(q_value, q_target)
 
 
 class QTarget(LoggingCallback):
+    r"""Creates rolling averages of the Q nets, and predicts q values using these.
+
+    The module is responsible both for keeping the averages correct in the target q
+    networks and supplying q-value predictions using the target q networks.
+
+    :param pi (torch.nn.Module): A deep neural net that outputs actions and their log
+        probability given a state.
+    :param ln_alpha (torch.tensor): The current weight for the entropy part of the
+        soft Q.
+    :param q1 (torch.nn.Module): A deep neural net that outputs the discounted loss
+        given the current observations and a given action.
+    :param q2 (torch.nn.Module): A deep neural net that outputs the discounted loss
+        given the current observations and a given action.
+    :param gamma (float): Discount factor for the rewards in time.
+    :param reward_scale (float): Scale factor for the rewards.
+    :param target_q_tau (float): The weight given to the latest network in the
+        exponential moving average. So NewTargetQ = OldTargetQ * (1-tau) + Q*tau.
+    :param data_group (str): The name of the data group from which this Loss takes its data.
+    """
+
     def __init__(
         self,
-        policy: nn.Module,
-        q1_target: nn.Module,
-        q2_target: nn.Module,
+        *,
+        pi: nn.Module,
         ln_alpha: torch.tensor,
         q1: nn.Module,
         q2: nn.Module,
@@ -49,9 +83,9 @@ class QTarget(LoggingCallback):
     ):
         super().__init__()
         self.data_group = data_group
-        self.policy = policy
-        self.q1_target = q1_target
-        self.q2_target = q2_target
+        self.policy = pi
+        self.q1t = copy.deepcopy(q1)
+        self.q2t = copy.deepcopy(q2)
         self.ln_alpha = ln_alpha
         self.q1 = q1
         self.q2 = q2
@@ -61,54 +95,79 @@ class QTarget(LoggingCallback):
 
     def begin_batch(self, next_observation, rewards, masks):
         next_p_sample, next_logp_pi = self.policy(**next_observation)
-        next_q1_target = self.q1_target(next_p_sample, **next_observation)
-        next_q2_target = self.q2_target(next_p_sample, **next_observation)
-        min_next_q_target = torch.min(next_q1_target, next_q2_target)
+        next_q1t = self.q1t(next_p_sample, **next_observation)
+        next_q2t = self.q2t(next_p_sample, **next_observation)
+        min_next_qt = torch.min(next_q1t, next_q2t)
         bsz = next_p_sample.shape[0]
 
         alpha = torch.exp(self.ln_alpha)
-        next_value = min_next_q_target - alpha * next_logp_pi
+        next_value = min_next_qt - alpha * next_logp_pi
 
         scaled_reward = self.reward_scale * rewards
-        q_target = (scaled_reward + self.gamma * masks * next_value).detach()
-        assert q_target.shape == (bsz, 1)
+        qt = (scaled_reward + self.gamma * masks * next_value).detach()
+        assert qt.shape == (bsz, 1)
 
         self.log_scalar("training/next_logp_pi", torch.mean(next_logp_pi))
-        self.log_scalar("training/min_next_q_target", torch.mean(min_next_q_target))
+        self.log_scalar("training/min_next_q_target", torch.mean(min_next_qt))
         self.log_scalar("training/scaled_reward", torch.mean(scaled_reward))
-        self.log_scalar("training/q_target", torch.mean(q_target))
+        self.log_scalar("training/q_target", torch.mean(qt))
 
-        return {self.data_group: {"q_target": q_target}}
+        return {self.data_group: {"q_target": qt}}
 
     def end_batch(self):
         super().end_batch()
-        soft_update_from_to(self.q1, self.q1_target, self.tau)
-        soft_update_from_to(self.q2, self.q2_target, self.tau)
+        soft_update_from_to(self.q1, self.q1t, self.tau)
+        soft_update_from_to(self.q2, self.q2t, self.tau)
 
 
 class PolicyLoss(LossCallback):
+    r"""Maximize the soft Q-value for the policy.
+
+    This loss modifies the policy to select the action that gives the highest soft q-value.
+
+    :param pi (torch.nn.Module): A deep neural net that outputs actions and their log
+        probability given a state.
+    :param ln_alpha (torch.tensor): The current weight for the entropy part of the
+        soft Q.
+    :param q (torch.nn.Module): A deep neural net that outputs the discounted loss
+        given the current observations and a given action.
+    :param opt (torch.optim.Optimizer): An optimizer for pi.
+    :param q2 (torch.nn.Module): A second deep neural net that outputs the discounted
+        loss given the current observations and a given action. This is not necessary
+        since it is fine if the policy isn't pessimistic, but can be nice for symmetry
+        with the Q-loss.
+    :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
+    :param name (str): The name of the module. Used e.g. while logging.
+    :param data_group (str): The name of the data group from which this Loss takes its data.
+    """
+
     def __init__(
         self,
-        policy: nn.Module,
+        *,
+        pi: nn.Module,
         ln_alpha: torch.tensor,
-        q1: nn.Module,
-        q2: nn.Module,
-        optimizer: optim.Optimizer,
+        q: nn.Module,
+        opt: optim.Optimizer,
+        q2: Optional[nn.Module] = None,
         max_grad_norm: float = 10.0,
         name: str = "policy",
         data_group: str = "default",
     ):
-        super().__init__(name, optimizer, max_grad_norm, data_group)
-        self.policy = policy
+        super().__init__(name, opt, max_grad_norm, data_group)
+        self.policy = pi
         self._ln_alpha = ln_alpha
-        self.q1 = q1
+        self.q1 = q
         self.q2 = q2
 
     def loss(self, observation):
         p_sample, logp_pi = self.policy(**observation)
-        q_pi_min = torch.min(
-            self.q1(p_sample, **observation), self.q2(p_sample, **observation)
-        )
+        if self.q2 is not None:
+            q_pi_min = torch.min(
+                self.q1(p_sample, **observation), self.q2(p_sample, **observation)
+            )
+        else:
+            # We don't actually need to be pessimistic in the policy update.
+            q_pi_min = self.q1(p_sample, **observation)
         # using reparameterization trick
         alpha = torch.exp(self._ln_alpha).detach()
         policy_loss = alpha * logp_pi - q_pi_min
@@ -121,11 +180,28 @@ class PolicyLoss(LossCallback):
 
 
 class AlphaLoss(LossCallback):
+    r"""Maximize the soft Q-value for the policy.
+
+    This loss modifies the policy to select the action that gives the highest soft q-value.
+
+    :param pi (torch.nn.Module): A deep neural net that outputs actions and their log
+        probability given a state.
+    :param ln_alpha (torch.tensor): The current weight for the entropy part of the
+        soft Q.
+    :param opt (torch.optim.Optimizer): An optimizer for ln_alpha.
+    :param n_actions (int): The dimension of the action space. Scales the target entropy.
+    :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
+    :param entropy_eps (float): Scaling value for the target entropy.
+    :param name (str): The name of the module. Used e.g. while logging.
+    :param data_group (str): The name of the data group from which this Loss takes its data.
+    """
+
     def __init__(
         self,
-        policy: nn.Module,
+        *,
+        pi: nn.Module,
         ln_alpha: torch.tensor,
-        optimizer: optim.Optimizer,
+        opt: optim.Optimizer,
         n_actions: int,
         max_grad_norm: float = 10.0,
         entropy_eps: float = 0.089,
@@ -133,21 +209,19 @@ class AlphaLoss(LossCallback):
         name: str = "alpha",
         data_group: str = "default",
     ):
-        super().__init__(name, optimizer, max_grad_norm, data_group)
-        self.policy = policy
-        self._max_ln_alpha = torch.log(max_alpha)
+        super().__init__(name, opt, max_grad_norm, data_group)
+        self.policy = pi
+        self._max_ln_alpha = torch.log(torch.tensor(max_alpha))
         # TODO(singhblom) Check number of actions
-        # self._target_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
-        self._target_entropy = (
+        # self.t_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
+        self.t_entropy = (
             n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
         )
         self.ln_alpha = ln_alpha  # This is log(alpha)
 
     def loss(self, observation):
         _p_sample, logp_pi = self.policy(**observation)
-        alpha_loss = -torch.mean(
-            self.ln_alpha * (logp_pi + self._target_entropy).detach()
-        )
+        alpha_loss = -torch.mean(self.ln_alpha * (logp_pi + self.t_entropy).detach())
         assert alpha_loss.dim() == 0
         self.log_scalar("loss/alpha_loss", alpha_loss)
         return alpha_loss
