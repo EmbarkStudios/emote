@@ -1,4 +1,3 @@
-from turtle import forward
 import torch
 from torch import nn
 from torch.optim import Adam
@@ -7,7 +6,7 @@ from gym.vector import SyncVectorEnv
 from shoggoth import Trainer
 from shoggoth.callbacks import TerminalLogger
 from shoggoth.nn import GaussianPolicyHead
-from shoggoth.memory.builder import MemoryConfiguration, create_memory
+from shoggoth.memory.builder import create_dict_obs_table
 from shoggoth.sac import (
     QLoss,
     QTarget,
@@ -54,8 +53,7 @@ class Policy(nn.Module):
 def test_htm():
 
     env = HiveGymWrapper(SyncVectorEnv(3 * [HitTheMiddle]))
-    mem_conf = MemoryConfiguration(10, 1000)
-    table = create_memory(env.hive_space, mem_conf)
+    table = create_dict_obs_table(env.hive_space, max_size=1000)
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(table, 20, 2, 500, "batch_size")
 
