@@ -1,10 +1,11 @@
 import torch
+from torch import nn
 from torch.optim import Adam
 from gym.vector import SyncVectorEnv
 
 from shoggoth import Trainer
 from shoggoth.callbacks import TerminalLogger
-from shoggoth.nn import ActionValue, GaussianMLPPolicy
+from shoggoth.nn import GaussianPolicyHead
 from shoggoth.memory.builder import MemoryConfiguration, create_memory
 from shoggoth.sac import (
     QLoss,
@@ -18,6 +19,26 @@ from shoggoth.memory import TableMemoryProxy, MemoryLoader
 from .gym import SimpleGymCollector, HitTheMiddle, HiveGymWrapper
 
 
+def q(obs, act):
+    return nn.Sequential(
+        nn.Linear(obs + act, 10),
+        nn.ReLU(),
+        nn.Linear(10, 10),
+        nn.ReLU(),
+        nn.Linear(10, 1),
+    )
+
+
+def policy(obs, act):
+    return nn.Sequential(
+        nn.Linear(obs, 10),
+        nn.ReLU(),
+        nn.Linear(10, 10),
+        nn.ReLU(),
+        GaussianPolicyHead(10, act),
+    )
+
+
 def test_htm():
 
     env = HiveGymWrapper(SyncVectorEnv(3 * [HitTheMiddle]))
@@ -26,9 +47,9 @@ def test_htm():
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(table, 20, 2, 500, "batch_size")
 
-    q1 = ActionValue(2, 1, [10, 10])
-    q2 = ActionValue(2, 1, [10, 10])
-    policy = GaussianMLPPolicy(2, 1, [10, 10])
+    q1 = q(2, 1)
+    q2 = q(2, 1)
+    policy = policy(2, 1)
     ln_alpha = torch.tensor(1.0, requires_grad=True)
     agent_proxy = FeatureAgentProxy(policy)
 
