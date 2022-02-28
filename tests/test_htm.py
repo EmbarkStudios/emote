@@ -1,3 +1,4 @@
+from turtle import forward
 import torch
 from torch import nn
 from torch.optim import Adam
@@ -19,24 +20,35 @@ from shoggoth.memory import TableMemoryProxy, MemoryLoader
 from .gym import SimpleGymCollector, HitTheMiddle, HiveGymWrapper
 
 
-def q(obs, act):
-    return nn.Sequential(
-        nn.Linear(obs + act, 10),
-        nn.ReLU(),
-        nn.Linear(10, 10),
-        nn.ReLU(),
-        nn.Linear(10, 1),
-    )
+class QNet(nn.Module):
+    def __init__(self, obs, act):
+        super().__init__()
+        self.q = nn.Sequential(
+            nn.Linear(obs + act, 10),
+            nn.ReLU(),
+            nn.Linear(10, 10),
+            nn.ReLU(),
+            nn.Linear(10, 1),
+        )
+
+    def forward(self, action, obs):
+        x = torch.cat([obs, action], dim=1)
+        return self.q(x)
 
 
-def policy(obs, act):
-    return nn.Sequential(
-        nn.Linear(obs, 10),
-        nn.ReLU(),
-        nn.Linear(10, 10),
-        nn.ReLU(),
-        GaussianPolicyHead(10, act),
-    )
+class Policy(nn.Module):
+    def __init__(self, obs, act):
+        super().__init__()
+        self.pi = nn.Sequential(
+            nn.Linear(obs, 10),
+            nn.ReLU(),
+            nn.Linear(10, 10),
+            nn.ReLU(),
+            GaussianPolicyHead(10, act),
+        )
+
+    def forward(self, obs):
+        return self.pi(obs)
 
 
 def test_htm():
@@ -47,9 +59,9 @@ def test_htm():
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(table, 20, 2, 500, "batch_size")
 
-    q1 = q(2, 1)
-    q2 = q(2, 1)
-    policy = policy(2, 1)
+    q1 = QNet(2, 1)
+    q2 = QNet(2, 1)
+    policy = Policy(2, 1)
     ln_alpha = torch.tensor(1.0, requires_grad=True)
     agent_proxy = FeatureAgentProxy(policy)
 
