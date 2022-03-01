@@ -53,11 +53,11 @@ class Policy(nn.Module):
 
 def test_htm():
 
-    env = HiveGymWrapper(SyncVectorEnv(3 * [HitTheMiddle]))
+    env = HiveGymWrapper(SyncVectorEnv(15 * [HitTheMiddle]))
     mem_conf = MemoryConfiguration(10, 1000)
     table = create_memory(env.hive_space, mem_conf)
     memory_proxy = TableMemoryProxy(table)
-    dataloader = MemoryLoader(table, 20, 2, 500, "batch_size")
+    dataloader = MemoryLoader(table, 50, 2, "batch_size")
 
     q1 = QNet(2, 1)
     q2 = QNet(2, 1)
@@ -74,9 +74,9 @@ def test_htm():
     ]
 
     callbacks = logged_cbs + [
-        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=1000),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=2000),
         TerminalLogger(logged_cbs, 500),
     ]
 
-    trainer = Trainer(callbacks, dataloader, 200)
+    trainer = Trainer(callbacks, dataloader)
     trainer.train()
