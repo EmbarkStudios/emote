@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Union, Any, Optional
 import logging
 
 import torch
@@ -18,8 +18,8 @@ class LoggingCallback(Callback):
 
     def __init__(self):
         super().__init__()
-        self.scalar_logs: Dict[str, Union[float, torch.Tensor]] = {}
-        self.hist_logs: Dict[str, Union[float, torch.Tensor]] = {}
+        self.scalar_logs: dict[str, Union[float, torch.Tensor]] = {}
+        self.hist_logs: dict[str, Union[float, torch.Tensor]] = {}
 
     def log_scalar(self, key: str, value: Union[float, torch.Tensor]):
         """Use log_scalar to periodically log scalar data."""
@@ -30,6 +30,17 @@ class LoggingCallback(Callback):
 
     def log_histogram(self, key: str, value: torch.Tensor):
         self.hist_logs[key] = value.detach()
+
+    def state_dict(self):
+        state_dict = super().state_dict()
+        state_dict["scalar_logs"] = self.scalar_logs
+        state_dict["hist_logs"] = self.hist_logs
+        return state_dict
+
+    def load_state_dict(self, state_dict: dict[str, Any]):
+        self.scalar_logs = state_dict.pop("scalar_logs")
+        self.hist_logs = state_dict.pop("hist_logs")
+        super().load_state_dict(state_dict)
 
 
 class LossCallback(LoggingCallback):
@@ -61,11 +72,14 @@ class LossCallback(LoggingCallback):
         self.log_scalar(f"loss/{self.name}_loss", loss)
         self.log_scalar(f"loss/{self.name}_gradient_norm", grad_norm)
 
-    def get_state(self):
-        return {"optimizer_state_dict": self.optimizer.state_dict()}
+    def state_dict(self):
+        state = super().state_dict()
+        state["optimizer_state_dict"] = self.optimizer.state_dict()
+        return state
 
-    def load_state(self, state):
-        self.optimizer.load_state_dict(state["optimizer_state_dict"])
+    def load_state_dict(self, state_dict):
+        self.optimizer.load_state_dict(state_dict.pop("optimizer_state_dict"))
+        super().load_state_dict(state_dict)
 
     @Callback.extend
     def loss(self, *args, **kwargs) -> Tensor:
@@ -76,6 +90,8 @@ class LossCallback(LoggingCallback):
 
 
 class TensorboardLogger(Callback):
+    """Logs the provided loggable callbacks to tensorboard."""
+
     def __init__(
         self,
         callbacks: list[LoggingCallback],
@@ -84,14 +100,17 @@ class TensorboardLogger(Callback):
         log_by_samples: bool = False,
     ):
         super().__init__(cycle=log_interval)
-        self._callbacks = callbacks
+        self._cbs = callbacks
         self._writer = writer
         self._log_samples = log_by_samples
 
     def log_scalars(self, step, suffix=None):
         """Logs scalar logs adding optional suffix on the first level.
-        E.g. If k='training/loss' and suffix='bp_step', k will be renamed to 'training_bp_step/loss'."""
-        for cb in self._callbacks:
+
+        **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
+        'training_bp_step/loss'.
+        """
+        for cb in self._cbs:
             for k, v in cb.scalar_logs.items():
                 if suffix:
                     k_split = k.split("/")
@@ -106,18 +125,23 @@ class TensorboardLogger(Callback):
 
 
 class TerminalLogger(Callback):
+    """Logs the provided loggable callbacks to the python logger."""
+
     def __init__(
         self,
         callbacks: list[LoggingCallback],
         log_interval: int,
     ):
         super().__init__(cycle=log_interval)
-        self._callbacks = callbacks
+        self._cbs = callbacks
 
     def log_scalars(self, step, suffix=None):
         """Logs scalar logs adding optional suffix on the first level.
-        E.g. If k='training/loss' and suffix='bp_step', k will be renamed to 'training_bp_step/loss'."""
-        for cb in self._callbacks:
+
+        **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
+        'training_bp_step/loss'.
+        """
+        for cb in self._cbs:
             for k, v in cb.scalar_logs.items():
                 if suffix:
                     k_split = k.split("/")
@@ -130,56 +154,95 @@ class TerminalLogger(Callback):
 
 
 class Checkpointer(Callback):
+    """Checkpointer writes out a checkpoint every n steps.
+
+    Exactly what is written to the checkpoint is determined by the networks and
+    callbacks supplied in the constructor.
+
+    :param networks (list[nn.Module]): A list of networks that should be saved.
+    :param callbacks (list[Callback]): A list of callbacks the should be saved.
+    :param path (str): The path to where the checkpoint should be stored.
+    :param checkpoint_interval (int): Number of backprops between checkpoints.
+    :param optimizers (Optional[list[optim.Optimizer]]): Optional list of optimizers
+        to save. Usually optimizers are handled by their respective callbacks but
+        if you give them to this list they will be handled explicitly.
+    """
+
     def __init__(
         self,
-        net: nn.Module,
-        callbacks: list[LoggingCallback],
+        *,
+        networks: list[nn.Module],
+        callbacks: list[Callback],
         path: str,
         checkpoint_interval: int,
+        optimizers: Optional[list[optim.Optimizer]] = None,
     ):
         super().__init__(cycle=checkpoint_interval)
-        self._net = net
-        self._callbacks = callbacks
+        self._nets = networks
+        self._cbs = callbacks
         self._path = path
         self._checkpoint_index = 0
+        self._opts: list[optim.Optimizer] = optimizers if optimizers else []
 
     def end_cycle(self, inf_step, bp_step, bp_samples):
         state_dict = {}
-        state_dict["model_state_dict"] = self._net.state_dict()
-        state_dict["callbacks"] = [cb.get_state() for cb in self._callbacks]
-        state_dict["checkpoint_index"] = self._checkpoint_index
-        state_dict["inf_step"] = inf_step
-        state_dict["bp_step"] = bp_step
-        state_dict["bp_samples"] = bp_samples
+        state_dict["callback_state_dicts"] = [cb.state_dict() for cb in self._cbs]
+        state_dict["network_state_dicts"] = [net.state_dict() for net in self._nets]
+        state_dict["optim_state_dicts"] = [opt.state_dict() for opt in self._opts]
+        state_dict["training_state"] = {
+            "checkpoint_index": self._checkpoint_index,
+            "inf_step": inf_step,
+            "bp_step": bp_step,
+            "bp_samples": bp_samples,
+        }
         torch.save(state_dict, f"{self._path}.{self._checkpoint_index}.tar")
+        self._checkpoint_index += 1
 
 
 class CheckpointLoader(Callback):
+    """CheckpointLoader loads a checkpoint like the one created by Checkpointer.
+
+    This is intended for resuming training given a specific checkpoint index. If you
+    want to do something more specific, like only restore a specific network, it is
+    probably easier to just do it explicitly when the network is constructed.
+
+    :param networks (list[nn.Module]): A list of networks that should be saved.
+    :param callbacks (list[Callback]): A list of callbacks the should be saved.
+    :param path (str): The path to where the checkpoint should be stored.
+    :param checkpoint_index (int): Which checkpoint to load.
+    :param reset_training_steps (bool): If False, start training at bp_steps=0 etc.
+        Otherwise start the training at whatever step and state the checkpoint has
+        saved.
+    :param optimizers (Optional[list[optim.Optimizer]]): Optional list of optimizers
+        to save. Usually optimizers are handled by their respective callbacks but
+        if you give them to this list they will be handled explicitly.
+    """
+
     def __init__(
         self,
-        net: nn.Module,
-        callbacks: List[LoggingCallback],
+        networks: list[nn.Module],
+        callbacks: list[Callback],
         path: str,
         checkpoint_index: int,
         reset_training_steps: bool = False,
+        optimizers: Optional[list[optim.Optimizer]] = None,
     ):
         super().__init__()
-        self._net = net
-        self._callbacks = callbacks
+        self._nets = networks
+        self._cbs = callbacks
         self._path = path
         self._checkpoint_index = checkpoint_index
         self._reset_training_steps = reset_training_steps
+        self._opts: list[optim.Optimizer] = optimizers if optimizers else []
 
     def begin_training(self):
-        state_dict = torch.load(f"{self._path}.{self._checkpoint_index}.tar")
-        self._net.load_state_dict(state_dict["model_state_dict"])
-        for cb, state in zip(self._callbacks, state_dict["callbacks"]):
-            cb.load_state(state)
+        state_dict: dict = torch.load(f"{self._path}.{self._checkpoint_index}.tar")
+        for cb, state in zip(self._cbs, state_dict["callback_state_dicts"]):
+            cb.load_state_dict(state)
+        for net, state in zip(self._nets, state_dict["network_state_dicts"]):
+            net.load_state_dict(state)
+        for opt, state in zip(self._opts, state_dict["optim_state_dicts"]):
+            opt.load_state_dict(state)
         if self._reset_training_steps:
             return {}
-        return {
-            "checkpoint_index": state_dict["checkpoint_index"],
-            "inf_step": state_dict["inf_step"],
-            "bp_step": state_dict["bp_step"],
-            "bp_samples": state_dict["bp_samples"],
-        }
+        return state_dict.get("training_state", {})
