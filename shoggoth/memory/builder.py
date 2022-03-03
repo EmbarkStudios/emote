@@ -115,7 +115,7 @@ class DictObsTable(DictTable):
         )
 
 
-class DictObsNStep(DictObsTable):
+class DictObsNStepTable(DictObsTable):
     """Create a memory suited for Reinforcement Learning Tasks with N-Step Bellman
     Backup with a single bootstrap value, and using dictionary observations as network
     inputs.

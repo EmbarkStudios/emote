@@ -50,36 +50,6 @@ class DictObsAdaptor:
         return result
 
 
-class PureIntrinsicRewardAdaptor:
-    """The intrinsic reward adaptor can be used to sum two sampled arrays elementwise.
-
-    :param pure: Whether to sum or replace the original reward
-    :param reward_key: The reward key to update
-    :param intrinsic_reward_key: The key containing the intrinsic reward to read from.
-    """
-
-    def __init__(
-        self,
-        pure: bool,
-        reward_key: str = "rewards",
-        intrinsic_reward_key: str = "intrinsic_rewards",
-    ):
-        self.intrinsic_reward_key = intrinsic_reward_key
-        self.reward_key = reward_key
-        self.pure = pure
-
-    def __call__(
-        self, result: SampleResult, count: int, sequence_length: int
-    ) -> SampleResult:
-        if self.pure:
-            result[self.reward_key] = (
-                result[self.reward_key] + result[self.intrinsic_reward_key]
-            )
-        else:
-            result[self.reward_key] = result[self.intrinsic_reward_key]
-        return result
-
-
 class KeyScaleAdaptor:
     """An adaptor to apply scaling to a specified sampled key.
 
