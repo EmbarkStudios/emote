@@ -1,10 +1,14 @@
 import torch
 from torch import nn
 from torch.optim import Adam
-from gym.vector import SyncVectorEnv
+from gym.vector import AsyncVectorEnv
 
 from shoggoth import Trainer
-from shoggoth.callbacks import TerminalLogger
+from shoggoth.callbacks import (
+    BackPropStepsTerminator,
+    FinalLossTestCheck,
+    TerminalLogger,
+)
 from shoggoth.nn import GaussianPolicyHead
 from shoggoth.memory.builder import DictObsTable
 from shoggoth.sac import (
@@ -19,15 +23,18 @@ from shoggoth.memory import TableMemoryProxy, MemoryLoader
 from .gym import SimpleGymCollector, HitTheMiddle, HiveGymWrapper
 
 
+N_HIDDEN = 10
+
+
 class QNet(nn.Module):
     def __init__(self, obs, act):
         super().__init__()
         self.q = nn.Sequential(
-            nn.Linear(obs + act, 10),
+            nn.Linear(obs + act, N_HIDDEN),
             nn.ReLU(),
-            nn.Linear(10, 10),
+            nn.Linear(N_HIDDEN, N_HIDDEN),
             nn.ReLU(),
-            nn.Linear(10, 1),
+            nn.Linear(N_HIDDEN, 1),
         )
 
     def forward(self, action, obs):
@@ -39,11 +46,11 @@ class Policy(nn.Module):
     def __init__(self, obs, act):
         super().__init__()
         self.pi = nn.Sequential(
-            nn.Linear(obs, 10),
+            nn.Linear(obs, N_HIDDEN),
             nn.ReLU(),
-            nn.Linear(10, 10),
+            nn.Linear(N_HIDDEN, N_HIDDEN),
             nn.ReLU(),
-            GaussianPolicyHead(10, act),
+            GaussianPolicyHead(N_HIDDEN, act),
         )
 
     def forward(self, obs):
@@ -52,10 +59,10 @@ class Policy(nn.Module):
 
 def test_htm():
 
-    env = HiveGymWrapper(SyncVectorEnv(3 * [HitTheMiddle]))
+    env = HiveGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
     table = DictObsTable(spaces=env.hive_space, maxlen=1000)
     memory_proxy = TableMemoryProxy(table)
-    dataloader = MemoryLoader(table, 50, 2, "batch_size")
+    dataloader = MemoryLoader(table, 100, 2, "batch_size")
 
     q1 = QNet(2, 1)
     q2 = QNet(2, 1)
@@ -64,16 +71,17 @@ def test_htm():
     agent_proxy = FeatureAgentProxy(policy)
 
     logged_cbs = [
-        QLoss(name="q1", q=q1, opt=Adam(q1.parameters())),
-        QLoss(name="q2", q=q2, opt=Adam(q2.parameters())),
+        QLoss(name="q1", q=q1, opt=Adam(q1.parameters(), lr=8e-3)),
+        QLoss(name="q2", q=q2, opt=Adam(q2.parameters(), lr=8e-3)),
         PolicyLoss(pi=policy, ln_alpha=ln_alpha, q=q1, opt=Adam(policy.parameters())),
         AlphaLoss(pi=policy, ln_alpha=ln_alpha, opt=Adam([ln_alpha]), n_actions=1),
         QTarget(pi=policy, ln_alpha=ln_alpha, q1=q1, q2=q2),
     ]
 
     callbacks = logged_cbs + [
-        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=2000),
-        TerminalLogger(logged_cbs, 500),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500),
+        TerminalLogger(logged_cbs, 400),
+        FinalLossTestCheck([logged_cbs[2]], [5.0], 2000),
     ]
 
     trainer = Trainer(callbacks, dataloader)

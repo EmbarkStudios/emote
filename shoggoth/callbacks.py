@@ -5,6 +5,7 @@ import torch
 from torch import Tensor, nn, optim
 from torch.utils.tensorboard import SummaryWriter
 
+from .trainer import TrainingShutdownException
 from .callback import Callback
 
 
@@ -246,3 +247,39 @@ class CheckpointLoader(Callback):
         if self._reset_training_steps:
             return {}
         return state_dict.get("training_state", {})
+
+
+class BackPropStepsTerminator(Callback):
+    """Terminates training after a given number of backprops.
+
+    :param bp_steps (int): The total number of backprops that the trainer should run
+        for.
+    """
+
+    def __init__(self, bp_steps: int):
+        assert bp_steps > 0, "Training steps must be above 0."
+        super().__init__(cycle=bp_steps)
+
+    def end_cycle(self):
+        raise TrainingShutdownException()
+
+
+class FinalLossTestCheck(Callback):
+    """Logs the provided loggable callbacks to the python logger."""
+
+    def __init__(
+        self,
+        callbacks: list[LossCallback],
+        cutoffs: list[float],
+        test_length: int,
+    ):
+        super().__init__(cycle=test_length)
+        self._cbs = callbacks
+        self._cutoffs = cutoffs
+
+    def end_cycle(self):
+        for cb, cutoff in zip(self._cbs, self._cutoffs):
+            loss = cb.scalar_logs[f"loss/{cb.name}_loss"]
+            if loss > cutoff:
+                raise Exception(f"Loss for {cb.name} too high: {loss}")
+        raise TrainingShutdownException()
