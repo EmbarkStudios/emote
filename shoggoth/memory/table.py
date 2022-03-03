@@ -2,7 +2,7 @@
 
 
 from threading import Lock
-from typing import Sequence, List, Tuple, Protocol
+from typing import Sequence, List, Tuple, Protocol, Optional
 
 import torch
 import numpy as np
@@ -12,9 +12,13 @@ from .strategy import SampleStrategy, EjectionStrategy
 from .column import Column, TagColumn, VirtualColumn
 from .storage import BaseStorage, TagStorage, VirtualStorage
 from ..utils.timed_call import BlockTimers
+from .adaptors import Adaptor
 
 
 class Table(Protocol):
+
+    adaptors: list[Adaptor]
+
     def sample(self, count: int, sequence_length: int) -> SampleResult:
         """sample COUNT traces from the memory, each consisting of SEQUENCE_LENGTH
         frames. The data is transposed in a SoA fashion (since this is
@@ -46,11 +50,13 @@ class Table(Protocol):
 class ArrayTable:
     def __init__(
         self,
+        *,
         columns: Sequence[Column],
         maxlen: int,
         sampler: SampleStrategy,
         ejector: EjectionStrategy,
         length_key="actions",
+        adaptors: Optional[Adaptor] = None,
     ):
         """Create the table with the specified configuration"""
         self._sampler = sampler
@@ -59,7 +65,7 @@ class ArrayTable:
         self._maxlen = maxlen
         self._columns = {column.name: column for column in columns}
         self._lock = Lock()
-        self.unique_adaptors = set()
+        self.adaptors = adaptors if adaptors else []
 
         self.clear()
 
@@ -143,7 +149,10 @@ class ArrayTable:
             with self._timers.scope("points"):
                 sample_points = self._sampler.sample(count, sequence_length)
 
-            return self._execute_gather(count, sequence_length, sample_points)
+            result = self._execute_gather(count, sequence_length, sample_points)
+        for adaptor in self.adaptors:
+            result = adaptor(result, count, sequence_length)
+        return result
 
     def size(self) -> int:
         """query the number of elements currently in the memory"""
