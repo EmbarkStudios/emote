@@ -175,9 +175,10 @@ class Callback(metaclass=CallbackMeta):
     The concept has been borrowed from Keras and FastAI.
     """
 
-    def __init__(self):
+    def __init__(self, cycle=0):
         super().__init__()
         self._order = 0
+        self.cycle = cycle
 
     def begin_training(self, *args, **kwargs):
         pass

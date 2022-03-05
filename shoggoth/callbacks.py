@@ -51,9 +51,6 @@ class LossCallback(LoggingCallback):
         ]
         self._max_grad_norm = max_grad_norm
 
-    # def setup_schedules(self, total_timesteps): #TODO(singhblom) implement correct schedule for torch
-    #     self._lr_schedule.setup(total_timesteps)
-
     def backward(self, *args, **kwargs):
         self.optimizer.zero_grad()
         loss = self.loss(*args, **kwargs)
@@ -63,11 +60,6 @@ class LossCallback(LoggingCallback):
 
         self.log_scalar(f"loss/{self.name}_loss", loss)
         self.log_scalar(f"loss/{self.name}_gradient_norm", grad_norm)
-
-    def end_batch(self):
-        self.log_scalar(
-            f"training/{self.name}_learning_rate", self.optimizer.param_groups[0]["lr"]
-        )
 
     def get_state(self):
         return {"optimizer_state_dict": self.optimizer.state_dict()}
@@ -86,16 +78,15 @@ class LossCallback(LoggingCallback):
 class TensorboardLogger(Callback):
     def __init__(
         self,
-        callbacks: List[LoggingCallback],
+        callbacks: list[LoggingCallback],
         writer: SummaryWriter,
-        bp_step: bool = True,
-        bp_samples: bool = True,
+        log_interval: int,
+        log_by_samples: bool = False,
     ):
-        super().__init__()
+        super().__init__(cycle=log_interval)
         self._callbacks = callbacks
         self._writer = writer
-        self._step = bp_step
-        self._samples = bp_samples
+        self._log_samples = log_by_samples
 
     def log_scalars(self, step, suffix=None):
         """Logs scalar logs adding optional suffix on the first level.
@@ -108,22 +99,20 @@ class TensorboardLogger(Callback):
                     k = "/".join(k_split)
                 self._writer.add_scalar(k, v, step)
 
-    def end_batch(self, should_bp_log, bp_step, bp_samples):
-        if should_bp_log and self._step:
-            self.log_scalars(bp_step, suffix="bp_step")
-        if should_bp_log and self._samples:
+    def end_cycle(self, bp_step, bp_samples):
+        self.log_scalars(bp_step, suffix="bp_step")
+        if self._log_samples:
             self.log_scalars(bp_samples, suffix="bp_samples")
 
 
 class TerminalLogger(Callback):
     def __init__(
         self,
-        callbacks: List[LoggingCallback],
-        bp_log_interval: int,
+        callbacks: list[LoggingCallback],
+        log_interval: int,
     ):
-        super().__init__()
+        super().__init__(cycle=log_interval)
         self._callbacks = callbacks
-        self._bp_log_interval = bp_log_interval
 
     def log_scalars(self, step, suffix=None):
         """Logs scalar logs adding optional suffix on the first level.
@@ -136,32 +125,33 @@ class TerminalLogger(Callback):
                     k = "/".join(k_split)
                 logging.info("%s@%s:\t%.4f", k, step, v)
 
-    def end_batch(self, bp_step):
-        if bp_step % self._bp_log_interval == 0:
-            self.log_scalars(bp_step)
+    def end_cycle(self, bp_step):
+        self.log_scalars(bp_step)
 
 
 class Checkpointer(Callback):
     def __init__(
         self,
         net: nn.Module,
-        callbacks: List[LoggingCallback],
+        callbacks: list[LoggingCallback],
         path: str,
+        checkpoint_interval: int,
     ):
-        super().__init__()
+        super().__init__(cycle=checkpoint_interval)
         self._net = net
         self._callbacks = callbacks
         self._path = path
+        self._checkpoint_index = 0
 
-    def end_cycle(self, cycle_index, inf_step, bp_step, bp_samples):
+    def end_cycle(self, inf_step, bp_step, bp_samples):
         state_dict = {}
         state_dict["model_state_dict"] = self._net.state_dict()
         state_dict["callbacks"] = [cb.get_state() for cb in self._callbacks]
-        state_dict["cycle_index"] = cycle_index
+        state_dict["checkpoint_index"] = self._checkpoint_index
         state_dict["inf_step"] = inf_step
         state_dict["bp_step"] = bp_step
         state_dict["bp_samples"] = bp_samples
-        torch.save(state_dict, f"{self._path}.{cycle_index}.tar")
+        torch.save(state_dict, f"{self._path}.{self._checkpoint_index}.tar")
 
 
 class CheckpointLoader(Callback):
@@ -170,25 +160,25 @@ class CheckpointLoader(Callback):
         net: nn.Module,
         callbacks: List[LoggingCallback],
         path: str,
-        cycle_index: int,
+        checkpoint_index: int,
         reset_training_steps: bool = False,
     ):
         super().__init__()
         self._net = net
         self._callbacks = callbacks
         self._path = path
-        self._cycle_index = cycle_index
+        self._checkpoint_index = checkpoint_index
         self._reset_training_steps = reset_training_steps
 
     def begin_training(self):
-        state_dict = torch.load(f"{self._path}.{self._cycle_index}.tar")
+        state_dict = torch.load(f"{self._path}.{self._checkpoint_index}.tar")
         self._net.load_state_dict(state_dict["model_state_dict"])
         for cb, state in zip(self._callbacks, state_dict["callbacks"]):
             cb.load_state(state)
         if self._reset_training_steps:
             return {}
         return {
-            "cycle_index": state_dict["cycle_index"],
+            "checkpoint_index": state_dict["checkpoint_index"],
             "inf_step": state_dict["inf_step"],
             "bp_step": state_dict["bp_step"],
             "bp_samples": state_dict["bp_samples"],

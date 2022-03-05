@@ -138,7 +138,6 @@ class MemoryLoader:
         table: Table,
         rollout_count: int,
         rollout_length: int,
-        iterations: int,
         size_key: str,
         data_group: str = "default",
     ):
@@ -146,7 +145,6 @@ class MemoryLoader:
         self.table = table
         self.rollout_count = rollout_count
         self.rollout_length = rollout_length
-        self.iterations = iterations
         self.size_key = size_key
         self.timer = TimedBlock()
 
@@ -161,12 +159,9 @@ class MemoryLoader:
                  Check `is_ready()` before trying to iterate over data."
             )
 
-        for _ in range(self.iterations):
+        while True:
             with self.timer:
                 data = self.table.sample(self.rollout_count, self.rollout_length)
 
             data[self.size_key] = self.rollout_count * self.rollout_length
             yield {self.data_group: data, self.size_key: data[self.size_key]}
-
-    def __len__(self):
-        return len(self.table)

@@ -1,9 +1,6 @@
-import time
 from typing import Any, Callable, Iterable, List, MutableMapping
 from weakref import ref
 from itertools import count
-
-from torch.optim import Optimizer
 
 from .callback import Callback
 from .utils import WeakReference
@@ -39,11 +36,10 @@ class Trainer:
         self,
         callbacks: List[Callback],
         dataloader: Iterable,
-        cycle_length: int,
     ):
         self.callbacks = sorted(callbacks, key=lambda cb: cb._order)
+        self._cyclic_callbacks = [cb for cb in self.callbacks if cb.cycle > 0]
         self.dataloader = dataloader
-        self.cycle_length = cycle_length
         self.state = StateDict()
 
     def train(self, shutdown_signal: Callable = None):
@@ -56,28 +52,22 @@ class Trainer:
         """
         shutdown_signal = shutdown_signal or (lambda: False)
 
-        bp_step = 0
-
         self._begin_training()
 
         try:
-            for cycle_index in count():
-                self.state["cycle_index"] = cycle_index
-                self._begin_cycle()
 
-                for cycle_step, batch in zip(range(self.cycle_length), self.dataloader):
-                    self.state["cycle_step"] = cycle_step
-                    self.state["bp_step"] = bp_step
+            for bp_step, batch in zip(count(1), self.dataloader):
+                self.state["bp_step"] = bp_step
+                self.state.update(batch)
 
-                    if shutdown_signal():
-                        raise TrainingShutdownException
+                if shutdown_signal():
+                    raise TrainingShutdownException
+                self._begin_cycle(bp_step)
+                self._begin_batch()
+                self._backward()
+                self._end_batch()
+                self._end_cycle(bp_step)
 
-                    self._begin_batch(batch)
-                    self._backward()
-                    self._end_batch()
-
-                    bp_step += 1
-                self._end_cycle()
         except TrainingShutdownException as ex:
             self._end_training(ex)
         except Exception as ex:
@@ -89,13 +79,14 @@ class Trainer:
             if updated_state := cb.begin_training(**self.state):
                 self.state.update(updated_state)
 
-    def _begin_cycle(self):
-        for cb in self.callbacks:
-            if updated_state := cb.begin_cycle(**self.state):
-                self.state.update(updated_state)
+    def _begin_cycle(self, bp_step):
+        for cb in self._cyclic_callbacks:
+            # Start cycles on 1st step of new cycle
+            if (bp_step - 1) % cb.cycle == 0:
+                if updated_state := cb.begin_cycle(**self.state):
+                    self.state.update(updated_state)
 
-    def _begin_batch(self, batch):
-        self.state.update(batch)
+    def _begin_batch(self):
         for cb in self.callbacks:
             if updated_state := cb.begin_batch(**self.state):
                 self.state.update(updated_state)
@@ -110,10 +101,11 @@ class Trainer:
             if updated_state := cb.end_batch(**self.state):
                 self.state.update(updated_state)
 
-    def _end_cycle(self):
-        for cb in self.callbacks:
-            if updated_state := cb.end_cycle(**self.state):
-                self.state.update(updated_state)
+    def _end_cycle(self, bp_step):
+        for cb in self._cyclic_callbacks:
+            if bp_step % cb.cycle == 0:
+                if updated_state := cb.end_cycle(**self.state):
+                    self.state.update(updated_state)
 
     def _end_training(self, exception: Exception):
         for cb in self.callbacks:
