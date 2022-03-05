@@ -6,19 +6,10 @@
 
 <div align="center">
 
-# 🍒 Emote
-
-> It was a terrible, indescribable thing vaster than any subway train — a
-> shapeless congeries of protoplasmic bubbles, faintly self-luminous, and
-> with myriads of temporary eyes forming and un-forming as pustules of greenish
-> light all over the tunnel-filling front that bore down upon us, crushing the
-> frantic penguins and slithering over the glistening floor that it and its
-> kind had swept so evilly free of all litter.
+# 🍒 **Emote** — **E**mbark's **Mo**dular **T**raining **E**ngine
 
 Emote is a flexible framework for reinforcement learning written at Embark.
-It is not the final title for the repository but I needed a placeholder.
-It is my humble hope that whatever code we produce will be more structured than the
-average emote.
+
     
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://embark.dev)
 [![Embark](https://img.shields.io/badge/discord-ark-%237289da.svg?logo=discord)](https://discord.gg/dAuKfZS)
