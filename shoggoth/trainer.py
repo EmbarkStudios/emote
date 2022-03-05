@@ -23,7 +23,7 @@ class TrainingShutdownException(Exception):
 
 
 class Trainer:
-    """The Trainer class manages the main training loop in shoggoth.
+    """The Trainer class manages the main training loop in emote.
 
     It does so by invoking a bunch of callbacks in a number of different places."""
 

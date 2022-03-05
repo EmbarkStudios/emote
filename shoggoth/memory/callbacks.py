@@ -2,9 +2,9 @@ import os
 import time
 import logging
 
-from shoggoth import Callback
-from shoggoth.callbacks import LoggingCallback
-from shoggoth.utils import BlockTimers
+from emote import Callback
+from emote.callbacks import LoggingCallback
+from emote.utils import BlockTimers
 
 from .table import Table
 

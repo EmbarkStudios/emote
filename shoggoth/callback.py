@@ -164,13 +164,13 @@ class CallbackMeta(ABCMeta):
 
 
 class Callback(metaclass=CallbackMeta):
-    """The principal modular building block of shoggoth.
+    """The principal modular building block of emote.
 
     Callbacks are modular pieces of code that together build up the training loop.
     They contain hooks that are executed at different points during training.
     These can consume values from other callbacks, and generate their own for others
     to consume. This allows a very loosely coupled flow of data between different
-    parts of the code. The most important examples of callbacks in shoggoth are the
+    parts of the code. The most important examples of callbacks in emote are the
     Losses.
 
     The concept has been borrowed from Keras and FastAI.

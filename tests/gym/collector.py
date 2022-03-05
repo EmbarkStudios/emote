@@ -5,8 +5,8 @@ Collectors for running OpenAI gym environments
 import threading
 from collections import deque
 
-from shoggoth.callback import Callback
-from shoggoth.proxies import AgentProxy, MemoryProxy
+from emote.callback import Callback
+from emote.proxies import AgentProxy, MemoryProxy
 from tests.gym.hive_gym_wrapper import HiveGymWrapper
 
 

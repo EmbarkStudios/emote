@@ -3,21 +3,21 @@ from torch import nn
 from torch.optim import Adam
 from gym.vector import AsyncVectorEnv
 
-from shoggoth import Trainer
-from shoggoth.callbacks import (
+from emote import Trainer
+from emote.callbacks import (
     FinalLossTestCheck,
     TerminalLogger,
 )
-from shoggoth.nn import GaussianPolicyHead
-from shoggoth.memory.builder import DictObsTable
-from shoggoth.sac import (
+from emote.nn import GaussianPolicyHead
+from emote.memory.builder import DictObsTable
+from emote.sac import (
     QLoss,
     QTarget,
     PolicyLoss,
     AlphaLoss,
     FeatureAgentProxy,
 )
-from shoggoth.memory import TableMemoryProxy, MemoryLoader
+from emote.memory import TableMemoryProxy, MemoryLoader
 
 from .gym import SimpleGymCollector, HitTheMiddle, HiveGymWrapper
 

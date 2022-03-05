@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from torch import optim
 
-from shoggoth.typing import AgentId, EpisodeState, HiveObservation, HiveResponse
+from emote.typing import AgentId, EpisodeState, HiveObservation, HiveResponse
 
 from .callbacks import LoggingCallback, LossCallback
 

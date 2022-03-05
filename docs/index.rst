@@ -1,5 +1,5 @@
 ========
-Shoggoth
+Emote
 ========
 
     *It was a terrible, indescribable thing vaster than any subway train — a
@@ -11,10 +11,10 @@ Shoggoth
 
     --- H. P. Lovecraft, *At the Mountains of Madness*
 
-Shoggoth is a flexible framework for reinforcement learning written at Embark.
+Emote is a flexible framework for reinforcement learning written at Embark.
 It is not the final title for the repository but I needed a placeholder.
 It is my humble hope that whatever code we produce will be more structured than the
-average shoggoth.
+average emote.
 
 Installation
 ============
@@ -36,7 +36,7 @@ to build other algorithms.
    :maxdepth: 2
    :caption: Contents:
 
-.. automodule:: shoggoth
+.. automodule:: emote
    :members:
 
 

@@ -11,10 +11,10 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Tuple
 
-from shoggoth.memory.core_types import Matrix
-from shoggoth.memory import Table
-from shoggoth.typing import HiveResponse, HiveObservation, AgentId, EpisodeState
-from shoggoth.utils import TimedBlock
+from emote.memory.core_types import Matrix
+from emote.memory import Table
+from emote.typing import HiveResponse, HiveObservation, AgentId, EpisodeState
+from emote.utils import TimedBlock
 
 
 @dataclass
