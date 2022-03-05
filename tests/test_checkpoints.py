@@ -5,14 +5,14 @@ import torch
 from torch import nn
 from torch.optim import Adam
 
-from shoggoth import Trainer
-from shoggoth.callbacks import (
+from emote import Trainer
+from emote.callbacks import (
     BackPropStepsTerminator,
     CheckpointLoader,
     Checkpointer,
 )
-from shoggoth.sac import QLoss
-from shoggoth.trainer import TrainingShutdownException
+from emote.sac import QLoss
+from emote.trainer import TrainingShutdownException
 
 
 N_HIDDEN = 10

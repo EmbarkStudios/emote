@@ -4,7 +4,7 @@ Proxies are bridges between the world the agent acts in and the algorithm traini
 
 from typing import Protocol
 
-from shoggoth.typing import AgentId, HiveObservation, HiveResponse
+from emote.typing import AgentId, HiveObservation, HiveResponse
 
 
 class AgentProxy(Protocol):

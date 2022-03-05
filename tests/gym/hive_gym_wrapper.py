@@ -3,8 +3,8 @@ import numpy as np
 import gym.spaces
 
 from gym.vector import VectorEnvWrapper, VectorEnv
-from shoggoth.typing import EpisodeState, HiveObservation, AgentId, HiveResponse
-from shoggoth.utils.spaces import BoxSpace, DictSpace, MDPSpace
+from emote.typing import EpisodeState, HiveObservation, AgentId, HiveResponse
+from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 
 class HiveGymWrapper(VectorEnvWrapper):

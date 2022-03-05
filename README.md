@@ -6,25 +6,16 @@
 
 <div align="center">
 
-# 🍒 Shoggoth
+# 🍒 **Emote** — **E**mbark's **Mo**dular **T**raining **E**ngine
 
-> It was a terrible, indescribable thing vaster than any subway train — a
-> shapeless congeries of protoplasmic bubbles, faintly self-luminous, and
-> with myriads of temporary eyes forming and un-forming as pustules of greenish
-> light all over the tunnel-filling front that bore down upon us, crushing the
-> frantic penguins and slithering over the glistening floor that it and its
-> kind had swept so evilly free of all litter.
+Emote is a flexible framework for reinforcement learning written at Embark.
 
-Shoggoth is a flexible framework for reinforcement learning written at Embark.
-It is not the final title for the repository but I needed a placeholder.
-It is my humble hope that whatever code we produce will be more structured than the
-average shoggoth.
     
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://embark.dev)
 [![Embark](https://img.shields.io/badge/discord-ark-%237289da.svg?logo=discord)](https://discord.gg/dAuKfZS)
-[![Documentation Status](https://readthedocs.org/projects/shoggoth/badge/?version=latest)](http://shoggoth.readthedocs.io/?badge=latest)
-[![PyPI version fury.io](https://badge.fury.io/py/shoggoth.svg)](https://pypi.python.org/pypi/shoggoth/)
-[![Build status](https://github.com/EmbarkStudios/shoggoth/workflows/CI/badge.svg)](https://github.com/EmbarkStudios/shoggoth/actions)
+[![Documentation Status](https://readthedocs.org/projects/emote/badge/?version=latest)](http://emote.readthedocs.io/?badge=latest)
+[![PyPI version fury.io](https://badge.fury.io/py/emote.svg)](https://pypi.python.org/pypi/emote/)
+[![Build status](https://github.com/EmbarkStudios/emote/workflows/CI/badge.svg)](https://github.com/EmbarkStudios/emote/actions)
 </div>
 
 

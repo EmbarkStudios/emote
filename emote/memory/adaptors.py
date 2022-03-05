@@ -5,7 +5,7 @@
 from typing import Callable, Optional
 import torch
 
-from shoggoth.memory.core_types import SampleResult
+from emote.memory.core_types import SampleResult
 
 
 Adaptor = Callable[[SampleResult, int, int], SampleResult]

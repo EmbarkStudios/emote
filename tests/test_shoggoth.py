@@ -1,4 +1,4 @@
-from shoggoth import __version__
+from emote import __version__
 
 
 def test_version():

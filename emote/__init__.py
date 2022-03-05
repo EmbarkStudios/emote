@@ -1,6 +1,6 @@
-"""shoggoth is a torch implementation of embarkrl
+"""emote is a torch implementation of embarkrl
 
-Shoggoth
+Emote
 ========
 
 
@@ -10,7 +10,7 @@ architectures, which optimizers, and so forth. We also need some kind of
 **data collector** that interacts with the world and stores the experiences
 from that in a way which makes them accessible to the learning protocol.
 
-In Shoggoth, data collection is done by Collectors, the protocol for the
+In Emote, data collection is done by Collectors, the protocol for the
 learning algorithm is built up of Callbacks, and they are tied together
 by a Trainer.
 
