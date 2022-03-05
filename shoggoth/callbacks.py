@@ -1,4 +1,4 @@
-from typing import Union, Any, Optional
+from typing import Union, Any, Optional, List, Dict
 import logging
 
 import torch
@@ -19,8 +19,8 @@ class LoggingCallback(Callback):
 
     def __init__(self):
         super().__init__()
-        self.scalar_logs: dict[str, Union[float, torch.Tensor]] = {}
-        self.hist_logs: dict[str, Union[float, torch.Tensor]] = {}
+        self.scalar_logs: Dict[str, Union[float, torch.Tensor]] = {}
+        self.hist_logs: Dict[str, Union[float, torch.Tensor]] = {}
 
     def log_scalar(self, key: str, value: Union[float, torch.Tensor]):
         """Use log_scalar to periodically log scalar data."""
@@ -38,7 +38,7 @@ class LoggingCallback(Callback):
         state_dict["hist_logs"] = self.hist_logs
         return state_dict
 
-    def load_state_dict(self, state_dict: dict[str, Any]):
+    def load_state_dict(self, state_dict: Dict[str, Any]):
         self.scalar_logs = state_dict.pop("scalar_logs")
         self.hist_logs = state_dict.pop("hist_logs")
         super().load_state_dict(state_dict)
@@ -49,14 +49,17 @@ class LossCallback(LoggingCallback):
 
     def __init__(
         self,
+        *,
         name: str,
-        optimizer: optim.Optimizer,
+        network: Optional[nn.Module],
+        optimizer: Optional[optim.Optimizer],
         max_grad_norm: float,
         data_group: str,
     ):
         super().__init__()
         self.data_group = data_group
         self.name = name
+        self.network = network
         self.optimizer = optimizer
         self.parameters = [
             p for param_group in optimizer.param_groups for p in param_group["params"]
@@ -75,11 +78,17 @@ class LossCallback(LoggingCallback):
 
     def state_dict(self):
         state = super().state_dict()
-        state["optimizer_state_dict"] = self.optimizer.state_dict()
+        if self.optimizer:
+            state["optimizer_state_dict"] = self.optimizer.state_dict()
+        if self.network:
+            state["network_state_dict"] = self.network.state_dict()
         return state
 
-    def load_state_dict(self, state_dict):
-        self.optimizer.load_state_dict(state_dict.pop("optimizer_state_dict"))
+    def load_state_dict(self, state_dict: Dict[str, Any]):
+        if self.optimizer:
+            self.optimizer.load_state_dict(state_dict.pop("optimizer_state_dict"))
+        if self.network:
+            self.network.load_state_dict(state_dict.pop("network_state_dict"))
         super().load_state_dict(state_dict)
 
     @Callback.extend
@@ -95,7 +104,7 @@ class TensorboardLogger(Callback):
 
     def __init__(
         self,
-        callbacks: list[LoggingCallback],
+        callbacks: List[LoggingCallback],
         writer: SummaryWriter,
         log_interval: int,
         log_by_samples: bool = False,
@@ -130,7 +139,7 @@ class TerminalLogger(Callback):
 
     def __init__(
         self,
-        callbacks: list[LoggingCallback],
+        callbacks: List[LoggingCallback],
         log_interval: int,
     ):
         super().__init__(cycle=log_interval)
@@ -160,30 +169,32 @@ class Checkpointer(Callback):
     Exactly what is written to the checkpoint is determined by the networks and
     callbacks supplied in the constructor.
 
-    :param networks (list[nn.Module]): A list of networks that should be saved.
-    :param callbacks (list[Callback]): A list of callbacks the should be saved.
+    :param callbacks (List[Callback]): A list of callbacks the should be saved.
     :param path (str): The path to where the checkpoint should be stored.
     :param checkpoint_interval (int): Number of backprops between checkpoints.
-    :param optimizers (Optional[list[optim.Optimizer]]): Optional list of optimizers
+    :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
         to save. Usually optimizers are handled by their respective callbacks but
         if you give them to this list they will be handled explicitly.
+    :param networks (Optional[List[nn.Module]]): An optional list of networks that
+        should be saved. Usually networks and optimizers are both restored by the
+        callbacks which handles their parameters.
     """
 
     def __init__(
         self,
         *,
-        networks: list[nn.Module],
-        callbacks: list[Callback],
+        callbacks: List[Callback],
         path: str,
         checkpoint_interval: int,
-        optimizers: Optional[list[optim.Optimizer]] = None,
+        optimizers: Optional[List[optim.Optimizer]] = None,
+        networks: Optional[List[nn.Module]] = None,
     ):
         super().__init__(cycle=checkpoint_interval)
-        self._nets = networks
         self._cbs = callbacks
         self._path = path
         self._checkpoint_index = 0
-        self._opts: list[optim.Optimizer] = optimizers if optimizers else []
+        self._opts: List[optim.Optimizer] = optimizers if optimizers else []
+        self._nets: List[nn.Module] = networks if networks else []
 
     def end_cycle(self, inf_step, bp_step, bp_samples):
         state_dict = {}
@@ -207,34 +218,37 @@ class CheckpointLoader(Callback):
     want to do something more specific, like only restore a specific network, it is
     probably easier to just do it explicitly when the network is constructed.
 
-    :param networks (list[nn.Module]): A list of networks that should be saved.
-    :param callbacks (list[Callback]): A list of callbacks the should be saved.
+    :param callbacks (List[Callback]): A list of callbacks the should be restored.
     :param path (str): The path to where the checkpoint should be stored.
     :param checkpoint_index (int): Which checkpoint to load.
     :param reset_training_steps (bool): If False, start training at bp_steps=0 etc.
         Otherwise start the training at whatever step and state the checkpoint has
         saved.
-    :param optimizers (Optional[list[optim.Optimizer]]): Optional list of optimizers
-        to save. Usually optimizers are handled by their respective callbacks but
+    :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
+        to restore. Usually optimizers are handled by their respective callbacks but
         if you give them to this list they will be handled explicitly.
+    :param networks (Optional[List[nn.Module]]): An optional list of networks that
+        should be restored. Usually networks and optimizers are both restored by the
+        callbacks which handles their parameters.
     """
 
     def __init__(
         self,
-        networks: list[nn.Module],
-        callbacks: list[Callback],
+        *,
+        callbacks: List[Callback],
         path: str,
         checkpoint_index: int,
         reset_training_steps: bool = False,
-        optimizers: Optional[list[optim.Optimizer]] = None,
+        optimizers: Optional[List[optim.Optimizer]] = None,
+        networks: Optional[List[nn.Module]] = None,
     ):
         super().__init__()
-        self._nets = networks
         self._cbs = callbacks
         self._path = path
         self._checkpoint_index = checkpoint_index
         self._reset_training_steps = reset_training_steps
-        self._opts: list[optim.Optimizer] = optimizers if optimizers else []
+        self._opts: List[optim.Optimizer] = optimizers if optimizers else []
+        self._nets: List[nn.Module] = networks if networks else []
 
     def begin_training(self):
         state_dict: dict = torch.load(f"{self._path}.{self._checkpoint_index}.tar")
@@ -269,8 +283,8 @@ class FinalLossTestCheck(Callback):
 
     def __init__(
         self,
-        callbacks: list[LossCallback],
-        cutoffs: list[float],
+        callbacks: List[LossCallback],
+        cutoffs: List[float],
         test_length: int,
     ):
         super().__init__(cycle=test_length)

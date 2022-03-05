@@ -1,5 +1,5 @@
 import copy
-from typing import Optional
+from typing import Optional, Any
 import numpy as np
 import torch
 from torch import nn
@@ -38,7 +38,13 @@ class QLoss(LossCallback):
         max_grad_norm: float = 10.0,
         data_group: str = "default",
     ):
-        super().__init__(name, opt, max_grad_norm, data_group)
+        super().__init__(
+            name=name,
+            optimizer=opt,
+            network=q,
+            max_grad_norm=max_grad_norm,
+            data_group=data_group,
+        )
         self.q_network = q
         self.mse = nn.MSELoss()
 
@@ -153,7 +159,13 @@ class PolicyLoss(LossCallback):
         name: str = "policy",
         data_group: str = "default",
     ):
-        super().__init__(name, opt, max_grad_norm, data_group)
+        super().__init__(
+            name=name,
+            optimizer=opt,
+            network=pi,
+            max_grad_norm=max_grad_norm,
+            data_group=data_group,
+        )
         self.policy = pi
         self._ln_alpha = ln_alpha
         self.q1 = q
@@ -213,7 +225,13 @@ class AlphaLoss(LossCallback):
         name: str = "alpha",
         data_group: str = "default",
     ):
-        super().__init__(name, opt, max_grad_norm, data_group)
+        super().__init__(
+            name=name,
+            optimizer=opt,
+            network=None,
+            max_grad_norm=max_grad_norm,
+            data_group=data_group,
+        )
         self.policy = pi
         self._max_ln_alpha = torch.log(torch.tensor(max_alpha))
         # TODO(singhblom) Check number of actions
@@ -236,6 +254,15 @@ class AlphaLoss(LossCallback):
         self.ln_alpha = torch.clamp_max_(self.ln_alpha, self._max_ln_alpha)
         self.ln_alpha.requires_grad_(True)
         self.log_scalar("training/alpha_value", torch.exp(self.ln_alpha).item())
+
+    def state_dict(self):
+        state = super().state_dict()
+        state["network_state_dict"] = self.ln_alpha
+
+    def load_state_dict(self, state_dict: dict[str, Any]):
+        self.ln_alpha = state_dict.pop("network_state_dict")
+        # TODO(singhblom) Set the right device
+        super().load_state_dict(state_dict)
 
 
 class FeatureAgentProxy:

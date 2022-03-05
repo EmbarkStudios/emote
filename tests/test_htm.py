@@ -5,7 +5,6 @@ from gym.vector import AsyncVectorEnv
 
 from shoggoth import Trainer
 from shoggoth.callbacks import (
-    BackPropStepsTerminator,
     FinalLossTestCheck,
     TerminalLogger,
 )
@@ -81,7 +80,7 @@ def test_htm():
     callbacks = logged_cbs + [
         SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500),
         TerminalLogger(logged_cbs, 400),
-        FinalLossTestCheck([logged_cbs[2]], [5.0], 2000),
+        FinalLossTestCheck([logged_cbs[2]], [10.0], 2000),
     ]
 
     trainer = Trainer(callbacks, dataloader)
