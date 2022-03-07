@@ -1,0 +1,13 @@
+name: emote
+channels:
+  - defaults
+  - pytorch
+dependencies:
+  - python=3.8
+  - pytorch
+  - cudatoolkit=10.2
+  - tensorboard
+  - black
+  - pytest
+  - sphinx
+
