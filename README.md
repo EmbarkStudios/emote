@@ -6,9 +6,12 @@
 
 <div align="center">
 
-# 🍒 **Emote** — **E**mbark's **Mo**dular **T**raining **E**ngine
+# 🍒 Emote
 
-Emote is a flexible framework for reinforcement learning written at Embark.
+**Emote** — **E**mbark's **Mo**dular **T**raining **E**ngine. Emote is a flexible framework for
+reinforcement learning written at Embark.
+
+It is very much **work in progress and not yet ready for production use.**
 
     
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://embark.dev)
@@ -19,21 +22,100 @@ Emote is a flexible framework for reinforcement learning written at Embark.
 </div>
 
 
-## Installation
+## What it does
 
-Install [Poetry](https://python-poetry.org/) following the instructions on the
-Poetry site. Then install the package using
+Emote provides a way to build reusable components for creating reinforcement learning algorithms, and a
+library of premade componenents built in this way. It is strongly inspired by the callback setup used
+by Keras and FastAI.
 
-```bash
-poetry install
+As an example, let us see how the SAC, the Soft Actor Critic algorithm by
+[Haarnoja et al.](https://arxiv.org/abs/1801.01290) can be written using Emote. The main algorithm in
+SAC is given in [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905) and
+looks like this:
+
+<div align="center">
+
+![Main SAC algorithm](./docs/haarnoja_sac.png)
+
+</div>
+
+Using the components provided with Emote, we can write this as
+
+```python
+env = HiveGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
+table = DictObsTable(spaces=env.hive_space, maxlen=1000)
+memory_proxy = TableMemoryProxy(table)
+dataloader = MemoryLoader(table, 100, 2, "batch_size")
+
+q1 = QNet(2, 1)
+q2 = QNet(2, 1)
+policy = Policy(2, 1)
+ln_alpha = torch.tensor(1.0, requires_grad=True)
+agent_proxy = FeatureAgentProxy(policy)
+
+callbacks = [
+    QLoss(name="q1", q=q1, opt=Adam(q1.parameters(), lr=8e-3)),
+    QLoss(name="q2", q=q2, opt=Adam(q2.parameters(), lr=8e-3)),
+    PolicyLoss(pi=policy, ln_alpha=ln_alpha, q=q1, opt=Adam(policy.parameters())),
+    AlphaLoss(pi=policy, ln_alpha=ln_alpha, opt=Adam([ln_alpha]), n_actions=1),
+    QTarget(pi=policy, ln_alpha=ln_alpha, q1=q1, q2=q2),
+    SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500),
+    FinalLossTestCheck([logged_cbs[2]], [10.0], 2000),
+]
+
+trainer = Trainer(callbacks, dataloader)
+trainer.train()
 ```
 
-### Installation on Windows
+Here each callback in the `callbacks` list is its own reusable class that can readily be used
+for other similar algorithms. The callback classes themselves are very straight forward to write.
+As an example, here is the `PolicyLoss` callback.
 
-Some of the development dependencies require a working compiler. Install 
-[MSYS2](https://www.msys2.org/), then install `mingw-64` and `swig` using `pacman`.
-After that you will probably have to invoke `poetry install` from inside the
-`MSYS2 MINGW 64` shell.
+```python
+class PolicyLoss(LossCallback):
+    def __init__(
+        self,
+        *,
+        pi: nn.Module,
+        ln_alpha: torch.tensor,
+        q: nn.Module,
+        opt: optim.Optimizer,
+        max_grad_norm: float = 10.0,
+        name: str = "policy",
+        data_group: str = "default",
+    ):
+        super().__init__(
+            name=name,
+            optimizer=opt,
+            network=pi,
+            max_grad_norm=max_grad_norm,
+            data_group=data_group,
+        )
+        self.policy = pi
+        self._ln_alpha = ln_alpha
+        self.q1 = q
+        self.q2 = q2
+
+    def loss(self, observation):
+        p_sample, logp_pi = self.policy(**observation)
+        q_pi_min = self.q1(p_sample, **observation)
+        # using reparameterization trick
+        alpha = torch.exp(self._ln_alpha).detach()
+        policy_loss = alpha * logp_pi - q_pi_min
+        policy_loss = torch.mean(policy_loss)
+        assert policy_loss.dim() == 0
+        return policy_loss
+```
+
+## Installation
+
+For installation and environment handling we use `conda`. Install it from [here](https://docs.anaconda.com/anaconda/install/). After `conda` is set up, set up and activate the emote environment by running
+
+```bash
+conda env create -f environment.yml
+conda activate emote
+pip install -r pip-requirements.txt
+```
 
 
 ## Contribution
