@@ -1,5 +1,5 @@
 import copy
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 import numpy as np
 import torch
 from torch import nn
@@ -237,7 +237,7 @@ class AlphaLoss(LossCallback):
         # TODO(singhblom) Check number of actions
         # self.t_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
         self.t_entropy = (
-            n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
+            n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps ** 2)) / 2.0
         )
         self.ln_alpha = ln_alpha  # This is log(alpha)
 
@@ -259,7 +259,7 @@ class AlphaLoss(LossCallback):
         state = super().state_dict()
         state["network_state_dict"] = self.ln_alpha
 
-    def load_state_dict(self, state_dict: dict[str, Any]):
+    def load_state_dict(self, state_dict: Dict[str, Any]):
         self.ln_alpha = state_dict.pop("network_state_dict")
         # TODO(singhblom) Set the right device
         super().load_state_dict(state_dict)
@@ -273,8 +273,8 @@ class FeatureAgentProxy:
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
 
     def __call__(
-        self, observations: dict[AgentId, HiveObservation]
-    ) -> dict[AgentId, HiveResponse]:
+        self, observations: Dict[AgentId, HiveObservation]
+    ) -> Dict[AgentId, HiveResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
         assert len(observations) > 0, "Observations must not be empty."

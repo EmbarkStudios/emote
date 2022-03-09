@@ -17,7 +17,7 @@ from .adaptors import Adaptor
 
 class Table(Protocol):
 
-    adaptors: list[Adaptor]
+    adaptors: List[Adaptor]
 
     def sample(self, count: int, sequence_length: int) -> SampleResult:
         """sample COUNT traces from the memory, each consisting of SEQUENCE_LENGTH

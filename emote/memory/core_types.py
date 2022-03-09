@@ -2,7 +2,7 @@
 Supporting types used for working with the memory
 """
 
-from typing import TypeVar, Generic, Tuple, Mapping
+from typing import TypeVar, Generic, Tuple, Dict
 
 # Number is *either* an int or a float, but *not* covariant.
 # For example: Sequence[Union[int, float]] accepts [int, float]
@@ -18,5 +18,5 @@ class Matrix(Generic[Number]):
     pass
 
 
-SampleResult = Mapping[str, Matrix]
+SampleResult = Dict[str, Matrix]
 SamplePoint = Tuple[int, int, int]

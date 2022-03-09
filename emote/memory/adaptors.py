@@ -2,7 +2,7 @@
 
 """
 
-from typing import Callable, Optional
+from typing import Callable, Optional, List
 import torch
 
 from emote.memory.core_types import SampleResult
@@ -24,8 +24,8 @@ class DictObsAdaptor:
 
     def __init__(
         self,
-        keys: list[str],
-        output_keys: Optional[list[str]] = None,
+        keys: List[str],
+        output_keys: Optional[List[str]] = None,
         with_next: bool = True,
     ):
         if output_keys is None:
