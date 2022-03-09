@@ -1,3 +1,4 @@
+from typing import List, Dict
 from itertools import count
 import numpy as np
 import gym.spaces
@@ -11,7 +12,7 @@ class HiveGymWrapper(VectorEnvWrapper):
     def __init__(self, env: VectorEnv):
         super().__init__(env)
         self._next_agent = count()
-        self._agent_ids: list[AgentId] = [
+        self._agent_ids: List[AgentId] = [
             next(self._next_agent) for i in range(self.num_envs)
         ]
         assert isinstance(env.single_observation_space, gym.spaces.Box)
@@ -26,8 +27,8 @@ class HiveGymWrapper(VectorEnvWrapper):
         self.env.envs[0].render()
 
     def hive_step(
-        self, actions: dict[AgentId, HiveResponse]
-    ) -> dict[AgentId, HiveObservation]:
+        self, actions: Dict[AgentId, HiveResponse]
+    ) -> Dict[AgentId, HiveObservation]:
         batched_actions = np.stack(
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
         )
@@ -64,7 +65,7 @@ class HiveGymWrapper(VectorEnvWrapper):
         )
         return results
 
-    def hive_reset(self) -> dict[AgentId, HiveObservation]:
+    def hive_reset(self) -> Dict[AgentId, HiveObservation]:
         self._agent_ids = [next(self._next_agent) for i in range(self.num_envs)]
         self.reset_async()
         obs = self.reset_wait()

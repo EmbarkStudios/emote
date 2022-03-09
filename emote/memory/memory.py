@@ -52,7 +52,7 @@ class TableMemoryProxy:
         minimum_length_threshold: Optional[int] = None,
         use_terminal: bool = False,
     ):
-        self._store: dict[AgentId, Episode] = {}
+        self._store: Dict[AgentId, Episode] = {}
         self._table = table
         if minimum_length_threshold is None:
             self._min_length_filter = lambda _: True
@@ -73,8 +73,8 @@ class TableMemoryProxy:
 
     def add(
         self,
-        observations: dict[AgentId, HiveObservation],
-        responses: dict[AgentId, HiveResponse],
+        observations: Dict[AgentId, HiveObservation],
+        responses: Dict[AgentId, HiveResponse],
     ):
         completed_episodes = {}
         for agent_id, observation in observations.items():

@@ -21,7 +21,7 @@ class DictTable(ArrayTable):
         *,
         use_terminal_column: bool,
         obs_keys: List[str],
-        columns: list[Column],
+        columns: List[Column],
         maxlen: int,
         length_key="actions",
     ):

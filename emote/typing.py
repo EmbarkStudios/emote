@@ -1,3 +1,4 @@
+from typing import List, Dict
 from dataclasses import dataclass
 from enum import Enum
 from numpy.typing import ArrayLike
@@ -12,19 +13,19 @@ BatchedData = ArrayLike
 
 # Input is a set of named inputs from one agent. We mainly use this for observations.
 InputSpace = str
-Input = dict[InputSpace, HiveData]
+Input = Dict[InputSpace, HiveData]
 # Input gathers inputs from multiple agents
-InputGroup = dict[AgentId, Input]
+InputGroup = Dict[AgentId, Input]
 # InputBatch is the result of merging an InputGroup based on input name.
-InputBatch = dict[InputSpace, BatchedData]
+InputBatch = Dict[InputSpace, BatchedData]
 
 # Output is a set of named outputs for one agent
 OutputSpace = str
-Output = dict[OutputSpace, HiveData]
+Output = Dict[OutputSpace, HiveData]
 # Input gathers inputs from multiple agents
-OutputGroup = dict[AgentId, Output]
+OutputGroup = Dict[AgentId, Output]
 # OutputBatch is the result of evaluating the neural network on an input batch, before unmerging.
-OutputBatch = dict[OutputSpace, BatchedData]
+OutputBatch = Dict[OutputSpace, BatchedData]
 
 
 class EpisodeState(Enum):
@@ -45,23 +46,23 @@ class EpisodeState(Enum):
 
 
 # In the future we might switch to supporting flat np.arrays here.
-FloatList = list[float]
+FloatList = List[float]
 
 
 class MetaData:
-    info: dict[str, float]
-    info_lists: dict[str, FloatList]
+    info: Dict[str, float]
+    info_lists: Dict[str, FloatList]
 
 
 @dataclass
 class HiveObservation:
-    rewards: dict[str, float]
+    rewards: Dict[str, float]
     episode_state: EpisodeState
-    array_data: dict[str, HiveData]
+    array_data: Dict[str, HiveData]
     metadata: MetaData = None
 
 
 @dataclass
 class HiveResponse:
-    list_data: dict[str, FloatList]
-    scalar_data: dict[str, float]
+    list_data: Dict[str, FloatList]
+    scalar_data: Dict[str, float]

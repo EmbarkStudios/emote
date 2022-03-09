@@ -1,6 +1,6 @@
 import inspect
 import logging
-from typing import Any
+from typing import Any, Dict
 import warnings
 from abc import ABCMeta
 from functools import wraps
@@ -202,8 +202,8 @@ class Callback(metaclass=CallbackMeta):
     def end_training(self, *args, **kwargs):
         pass
 
-    def state_dict(self) -> dict[str, Any]:
+    def state_dict(self) -> Dict[str, Any]:
         return {}
 
-    def load_state_dict(self, state_dict: dict[str, Any]):
+    def load_state_dict(self, state_dict: Dict[str, Any]):
         pass
