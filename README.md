@@ -6,19 +6,19 @@
 
 <div align="center">
 
-# 🍒 Emote
+# `🍒 emote`
 
-**Emote** — **E**mbark's **Mo**dular **T**raining **E**ngine. Emote is a flexible framework for
-reinforcement learning written at Embark.
-
-It is very much **work in progress and not yet ready for production use.**
-
-    
+**E**mbark's **Mo**dular **T**raining **E**ngine - a flexible framework for
+reinforcement learning 
+   
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://embark.dev)
 [![Embark](https://img.shields.io/badge/discord-ark-%237289da.svg?logo=discord)](https://discord.gg/dAuKfZS)
 [![Documentation Status](https://readthedocs.org/projects/emote/badge/?version=latest)](http://emote.readthedocs.io/?badge=latest)
 [![PyPI version fury.io](https://badge.fury.io/py/emote.svg)](https://pypi.python.org/pypi/emote/)
 [![Build status](https://github.com/EmbarkStudios/emote/workflows/CI/badge.svg)](https://github.com/EmbarkStudios/emote/actions)
+
+🚧 This project is very much **work in progress and not yet ready for production use.** 🚧
+
 </div>
 
 
