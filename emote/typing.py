@@ -5,15 +5,15 @@ from numpy.typing import ArrayLike
 
 # The AgentId is an application-defined integer
 AgentId = int
-# HiveData is a single ndarray containing correlated data for one agent.
-HiveData = ArrayLike
-# BatchArray is a concatenated set of arrays from multiple agents.
-# The shape of BatchedData will be [Number of Agents, *(shape of HiveData)]
+# SingleAgentData is a single ndarray containing correlated data for one agent.
+SingleAgentData = ArrayLike
+# BatchedData is a concatenated set of arrays from multiple agents.
+# The shape of BatchedData will be [Number of Agents, *(shape of SingleAgentData)]
 BatchedData = ArrayLike
 
 # Input is a set of named inputs from one agent. We mainly use this for observations.
 InputSpace = str
-Input = Dict[InputSpace, HiveData]
+Input = Dict[InputSpace, SingleAgentData]
 # Input gathers inputs from multiple agents
 InputGroup = Dict[AgentId, Input]
 # InputBatch is the result of merging an InputGroup based on input name.
@@ -21,7 +21,7 @@ InputBatch = Dict[InputSpace, BatchedData]
 
 # Output is a set of named outputs for one agent
 OutputSpace = str
-Output = Dict[OutputSpace, HiveData]
+Output = Dict[OutputSpace, SingleAgentData]
 # Input gathers inputs from multiple agents
 OutputGroup = Dict[AgentId, Output]
 # OutputBatch is the result of evaluating the neural network on an input batch, before unmerging.
@@ -55,14 +55,14 @@ class MetaData:
 
 
 @dataclass
-class HiveObservation:
+class DictObservation:
     rewards: Dict[str, float]
     episode_state: EpisodeState
-    array_data: Dict[str, HiveData]
+    array_data: Dict[str, SingleAgentData]
     metadata: MetaData = None
 
 
 @dataclass
-class HiveResponse:
+class DictResponse:
     list_data: Dict[str, FloatList]
     scalar_data: Dict[str, float]

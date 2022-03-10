@@ -4,7 +4,7 @@ Proxies are bridges between the world the agent acts in and the algorithm traini
 
 from typing import Protocol, Dict
 
-from emote.typing import AgentId, HiveObservation, HiveResponse
+from emote.typing import AgentId, DictObservation, DictResponse
 
 
 class AgentProxy(Protocol):
@@ -12,8 +12,8 @@ class AgentProxy(Protocol):
 
     def __call__(
         self,
-        obserations: Dict[AgentId, HiveObservation],
-    ) -> Dict[AgentId, HiveResponse]:
+        obserations: Dict[AgentId, DictObservation],
+    ) -> Dict[AgentId, DictResponse]:
         """Take observations for the active agents and returns the relevant network output."""
         ...
 
@@ -23,8 +23,8 @@ class MemoryProxy(Protocol):
 
     def add(
         self,
-        observations: Dict[AgentId, HiveObservation],
-        responses: Dict[AgentId, HiveResponse],
+        observations: Dict[AgentId, DictObservation],
+        responses: Dict[AgentId, DictResponse],
     ):
         """Store episodes in the memory buffer used for training.
 
