@@ -8,6 +8,8 @@ import torch.distributions.transforms as transforms
 import torch.nn.functional as F
 from torch import Tensor
 
+from emote.nn.initialization import ortho_init_
+
 
 class SquashStretchTransform(transforms.Transform):
     r"""
@@ -111,11 +113,10 @@ class GaussianMLPPolicy(BasePolicy):
             *[
                 nn.Sequential(nn.Linear(n_in, n_out), nn.ReLU())
                 for n_in, n_out in zip([observation_dim] + hidden_dims, hidden_dims)
-            ]
+            ],
+            GaussianPolicyHead(hidden_dims[-1], action_dim)
         )
-        self.head = GaussianPolicyHead(hidden_dims[-1], action_dim)
+        self.seq.apply(ortho_init_)
 
     def forward(self, obs):
-        x = self.seq(obs)
-        pre_actions, neg_log_probs = self.head(x)
-        return pre_actions, neg_log_probs
+        return self.seq(obs)
