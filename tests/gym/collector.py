@@ -47,7 +47,7 @@ class GymCollector(Callback):
         "Runs through the init, step cycle once on main thread to make sure all envs work."
         self._obs = self._env.hive_reset()
         actions = self._agent(self._obs)
-        _ = self._env.step(actions)
+        _ = self._env.hive_step(actions)
         self._obs = self._env.hive_reset()
 
 
