@@ -112,12 +112,12 @@ class SimpleGymCollector(GymCollector):
         agent: AgentProxy,
         memory: MemoryProxy,
         render=True,
-        bp_samples_per_inf=10,
+        bp_steps_per_inf=10,
         warmup_steps=0,
     ):
         super().__init__(env, agent, memory, render)
         self._warmup_steps = warmup_steps
-        self._bp_samples_per_inf = bp_samples_per_inf
+        self._bp_steps_per_inf = bp_steps_per_inf
 
     def begin_training(self):
         super().begin_training()
@@ -125,7 +125,7 @@ class SimpleGymCollector(GymCollector):
         self.collect_multiple(iterations_required)
         return {"inf_step": self._warmup_steps}
 
-    def begin_batch(self, inf_step, bp_samples):
-        if bp_samples % self._bp_samples_per_inf == 0:
+    def begin_batch(self, inf_step, bp_steps):
+        if bp_steps % self._bp_steps_per_inf == 0:
             self.collect_data()
         return {"inf_step": inf_step + self.num_envs}

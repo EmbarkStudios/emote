@@ -56,19 +56,18 @@ class Trainer:
 
         try:
 
-            for bp_samples, batch in zip(count(1), self.dataloader):
+            for bp_step, batch in zip(count(1), self.dataloader):
                 batch_size = batch['batch_size']
-                self.state["bp_step"] = batch_size * bp_samples
-                self.state["bp_samples"] = bp_samples
+                self.state["bp_samples"] = bp_step * batch_size
                 self.state.update(batch)
 
                 if shutdown_signal():
                     raise TrainingShutdownException
-                self._begin_cycle(bp_samples)
+                self._begin_cycle(bp_step)
                 self._begin_batch()
                 self._backward()
                 self._end_batch()
-                self._end_cycle(bp_samples)
+                self._end_cycle(bp_step)
 
         except TrainingShutdownException as ex:
             self._end_training(ex)
@@ -81,10 +80,10 @@ class Trainer:
             if updated_state := cb.begin_training(**self.state):
                 self.state.update(updated_state)
 
-    def _begin_cycle(self, bp_samples):
+    def _begin_cycle(self, bp_step):
         for cb in self._cyclic_callbacks:
             # Start cycles on 1st step of new cycle
-            if (bp_samples - 1) % cb.cycle == 0:
+            if (bp_step - 1) % cb.cycle == 0:
                 if updated_state := cb.begin_cycle(**self.state):
                     self.state.update(updated_state)
 
@@ -103,9 +102,9 @@ class Trainer:
             if updated_state := cb.end_batch(**self.state):
                 self.state.update(updated_state)
 
-    def _end_cycle(self, bp_samples):
+    def _end_cycle(self, bp_step):
         for cb in self._cyclic_callbacks:
-            if bp_samples % cb.cycle == 0:
+            if bp_step % cb.cycle == 0:
                 if updated_state := cb.end_cycle(**self.state):
                     self.state.update(updated_state)
 
