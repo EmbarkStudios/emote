@@ -30,6 +30,8 @@ class GymCollector(Callback):
 
     def collect_data(self):
         """Collect a single rollout"""
+        if self._render:
+            self._env.render()
         actions = self._agent(self._obs)
         next_obs = self._env.hive_step(actions)
         self._memory.add(self._obs, actions)
@@ -58,8 +60,10 @@ class ThreadedGymCollector(GymCollector):
         agent: AgentProxy,
         memory: MemoryProxy,
         render=True,
+        warmup_steps=0,
     ):
         super().__init__(env, agent, memory, render)
+        self._warmup_steps = warmup_steps
         self._stop = False
         self._thread = None
 
@@ -81,6 +85,11 @@ class ThreadedGymCollector(GymCollector):
             self.collect_data()
 
     def begin_training(self):
+        # Collect trajectories for warmup steps before starting training
+        super().begin_training()
+        iterations_required = self._warmup_steps
+        self.collect_multiple(iterations_required)
+
         self._thread = threading.Thread(target=self.collect_forever)
         self._thread.start()
 
@@ -103,12 +112,12 @@ class SimpleGymCollector(GymCollector):
         agent: AgentProxy,
         memory: MemoryProxy,
         render=True,
-        bp_steps_per_inf=10,
+        bp_samples_per_inf=10,
         warmup_steps=0,
     ):
         super().__init__(env, agent, memory, render)
         self._warmup_steps = warmup_steps
-        self._bp_steps_per_inf = bp_steps_per_inf
+        self._bp_samples_per_inf = bp_samples_per_inf
 
     def begin_training(self):
         super().begin_training()
@@ -116,7 +125,7 @@ class SimpleGymCollector(GymCollector):
         self.collect_multiple(iterations_required)
         return {"inf_step": self._warmup_steps}
 
-    def begin_batch(self, inf_step, bp_step):
-        if bp_step % self._bp_steps_per_inf == 0:
+    def begin_batch(self, inf_step, bp_samples):
+        if bp_samples % self._bp_samples_per_inf == 0:
             self.collect_data()
         return {"inf_step": inf_step + self.num_envs}
