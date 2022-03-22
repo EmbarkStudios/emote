@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.optim import Adam
-from gym.vector import AsyncVectorEnv
+from gym.vector import AsyncVectorEnv, SyncVectorEnv
 
 from emote import Trainer
 from emote.callbacks import (
@@ -78,7 +78,7 @@ def test_htm():
     ]
 
     callbacks = logged_cbs + [
-        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
         TerminalLogger(logged_cbs, 400),
         FinalLossTestCheck([logged_cbs[2]], [10.0], 2000),
     ]
