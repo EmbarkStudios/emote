@@ -125,7 +125,7 @@ class SimpleGymCollector(GymCollector):
         self.collect_multiple(iterations_required)
         return {"inf_step": self._warmup_steps}
 
-    def begin_batch(self, inf_step, bp_steps):
-        if bp_steps % self._bp_steps_per_inf == 0:
+    def begin_batch(self, inf_step, bp_step):
+        if bp_step % self._bp_steps_per_inf == 0:
             self.collect_data()
         return {"inf_step": inf_step + self.num_envs}
