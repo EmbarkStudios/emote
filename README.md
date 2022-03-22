@@ -42,8 +42,8 @@ looks like this:
 Using the components provided with Emote, we can write this as
 
 ```python
-env = HiveGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-table = DictObsTable(spaces=env.hive_space, maxlen=1000)
+env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
+table = DictObsTable(spaces=env.dict_space, maxlen=1000)
 memory_proxy = TableMemoryProxy(table)
 dataloader = MemoryLoader(table, 100, 2, "batch_size")
 

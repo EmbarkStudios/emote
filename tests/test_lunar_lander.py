@@ -22,7 +22,7 @@ from emote.sac import (
 )
 from emote.memory import TableMemoryProxy, MemoryLoader
 
-from .gym import SimpleGymCollector, HiveGymWrapper
+from .gym import SimpleGymCollector, DictGymWrapper
 
 
 N_HIDDEN = 256
@@ -41,13 +41,13 @@ def test_lunar_lander():
 
     learning_rate = 1e-3
 
-    env = HiveGymWrapper(SyncVectorEnv([_make_env(i) for i in range(n_env)]))
-    table = DictObsTable(spaces=env.hive_space, maxlen=4_000_000)
+    env = DictGymWrapper(SyncVectorEnv([_make_env(i) for i in range(n_env)]))
+    table = DictObsTable(spaces=env.dict_space, maxlen=4_000_000)
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(table, batch_size, rollout_len, "batch_size")
 
-    num_actions = env.hive_space.actions.shape[0]
-    num_obs = list(env.hive_space.state.spaces.values())[0].shape[0]
+    num_actions = env.dict_space.actions.shape[0]
+    num_obs = list(env.dict_space.state.spaces.values())[0].shape[0]
 
     q1 = ActionValue(num_obs, num_actions, hidden_layers)
     q2 = ActionValue(num_obs, num_actions, hidden_layers)

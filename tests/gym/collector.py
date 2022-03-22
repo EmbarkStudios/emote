@@ -7,7 +7,7 @@ from collections import deque
 
 from emote.callback import Callback
 from emote.proxies import AgentProxy, MemoryProxy
-from tests.gym.hive_gym_wrapper import HiveGymWrapper
+from tests.gym.dict_gym_wrapper import DictGymWrapper
 
 
 class GymCollector(Callback):
@@ -15,7 +15,7 @@ class GymCollector(Callback):
 
     def __init__(
         self,
-        env: HiveGymWrapper,
+        env: DictGymWrapper,
         agent: AgentProxy,
         memory: MemoryProxy,
         render: bool = True,
@@ -33,7 +33,7 @@ class GymCollector(Callback):
         if self._render:
             self._env.render()
         actions = self._agent(self._obs)
-        next_obs = self._env.hive_step(actions)
+        next_obs = self._env.dict_step(actions)
         self._memory.add(self._obs, actions)
         self._obs = next_obs
 
@@ -47,16 +47,16 @@ class GymCollector(Callback):
 
     def begin_training(self):
         "Runs through the init, step cycle once on main thread to make sure all envs work."
-        self._obs = self._env.hive_reset()
+        self._obs = self._env.dict_reset()
         actions = self._agent(self._obs)
-        _ = self._env.hive_step(actions)
-        self._obs = self._env.hive_reset()
+        _ = self._env.dict_step(actions)
+        self._obs = self._env.dict_reset()
 
 
 class ThreadedGymCollector(GymCollector):
     def __init__(
         self,
-        env: HiveGymWrapper,
+        env: DictGymWrapper,
         agent: AgentProxy,
         memory: MemoryProxy,
         render=True,
@@ -108,7 +108,7 @@ class ThreadedGymCollector(GymCollector):
 class SimpleGymCollector(GymCollector):
     def __init__(
         self,
-        env: HiveGymWrapper,
+        env: DictGymWrapper,
         agent: AgentProxy,
         memory: MemoryProxy,
         render=True,

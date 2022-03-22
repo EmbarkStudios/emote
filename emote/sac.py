@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from torch import optim
 
-from emote.typing import AgentId, EpisodeState, HiveObservation, HiveResponse
+from emote.typing import AgentId, EpisodeState, DictObservation, DictResponse
 
 from .callbacks import LoggingCallback, LossCallback
 
@@ -237,7 +237,7 @@ class AlphaLoss(LossCallback):
         # TODO(singhblom) Check number of actions
         # self.t_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
         self.t_entropy = (
-            n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps ** 2)) / 2.0
+            n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
         )
         self.ln_alpha = ln_alpha  # This is log(alpha)
 
@@ -273,8 +273,8 @@ class FeatureAgentProxy:
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
 
     def __call__(
-        self, observations: Dict[AgentId, HiveObservation]
-    ) -> Dict[AgentId, HiveResponse]:
+        self, observations: Dict[AgentId, DictObservation]
+    ) -> Dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
         assert len(observations) > 0, "Observations must not be empty."
@@ -290,6 +290,6 @@ class FeatureAgentProxy:
         )
         actions = self.policy(tensor_obs)[0].detach().numpy()
         return {
-            agent_id: HiveResponse(list_data={"actions": actions[i]}, scalar_data={})
+            agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
         }

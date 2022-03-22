@@ -19,7 +19,7 @@ from emote.sac import (
 )
 from emote.memory import TableMemoryProxy, MemoryLoader
 
-from .gym import SimpleGymCollector, HitTheMiddle, HiveGymWrapper
+from .gym import SimpleGymCollector, HitTheMiddle, DictGymWrapper
 
 
 N_HIDDEN = 10
@@ -58,8 +58,8 @@ class Policy(nn.Module):
 
 def test_htm():
 
-    env = HiveGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-    table = DictObsTable(spaces=env.hive_space, maxlen=1000)
+    env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
+    table = DictObsTable(spaces=env.dict_space, maxlen=1000)
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(table, 100, 2, "batch_size")
 

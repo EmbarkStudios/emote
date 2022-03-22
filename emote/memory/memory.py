@@ -13,7 +13,7 @@ from typing import Dict, List, Mapping, Optional, Tuple
 
 from emote.memory.core_types import Matrix
 from emote.memory import Table
-from emote.typing import HiveResponse, HiveObservation, AgentId, EpisodeState
+from emote.typing import DictResponse, DictObservation, AgentId, EpisodeState
 from emote.utils import TimedBlock
 
 
@@ -73,8 +73,8 @@ class TableMemoryProxy:
 
     def add(
         self,
-        observations: Dict[AgentId, HiveObservation],
-        responses: Dict[AgentId, HiveResponse],
+        observations: Dict[AgentId, DictObservation],
+        responses: Dict[AgentId, DictResponse],
     ):
         completed_episodes = {}
         for agent_id, observation in observations.items():
