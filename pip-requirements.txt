@@ -1,3 +1,0 @@
-gym[atari,classic_control]
-sphinx-rtd-theme
-black
