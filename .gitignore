@@ -5,3 +5,4 @@ __pycache__/
 *.onnx
 .coverage
 docs/_build
+runs/**
