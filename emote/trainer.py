@@ -59,7 +59,6 @@ class Trainer:
             for bp_step, batch in zip(count(1), self.dataloader):
                 batch_size = batch['batch_size']
                 self.state["bp_step"] = bp_step
-                self.state["bp_samples"] = bp_step * batch_size
                 self.state.update(batch)
 
                 if shutdown_signal():

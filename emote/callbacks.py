@@ -128,10 +128,8 @@ class TensorboardLogger(Callback):
                     k = "/".join(k_split)
                 self._writer.add_scalar(k, v, step)
 
-    def end_cycle(self, bp_step, bp_samples):
+    def end_cycle(self, bp_step):
         self.log_scalars(bp_step, suffix="bp_step")
-        if self._log_samples:
-            self.log_scalars(bp_samples, suffix="bp_samples")
 
 
 class TerminalLogger(Callback):
@@ -196,7 +194,7 @@ class Checkpointer(Callback):
         self._opts: List[optim.Optimizer] = optimizers if optimizers else []
         self._nets: List[nn.Module] = networks if networks else []
 
-    def end_cycle(self, inf_step, bp_step, bp_samples):
+    def end_cycle(self, inf_step, bp_step):
         state_dict = {}
         state_dict["callback_state_dicts"] = [cb.state_dict() for cb in self._cbs]
         state_dict["network_state_dicts"] = [net.state_dict() for net in self._nets]
@@ -205,7 +203,6 @@ class Checkpointer(Callback):
             "checkpoint_index": self._checkpoint_index,
             "inf_step": inf_step,
             "bp_step": bp_step,
-            "bp_samples": bp_samples,
         }
         torch.save(state_dict, f"{self._path}.{self._checkpoint_index}.tar")
         self._checkpoint_index += 1
