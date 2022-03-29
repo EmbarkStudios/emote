@@ -2,16 +2,16 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 from torch import nn
 from torch.optim import Adam
-from gym.vector import AsyncVectorEnv, SyncVectorEnv
+from gym.vector import SyncVectorEnv
 import gym
-import numpy as np
 
 from emote import Trainer
 from emote.callbacks import (
     FinalLossTestCheck,
     TensorboardLogger
 )
-from emote.nn import GaussianMLPPolicy, ActionValue
+from emote.nn import GaussianPolicyHead
+from emote.nn.initialization import ortho_init_
 from emote.memory.builder import DictObsTable
 from emote.sac import (
     QLoss,
@@ -22,10 +22,40 @@ from emote.sac import (
 )
 from emote.memory import TableMemoryProxy, MemoryLoader
 
-from .gym import SimpleGymCollector, DictGymWrapper
+from .gym import SimpleGymCollector, DictGymWrapper, ThreadedGymCollector
 
 
-N_HIDDEN = 256
+class QNet(nn.Module):
+    def __init__(self, num_obs, num_actions, num_hidden):
+        super().__init__()
+        self.q = nn.Sequential(
+            nn.Linear(num_obs + num_actions, num_hidden),
+            nn.ReLU(),
+            nn.Linear(num_hidden, num_hidden),
+            nn.ReLU(),
+            nn.Linear(num_hidden, 1),
+        )
+        self.q.apply(ortho_init_)
+
+    def forward(self, action, obs):
+        x = torch.cat([obs, action], dim=1)
+        return self.q(x)
+
+
+class Policy(nn.Module):
+    def __init__(self, num_obs, num_actions, num_hidden):
+        super().__init__()
+        self.pi = nn.Sequential(
+            nn.Linear(num_obs, num_hidden),
+            nn.ReLU(),
+            nn.Linear(num_hidden, num_hidden),
+            nn.ReLU(),
+            GaussianPolicyHead(num_hidden, num_actions),
+        )
+        self.pi.apply(ortho_init_)
+
+    def forward(self, obs):
+        return self.pi(obs)
 
 
 def test_lunar_lander():
@@ -49,9 +79,9 @@ def test_lunar_lander():
     num_actions = env.dict_space.actions.shape[0]
     num_obs = list(env.dict_space.state.spaces.values())[0].shape[0]
 
-    q1 = ActionValue(num_obs, num_actions, hidden_layers)
-    q2 = ActionValue(num_obs, num_actions, hidden_layers)
-    policy = GaussianMLPPolicy(num_obs, num_actions, hidden_layers)
+    q1 = QNet(num_obs, num_actions, hidden_layers)
+    q2 = QNet(num_obs, num_actions, hidden_layers)
+    policy = Policy(num_obs, num_actions, hidden_layers)
 
     ln_alpha = torch.tensor(1.0, requires_grad=True)
     agent_proxy = FeatureAgentProxy(policy)
