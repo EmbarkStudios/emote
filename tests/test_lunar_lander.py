@@ -22,7 +22,7 @@ from emote.sac import (
 )
 from emote.memory import TableMemoryProxy, MemoryLoader
 
-from .gym import SimpleGymCollector, DictGymWrapper, ThreadedGymCollector
+from .gym import SimpleGymCollector, DictGymWrapper
 
 
 class QNet(nn.Module):
@@ -62,7 +62,7 @@ def test_lunar_lander():
 
     experiment_name = "Lunar-lander_test2"
 
-    hidden_layers = [256, 256]
+    hidden_layer = 256
 
     batch_size = 500
     rollout_len = 2
@@ -79,9 +79,9 @@ def test_lunar_lander():
     num_actions = env.dict_space.actions.shape[0]
     num_obs = list(env.dict_space.state.spaces.values())[0].shape[0]
 
-    q1 = QNet(num_obs, num_actions, hidden_layers)
-    q2 = QNet(num_obs, num_actions, hidden_layers)
-    policy = Policy(num_obs, num_actions, hidden_layers)
+    q1 = QNet(num_obs, num_actions, hidden_layer)
+    q2 = QNet(num_obs, num_actions, hidden_layer)
+    policy = Policy(num_obs, num_actions, hidden_layer)
 
     ln_alpha = torch.tensor(1.0, requires_grad=True)
     agent_proxy = FeatureAgentProxy(policy)
