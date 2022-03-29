@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.optim import Adam
-from gym.vector import AsyncVectorEnv, SyncVectorEnv
+from gym.vector import AsyncVectorEnv
 
 from emote import Trainer
 from emote.callbacks import (
