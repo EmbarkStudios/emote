@@ -19,6 +19,7 @@ class GymCollector(Callback):
         agent: AgentProxy,
         memory: MemoryProxy,
         render: bool = True,
+        warmup_steps: int = 0,
     ):
         super().__init__()
         self._agent = agent
@@ -27,6 +28,7 @@ class GymCollector(Callback):
         self._render = render
         self._last_environment_rewards = deque(maxlen=1000)
         self.num_envs = env.num_envs
+        self._warmup_steps = warmup_steps
 
     def collect_data(self):
         """Collect a single rollout"""
@@ -46,11 +48,16 @@ class GymCollector(Callback):
             self.collect_data()
 
     def begin_training(self):
-        "Runs through the init, step cycle once on main thread to make sure all envs work."
+        "Make sure all envs work and collect warmup steps."
+        # Runs through the init, step cycle once on main thread to make sure all envs work.
         self._obs = self._env.dict_reset()
         actions = self._agent(self._obs)
         _ = self._env.dict_step(actions)
         self._obs = self._env.dict_reset()
+
+        # Collect trajectories for warmup steps before starting training
+        iterations_required = self._warmup_steps
+        self.collect_multiple(iterations_required)
 
 
 class ThreadedGymCollector(GymCollector):
@@ -59,10 +66,10 @@ class ThreadedGymCollector(GymCollector):
         env: DictGymWrapper,
         agent: AgentProxy,
         memory: MemoryProxy,
-        render=True,
-        warmup_steps=0,
+        render: bool = True,
+        warmup_steps: int = 0,
     ):
-        super().__init__(env, agent, memory, render)
+        super().__init__(env, agent, memory, render, warmup_steps)
         self._warmup_steps = warmup_steps
         self._stop = False
         self._thread = None
@@ -85,11 +92,7 @@ class ThreadedGymCollector(GymCollector):
             self.collect_data()
 
     def begin_training(self):
-        # Collect trajectories for warmup steps before starting training
         super().begin_training()
-        iterations_required = self._warmup_steps
-        self.collect_multiple(iterations_required)
-
         self._thread = threading.Thread(target=self.collect_forever)
         self._thread.start()
 
@@ -111,18 +114,15 @@ class SimpleGymCollector(GymCollector):
         env: DictGymWrapper,
         agent: AgentProxy,
         memory: MemoryProxy,
-        render=True,
-        bp_steps_per_inf=10,
-        warmup_steps=0,
+        render: bool = True,
+        warmup_steps: int = 0,
+        bp_steps_per_inf: int = 10,
     ):
-        super().__init__(env, agent, memory, render)
-        self._warmup_steps = warmup_steps
+        super().__init__(env, agent, memory, render, warmup_steps)
         self._bp_steps_per_inf = bp_steps_per_inf
 
     def begin_training(self):
         super().begin_training()
-        iterations_required = self._warmup_steps
-        self.collect_multiple(iterations_required)
         return {"inf_step": self._warmup_steps}
 
     def begin_batch(self, inf_step, bp_step):
