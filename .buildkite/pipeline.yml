@@ -13,6 +13,6 @@ common: &common
 
 steps:
   - label: 📚 Publish docs
-    command: .buildkite/publish-docs.sh
+    command: bash .buildkite/publish-docs.sh
 
     << : *common
