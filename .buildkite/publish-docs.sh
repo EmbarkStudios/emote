@@ -16,8 +16,8 @@ export PYTHONUNBUFFERED=1 \
     POETRY_NO_INTERACTION=1 \
 
 pip install poetry==1.2.0b1
-poetry install --no-dev
+poetry install
 
-echo -- Building docs
+echo --- Building docs
 pushd docs
 make html
