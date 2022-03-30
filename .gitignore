@@ -10,6 +10,7 @@ __pycache__/
 # CI/CD/Tooling
 docs/_build
 docs/generated
+docs/coverage.rst
 
 # Program outputs
 *.onnx
