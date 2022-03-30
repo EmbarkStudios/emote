@@ -42,6 +42,7 @@ to build other algorithms.
 
 .. toctree::
    :caption: Extras
+   :hidden:
 			 
    Undocumented code <coverage.rst>
    
