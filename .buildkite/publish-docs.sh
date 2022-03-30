@@ -15,7 +15,7 @@ export PYTHONUNBUFFERED=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=true \
     POETRY_NO_INTERACTION=1 \
 
-curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+pip install poetry==1.2.0b1
 poetry install --no-dev
 
 echo -- Building docs
