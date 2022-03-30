@@ -182,28 +182,27 @@ class Callback(metaclass=CallbackMeta):
         self._order = 0
         self.cycle = cycle
 
-    def begin_training(self, *args, **kwargs):
+    def begin_training(self, *args, **kwargs) -> Dict[str, Any]:
         """Called when training starts, both from scratch and when restoring
         from a checkpoint."""
         pass
 
-    def begin_cycle(self, *args, **kwargs):
+    def begin_cycle(self, *args, **kwargs) -> Dict[str, Any]:
         """Called at the start of each cycle."""
+
+    def begin_batch(self, *args, **kwargs) -> Dict[str, Any]:
         pass
 
-    def begin_batch(self, *args, **kwargs):
+    def backward(self, *args, **kwargs) -> Dict[str, Any]:
         pass
 
-    def backward(self, *args, **kwargs):
+    def end_batch(self, *args, **kwargs) -> Dict[str, Any]:
         pass
 
-    def end_batch(self, *args, **kwargs):
+    def end_cycle(self, *args, **kwargs) -> Dict[str, Any]:
         pass
 
-    def end_cycle(self, *args, **kwargs):
-        pass
-
-    def end_training(self, *args, **kwargs):
+    def end_training(self, *args, **kwargs) -> Dict[str, Any]:
         pass
 
     def state_dict(self) -> Dict[str, Any]:

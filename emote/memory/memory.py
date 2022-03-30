@@ -10,7 +10,8 @@ import logging
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Mapping, Optional, Tuple
+from typing import Dict, List, Mapping, Optional, Tuple, Any
+from emote.callback import Callback
 
 from ..typing import AgentId, DictObservation, DictResponse, EpisodeState
 from ..utils import TimedBlock
@@ -136,7 +137,7 @@ class TableMemoryProxy:
             self._table.add_sequence(agent_id, sequence)
 
 
-class MemoryLoader:
+class MemoryLoader(Callback):
     def __init__(
         self,
         table: Table,
@@ -145,27 +146,35 @@ class MemoryLoader:
         size_key: str,
         data_group: str = "default",
     ):
+        self._order = -1000  # TODO(singhblom) Should be done explicitly in the cb list
         self.data_group = data_group
         self.table = table
         self.rollout_count = rollout_count
         self.rollout_length = rollout_length
         self.size_key = size_key
         self.timer = TimedBlock()
+        self.completed_samples = 0
 
     def is_ready(self):
         """True if the data loader has enough data to start providing data"""
         return self.table.size() >= (self.rollout_count * self.rollout_length)
 
-    def __iter__(self):
+    def begin_batch(self) -> Dict[str, Any]:
         if not self.is_ready():
             raise Exception(
                 "Data loader does not have enough data.\
                  Check `is_ready()` before trying to iterate over data."
             )
 
-        while True:
-            with self.timer:
-                data = self.table.sample(self.rollout_count, self.rollout_length)
+        with self.timer:
+            data = self.table.sample(self.rollout_count, self.rollout_length)
+        new_samples = self.rollout_count * self.rollout_length
+        data[self.size_key] = new_samples
+        self.completed_samples += new_samples
+        return {self.data_group: data, self.size_key: data[self.size_key]}
 
-            data[self.size_key] = self.rollout_count * self.rollout_length
-            yield {self.data_group: data, self.size_key: data[self.size_key]}
+    def end_batch(self) -> Dict[str, Any]:
+        return {"completed_samples": self.completed_samples}
+
+    def begin_training(self) -> Dict[str, Any]:
+        return {"completed_samples": self.completed_samples}

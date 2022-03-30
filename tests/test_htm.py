@@ -53,15 +53,17 @@ def test_htm():
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
     table = DictObsTable(spaces=env.dict_space, maxlen=1000, device=device)
     memory_proxy = TableMemoryProxy(table)
+    LOG_INTERVAL = 400
     dataloader = MemoryLoader(table, 100, 2, "batch_size")
 
     q1 = QNet(2, 1)
     q2 = QNet(2, 1)
     policy = Policy(2, 1)
     ln_alpha = torch.tensor(1.0, requires_grad=True)
-    agent_proxy = FeatureAgentProxy(policy, device)
+    agent_proxy = FeatureAgentProxy(policy=policy, device=device, steps_per_log=LOG_INTERVAL)
 
     logged_cbs = [
+        agent_proxy,
         QLoss(name="q1", q=q1, opt=Adam(q1.parameters(), lr=8e-3)),
         QLoss(name="q2", q=q2, opt=Adam(q2.parameters(), lr=8e-3)),
         PolicyLoss(pi=policy, ln_alpha=ln_alpha, q=q1, opt=Adam(policy.parameters())),
@@ -70,10 +72,8 @@ def test_htm():
     ]
 
     callbacks = logged_cbs + [
-        SimpleGymCollector(
-            env, agent_proxy, memory_proxy, warmup_steps=500, render=False
-        ),
-        TerminalLogger(logged_cbs, 400),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
+        TerminalLogger(logged_cbs, LOG_INTERVAL),
         FinalLossTestCheck([logged_cbs[2]], [10.0], 2000),
     ]
 

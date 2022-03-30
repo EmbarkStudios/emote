@@ -59,8 +59,7 @@ class Trainer:
 
         try:
 
-            for bp_step, batch in zip(count(1), self.dataloader):
-                self.state.update(batch)
+            for bp_step in count(1):
                 self.state["bp_step"] = bp_step
                 self.state["bp_samples"] += self.state[self._batch_size_key]
 

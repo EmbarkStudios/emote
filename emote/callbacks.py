@@ -99,8 +99,10 @@ class LossCallback(LoggingCallback):
         self.optimizer.step()
         self.lr_schedule.step()
         self.log_scalar(f"loss/{self.name}_lr", self.lr_schedule.get_last_lr()[0])
-        self.log_scalar(f"loss/{self.name}_loss", loss)
-        self.log_scalar(f"loss/{self.name}_gradient_norm", grad_norm)
+
+        # Log the first element of the batch 
+        self.log_scalar(f"loss/{self.name}", loss[0])
+        self.log_scalar(f"gradient_norm/{self.name}", grad_norm[0])
 
     def state_dict(self):
         state = super().state_dict()

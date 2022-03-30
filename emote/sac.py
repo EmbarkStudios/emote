@@ -7,6 +7,7 @@ import torch
 
 from torch import nn, optim
 
+from emote.proxies import DictAgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 
@@ -205,9 +206,8 @@ class PolicyLoss(LossCallback):
         alpha = torch.exp(self._ln_alpha).detach()
         policy_loss = alpha * logp_pi - q_pi_min
         policy_loss = torch.mean(policy_loss)
-        self.log_scalar(f"policy/q_pi_min", torch.mean(q_pi_min))
-        self.log_scalar(f"policy/logp_pi", torch.mean(logp_pi))
-        self.log_scalar(f"policy/alpha", torch.mean(alpha))
+        self.log_scalar(f"training/q_pi_min", torch.mean(q_pi_min))
+        self.log_scalar(f"training/logp_pi", torch.mean(logp_pi))
         assert policy_loss.dim() == 0
         return policy_loss
 
@@ -261,9 +261,7 @@ class AlphaLoss(LossCallback):
         self._max_ln_alpha = torch.log(torch.tensor(max_alpha, device=ln_alpha.device))
         # TODO(singhblom) Check number of actions
         # self.t_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
-        self.t_entropy = (
-            n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
-        )
+        self.t_entropy = n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
         self.ln_alpha = ln_alpha  # This is log(alpha)
 
     def loss(self, observation):
@@ -295,10 +293,11 @@ class AlphaLoss(LossCallback):
         super().load_state_dict(state_dict)
 
 
-class FeatureAgentProxy:
+class FeatureAgentProxy(DictAgentProxy):
     """This AgentProxy assumes that the observations will contain flat array of observations names 'obs'"""
 
-    def __init__(self, policy: nn.Module, device: torch.device):
+    def __init__(self, *, policy: nn.Module, device: torch.device, steps_per_log: int):
+        super().__init__(steps_per_log=steps_per_log)
         self.policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device
@@ -315,11 +314,10 @@ class FeatureAgentProxy:
             if obs.episode_state not in self._end_states
         ]
         tensor_obs = torch.tensor(
-            np.array(
-                [observations[agent_id].array_data["obs"] for agent_id in active_agents]
-            )
+            np.array([observations[agent_id].array_data["obs"] for agent_id in active_agents])
         ).to(self.device)
         actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
+        self.completed_inferences += len(active_agents)
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
