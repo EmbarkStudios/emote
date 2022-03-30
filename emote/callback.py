@@ -182,9 +182,12 @@ class Callback(metaclass=CallbackMeta):
         self.cycle = cycle
 
     def begin_training(self, *args, **kwargs):
+        '''Called when training starts, both from scratch and when restoring
+        from a checkpoint.'''
         pass
 
     def begin_cycle(self, *args, **kwargs):
+        '''Called at the start of each cycle.'''
         pass
 
     def begin_batch(self, *args, **kwargs):

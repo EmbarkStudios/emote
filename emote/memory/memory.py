@@ -66,7 +66,7 @@ class TableMemoryProxy:
         self._term_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self._use_terminal = use_terminal
 
-    def is_initial(self, identity):
+    def is_initial(self, identity: int):
         """Returns true if identity is not already used in a partial sequence. Does not
         validate if the identity is associated with a complete episode."""
         return identity not in self._store

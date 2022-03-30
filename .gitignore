@@ -1,8 +1,16 @@
-__pycache__/
+# Editor polution
 .vscode
 .dir-locals.el
+
+# General python junk
+__pycache__/
 *.egg-info
-*.onnx
 .coverage
+
+# CI/CD/Tooling
 docs/_build
+docs/generated
+
+# Program outputs
+*.onnx
 runs/**

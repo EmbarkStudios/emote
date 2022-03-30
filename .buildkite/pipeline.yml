@@ -1,0 +1,18 @@
+common: &common
+  plugins:
+  - EmbarkStudios/k8s#1.2.10:
+      service-account-name: monorepo-ci
+      image: gcr.io/embark-shared/ml/cpu:$SANITIZED_BRANCH_NAME
+      default-secret-name: buildkite-k8s-plugin
+      always-pull: true
+
+  agents:
+    cluster: builds-fi-2
+    queue: monorepo-ci
+    size: small
+
+steps:
+  - label: :book: Publish docs
+    command: .buildkite/publish-docs.sh
+
+    << : *common

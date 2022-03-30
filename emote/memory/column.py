@@ -5,7 +5,7 @@
 from dataclasses import dataclass
 from typing import Tuple, Type
 
-from .storage import VirtualStorage
+from emote.memory.storage import VirtualStorage
 
 
 @dataclass
@@ -13,6 +13,8 @@ class Column:
     """A typed column for data storage."""
 
     name: str
+    '''The name of the column'''
+
     shape: Tuple[int]
     dtype: type
 

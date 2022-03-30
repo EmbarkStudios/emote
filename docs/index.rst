@@ -21,16 +21,24 @@ sense that we could easily swap the algorithm we used and how data was collected
 but also in the sense that the different parts of various algorithms could be reused
 to build other algorithms.
 
+.. automodule:: emote
+
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Design
+   :hidden:
 
-.. automodule:: emote
-   :members:
+   self
 
+.. toctree::
+   :maxdepth: 6
+   :caption: API Documentation
+   :hidden:
 
-Indices and tables
-==================
+   emote
+   memory
+   callback
 
 * :ref:`genindex`
 * :ref:`modindex`
