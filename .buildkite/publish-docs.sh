@@ -1,4 +1,4 @@
---- Installing dependencies
+echo --- Installing dependencies
 
 export PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -13,6 +13,6 @@ export PYTHONUNBUFFERED=1 \
 curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
 poetry install --no-dev
 
--- Building docs
+echo -- Building docs
 pushd docs
 make html
