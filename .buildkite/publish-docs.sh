@@ -1,3 +1,8 @@
+echo --- Initializing gcloud
+
+if [ -f '/root/google-cloud-sdk/path.bash.inc' ]; then . '/root/google-cloud-sdk/path.bash.inc'; fi
+gcloud config set account monorepo-ci@embark-builds.iam.gserviceaccount.com
+
 echo --- Installing dependencies
 
 apt-get update \
@@ -20,4 +25,6 @@ poetry install
 
 echo --- Building docs
 pushd docs
-make html
+make deploy
+gsutil rsync -n -r ./_build/dirhtml gs://embark-static/emote-docs
+popd

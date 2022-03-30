@@ -40,6 +40,11 @@ to build other algorithms.
    memory
    callback
 
+.. toctree::
+   :caption: Extras
+			 
+   Undocumented code <coverage.rst>
+   
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`

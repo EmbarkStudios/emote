@@ -34,6 +34,7 @@ release = "0.1.0"
 extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.autodoc",
+    "sphinx.ext.coverage",
     "sphinx.ext.graphviz",
     "sphinx_autodoc_typehints",
 ]
