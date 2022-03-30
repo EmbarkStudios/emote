@@ -22,9 +22,10 @@ export PYTHONUNBUFFERED=1 \
 
 pip install poetry==1.2.0b1
 poetry install
-
+poetry env info --path
 echo --- Building docs
 pushd docs
+poetry env info --path
 make deploy
 gsutil rsync -n -r ./_build/dirhtml gs://embark-static/emote-docs
 popd
