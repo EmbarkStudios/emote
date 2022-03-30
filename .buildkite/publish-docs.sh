@@ -1,6 +1,6 @@
 echo --- Installing dependencies
 
-RUN apt-get update \
+apt-get update \
     && apt-get install --no-install-recommends -y \
         curl \
         build-essential
