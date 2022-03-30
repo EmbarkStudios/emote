@@ -1,3 +1,5 @@
+set -eo pipefail
+
 echo --- Initializing gcloud
 
 if [ -f '/root/google-cloud-sdk/path.bash.inc' ]; then . '/root/google-cloud-sdk/path.bash.inc'; fi
