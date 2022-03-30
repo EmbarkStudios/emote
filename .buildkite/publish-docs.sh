@@ -35,5 +35,5 @@ echo --- Building docs
 pushd docs
 poetry env info --path
 make deploy
-gsutil rsync -n -r ./_build/dirhtml gs://embark-static/emote-docs
+gsutil rsync -r ./_build/dirhtml gs://embark-static/emote-docs
 popd
