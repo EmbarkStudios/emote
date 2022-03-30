@@ -71,11 +71,15 @@ def test_htm():
         QTarget(pi=policy, ln_alpha=ln_alpha, q1=q1, q2=q2),
     ]
 
-    callbacks = logged_cbs + [
-        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
-        TerminalLogger(logged_cbs, LOG_INTERVAL),
-        FinalLossTestCheck([logged_cbs[2]], [10.0], 2000),
-    ]
+    callbacks = (
+        [dataloader]
+        + logged_cbs
+        + [
+            SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
+            TerminalLogger(logged_cbs, LOG_INTERVAL),
+            FinalLossTestCheck([logged_cbs[2]], [10.0], 2000),
+        ]
+    )
 
     trainer = Trainer(callbacks, dataloader)
     trainer.train()
