@@ -12,7 +12,7 @@ common: &common
     size: small
 
 steps:
-  - label: :book: Publish docs
+  - label: 📚 Publish docs
     command: .buildkite/publish-docs.sh
 
     << : *common
