@@ -15,8 +15,6 @@ reinforcement learning
 [![Embark](https://img.shields.io/badge/discord-ark-%237289da.svg?logo=discord)](https://discord.gg/dAuKfZS)
 [![Build status](https://badge.buildkite.com/968ac3c0bb075fb878f9f973ed91406c8b257b0f050c197542.svg?theme=github&branch=ts/docs-poetry)](https://buildkite.com/embark-studios/emote)
 [![Build status](https://badge.buildkite.com/968ac3c0bb075fb878f9f973ed91406c8b257b0f050c197542.svg?theme=github&branch=ts/docs-poetry&step=%F0%9F%93%9A%20Publish%20docs&label=Docs)](https://static.embark.net/emote-docs/)
-[![PyPI version fury.io](https://badge.fury.io/py/emote.svg)](https://pypi.python.org/pypi/emote/)
-[![Build status](https://github.com/EmbarkStudios/emote/workflows/CI/badge.svg)](https://github.com/EmbarkStudios/emote/actions)
 
 🚧 This project is very much **work in progress and not yet ready for production use.** 🚧
 
