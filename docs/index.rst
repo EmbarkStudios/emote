@@ -7,6 +7,10 @@ for reinforcement learning written at Embark.
 
 Installation
 ============
+
+.. warning:: Due to bugs in Poetry, you'll need to use a pre-release
+             Poetry 1.2 version, e.g. 1.2.0a1 or later.
+
 Install `Poetry <https://python-poetry.org/>`_ following the instructions on the
 Poetry site. Then install the package using ::
 
@@ -43,9 +47,9 @@ to build other algorithms.
 .. toctree::
    :caption: Extras
    :hidden:
-			 
+
    Undocumented code <coverage.rst>
-   
+
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`

@@ -109,13 +109,13 @@ class PolicyLoss(LossCallback):
 
 ## Installation
 
-For installation and environment handling we use `conda`. Install it from [here](https://docs.anaconda.com/anaconda/install/). After `conda` is set up, set up and activate the emote environment by running
+For installation and environment handling we use `poetry`. Install it from [here](https://python-poetry.org/). After `poetry` is set up, set up and activate the emote environment by running
 
 ```bash
-conda env create -f environment.yml
-conda activate emote
-pip install -r pip-requirements.txt
+poetry install
 ```
+
+:warning: Due to bugs in Poetry you need to use one of the pre-release versions of the 1.2 minor version, until 1.2 is released.
 
 
 ## Contribution
