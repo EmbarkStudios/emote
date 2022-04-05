@@ -108,7 +108,7 @@ class PolicyLoss(LossCallback):
 
 ## Installation
 
-:warning: Due to bugs in Poetry you currently need to use one of the pre-release versions of the 1.2 series. :warning:
+:warning: You currently **need** to use a pre-release version of the Poetry 1.2 series. :warning:
 
 For installation and environment handling we use `poetry`. Install it from [here](https://python-poetry.org/). After `poetry` is set up, set up and activate the emote environment by running
 

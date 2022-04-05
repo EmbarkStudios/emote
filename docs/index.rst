@@ -8,8 +8,7 @@ for reinforcement learning written at Embark.
 Installation
 ============
 
-.. warning:: Due to bugs in Poetry, you'll need to use a pre-release
-             Poetry 1.2 version, e.g. 1.2.0a1 or later.
+.. warning:: You'll need to use a pre-release Poetry 1.2 version, e.g. 1.2.0a1 or later. Older versions will crash while installing our dependencies.
 
 Install `Poetry <https://python-poetry.org/>`_ following the instructions on the
 Poetry site. Then install the package using ::

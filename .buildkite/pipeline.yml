@@ -14,5 +14,5 @@ common: &common
 steps:
   - label: 📚 Publish docs
     command: bash .buildkite/publish-docs.sh
-
+    branches: "main"
     << : *common
