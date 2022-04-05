@@ -19,7 +19,7 @@ import torch
 # batch.
 #
 # Reward Matrix:  [num_rolls, roll_length+1]
-def make_gamma_matrix(gamma, roll_length):
+def make_gamma_matrix(gamma: float, roll_length: int):
     gamma = torch.tensor(gamma, dtype=torch.float32)
     gamma_matrix = torch.zeros((roll_length + 1, roll_length), dtype=torch.float32)
     gamma_vector = torch.zeros((roll_length + 1), dtype=torch.float32)
@@ -40,7 +40,7 @@ def make_gamma_matrix(gamma, roll_length):
 #  [ r0, r1, ..., v]           [0.99^0, 0.0   ]
 #  [ r0, r1, ..., v]     *     [0.99^1, 0.99^0]
 #  [ r0, r1, ..., v]           [0.99^2, 0.99^1]
-def discount(rewards, values, gamma_matrix):
+def discount(rewards: torch.tensor, values: torch.tensor, gamma_matrix: torch.tensor):
     # [num_rolls, roll_length + 1]
     reward_matrix = torch.cat([rewards, values], dim=1)
     # [num_rolls, roll_length]
@@ -51,5 +51,5 @@ def discount(rewards, values, gamma_matrix):
     )
 
 
-def split_rollouts(data, rollout_len):
+def split_rollouts(data: torch.tensor, rollout_len: int):
     return data.view([data.shape[0] // rollout_len, rollout_len, *data.shape[1:]])
