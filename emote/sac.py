@@ -281,7 +281,7 @@ class AlphaLoss(LossCallback):
 class FeatureAgentProxy:
     """This AgentProxy assumes that the observations will contain flat array of observations names 'obs'"""
 
-    def __init__(self, policy: nn.Module, device: Any = torch.device("cpu")):
+    def __init__(self, policy: nn.Module, device: torch.device):
         self.policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device

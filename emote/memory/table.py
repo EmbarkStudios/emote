@@ -2,7 +2,7 @@
 
 
 from threading import Lock
-from typing import Any, Sequence, List, Tuple, Protocol, Optional
+from typing import Sequence, List, Tuple, Protocol, Optional
 
 import torch
 import numpy as np
@@ -57,7 +57,7 @@ class ArrayTable:
         ejector: EjectionStrategy,
         length_key="actions",
         adaptors: Optional[Adaptor] = None,
-        device: Any,
+        device: torch.device,
     ):
         """Create the table with the specified configuration"""
         self._sampler = sampler

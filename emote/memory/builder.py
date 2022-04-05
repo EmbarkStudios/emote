@@ -2,7 +2,7 @@
 
 """
 
-from typing import Any, List
+from typing import List
 
 import numpy as np
 import torch
@@ -25,7 +25,7 @@ class DictTable(ArrayTable):
         columns: List[Column],
         maxlen: int,
         length_key="actions",
-        device: Any,
+        device: torch.device,
     ):
         adaptors = [DictObsAdaptor(obs_keys)]
         if use_terminal_column:
@@ -61,7 +61,7 @@ class DictObsTable(DictTable):
         spaces: MDPSpace,
         use_terminal_column: bool = False,
         maxlen: int = 1_000_000,
-        device: Any = torch.device("cpu"),
+        device: torch.device,
     ):
         if spaces.rewards is not None:
             reward_column = Column(
@@ -132,7 +132,7 @@ class DictObsNStepTable(DictTable):
         spaces: MDPSpace,
         use_terminal_column: bool,
         maxlen: int,
-        device: Any = torch.device("cpu"),
+        device: torch.device,
     ):
         if spaces.rewards is not None:
             reward_column = Column(

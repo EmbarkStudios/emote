@@ -1,5 +1,5 @@
 import math
-from typing import Any, Tuple
+from typing import Tuple
 
 import torch
 import torch.nn as nn
@@ -34,7 +34,6 @@ class SquashStretchTransform(transforms.Transform):
         return self._stretch * torch.tanh(x / self._stretch)
 
     def _inverse(self, y):
-        # eps = torch.finfo(y.dtype).eps
         eps = 1e-3
         return self._stretch * self.atanh(
             (y / self._stretch).clamp(min=-1.0 + eps, max=1.0 - eps)

@@ -9,8 +9,8 @@
 # `🍒 emote`
 
 **E**mbark's **Mo**dular **T**raining **E**ngine - a flexible framework for
-reinforcement learning 
-   
+reinforcement learning
+
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://embark.dev)
 [![Embark](https://img.shields.io/badge/discord-ark-%237289da.svg?logo=discord)](https://discord.gg/dAuKfZS)
 [![Build status](https://badge.buildkite.com/968ac3c0bb075fb878f9f973ed91406c8b257b0f050c197542.svg?theme=github&branch=ts/docs-poetry)](https://buildkite.com/embark-studios/emote)
@@ -41,8 +41,9 @@ looks like this:
 Using the components provided with Emote, we can write this as
 
 ```python
+device = torch.device("cpu")
 env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-table = DictObsTable(spaces=env.dict_space, maxlen=1000)
+table = DictObsTable(spaces=env.dict_space, maxlen=1000, device=device)
 memory_proxy = TableMemoryProxy(table)
 dataloader = MemoryLoader(table, 100, 2, "batch_size")
 
@@ -50,7 +51,7 @@ q1 = QNet(2, 1)
 q2 = QNet(2, 1)
 policy = Policy(2, 1)
 ln_alpha = torch.tensor(1.0, requires_grad=True)
-agent_proxy = FeatureAgentProxy(policy)
+agent_proxy = FeatureAgentProxy(policy, device)
 
 callbacks = [
     QLoss(name="q1", q=q1, opt=Adam(q1.parameters(), lr=8e-3)),
