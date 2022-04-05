@@ -2,9 +2,10 @@
 
 """
 
-from typing import List
+from typing import Any, List
 
 import numpy as np
+import torch
 
 from ..utils import MDPSpace
 from .table import ArrayTable
@@ -24,6 +25,7 @@ class DictTable(ArrayTable):
         columns: List[Column],
         maxlen: int,
         length_key="actions",
+        device: Any,
     ):
         adaptors = [DictObsAdaptor(obs_keys)]
         if use_terminal_column:
@@ -43,6 +45,7 @@ class DictTable(ArrayTable):
             ejector=FifoEjectionStrategy(),
             length_key=length_key,
             adaptors=adaptors,
+            device=device,
         )
 
 
@@ -58,6 +61,7 @@ class DictObsTable(DictTable):
         spaces: MDPSpace,
         use_terminal_column: bool = False,
         maxlen: int = 1_000_000,
+        device: Any = torch.device("cpu"),
     ):
         if spaces.rewards is not None:
             reward_column = Column(
@@ -112,10 +116,11 @@ class DictObsTable(DictTable):
             maxlen=maxlen,
             columns=columns,
             obs_keys=obs_keys,
+            device=device,
         )
 
 
-class DictObsNStepTable(DictObsTable):
+class DictObsNStepTable(DictTable):
     """Create a memory suited for Reinforcement Learning Tasks with N-Step Bellman
     Backup with a single bootstrap value, and using dictionary observations as network
     inputs.
@@ -127,6 +132,7 @@ class DictObsNStepTable(DictObsTable):
         spaces: MDPSpace,
         use_terminal_column: bool,
         maxlen: int,
+        device: Any = torch.device("cpu"),
     ):
         if spaces.rewards is not None:
             reward_column = Column(
@@ -181,4 +187,5 @@ class DictObsNStepTable(DictObsTable):
             maxlen=maxlen,
             columns=columns,
             obs_keys=obs_keys,
+            device=device,
         )

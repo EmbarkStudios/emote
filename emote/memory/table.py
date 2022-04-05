@@ -2,7 +2,7 @@
 
 
 from threading import Lock
-from typing import Sequence, List, Tuple, Protocol, Optional
+from typing import Any, Sequence, List, Tuple, Protocol, Optional
 
 import torch
 import numpy as np
@@ -57,6 +57,7 @@ class ArrayTable:
         ejector: EjectionStrategy,
         length_key="actions",
         adaptors: Optional[Adaptor] = None,
+        device: Any,
     ):
         """Create the table with the specified configuration"""
         self._sampler = sampler
@@ -66,6 +67,7 @@ class ArrayTable:
         self._columns = {column.name: column for column in columns}
         self._lock = Lock()
         self.adaptors = adaptors if adaptors else []
+        self._device = device
 
         self.clear()
 
@@ -136,7 +138,7 @@ class ArrayTable:
 
                     next_idx += local_seq_length
 
-                out[key] = torch.tensor(output_store)
+                out[key] = torch.tensor(output_store).to(self._device)
 
         return out
 

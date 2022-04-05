@@ -6,6 +6,7 @@ from torch import nn
 from torch import optim
 
 from emote.typing import AgentId, EpisodeState, DictObservation, DictResponse
+from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 
 from .callbacks import LoggingCallback, LossCallback
 
@@ -86,6 +87,7 @@ class QTarget(LoggingCallback):
         reward_scale: float = 1.0,
         target_q_tau: float = 0.005,
         data_group: str = "default",
+        roll_length: int = 1,
     ):
         super().__init__()
         self.data_group = data_group
@@ -98,19 +100,30 @@ class QTarget(LoggingCallback):
         self.reward_scale = reward_scale
         self.tau = target_q_tau
         self.gamma = torch.tensor(gamma)
+        self.rollout_len = roll_length
+        if self.rollout_len > 1:
+            self.gamma_matrix = make_gamma_matrix(self.gamma, self.rollout_len).to(
+                ln_alpha.device
+            )
 
     def begin_batch(self, next_observation, rewards, masks):
         next_p_sample, next_logp_pi = self.policy(**next_observation)
         next_q1t = self.q1t(next_p_sample, **next_observation)
         next_q2t = self.q2t(next_p_sample, **next_observation)
         min_next_qt = torch.min(next_q1t, next_q2t)
-        bsz = next_p_sample.shape[0]
+        bsz = rewards.shape[0]
 
         alpha = torch.exp(self.ln_alpha)
         next_value = min_next_qt - alpha * next_logp_pi
-
         scaled_reward = self.reward_scale * rewards
-        qt = (scaled_reward + self.gamma * masks * next_value).detach()
+
+        if self.rollout_len > 1:
+            last_step_masks = split_rollouts(masks, self.rollout_len)[:, -1]
+            scaled_reward = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
+            next_value_masked = torch.multiply(next_value, last_step_masks)
+            qt = discount(scaled_reward, next_value_masked, self.gamma_matrix).detach()
+        else:
+            qt = (scaled_reward + self.gamma * masks * next_value).detach()
         assert qt.shape == (bsz, 1)
 
         self.log_scalar("training/next_logp_pi", torch.mean(next_logp_pi))
@@ -233,7 +246,7 @@ class AlphaLoss(LossCallback):
             data_group=data_group,
         )
         self.policy = pi
-        self._max_ln_alpha = torch.log(torch.tensor(max_alpha))
+        self._max_ln_alpha = torch.log(torch.tensor(max_alpha, device=ln_alpha.device))
         # TODO(singhblom) Check number of actions
         # self.t_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
         self.t_entropy = (
@@ -268,9 +281,10 @@ class AlphaLoss(LossCallback):
 class FeatureAgentProxy:
     """This AgentProxy assumes that the observations will contain flat array of observations names 'obs'"""
 
-    def __init__(self, policy: nn.Module):
+    def __init__(self, policy: nn.Module, device: Any = torch.device("cpu")):
         self.policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
+        self.device = device
 
     def __call__(
         self, observations: Dict[AgentId, DictObservation]
@@ -287,8 +301,8 @@ class FeatureAgentProxy:
             np.array(
                 [observations[agent_id].array_data["obs"] for agent_id in active_agents]
             )
-        )
-        actions = self.policy(tensor_obs)[0].detach().numpy()
+        ).to(self.device)
+        actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
