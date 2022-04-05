@@ -1,6 +1,47 @@
+[tool.poetry]
+name = "emote"
+version = "0.1.0"
+description = "A modular reinforcement learning library."
+authors = [
+    "Martin Singh-Blom <martin.singh-blom@embark-studios.com>",
+    "Tom Solberg <tom.solberg@embark-studios.com>",
+    "Jack Harmer <jack.harmer@embark-studios.com>",
+    "Jorge Del Val <jorge.delval@embark-studios.com>",
+    "Riley Miladi <riley.miladi@embark-studios.com>",
+]
+license = "MIT"
+repository = "https://github.com/EmbarkStudios/emote"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+torch = "1.10.2+cu111"
+tensorboard = "^2.8.0"
+gym = {extras = ["atari", "classic_control"], version = "^0.21.0"}
+setuptools = "=59.5"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.0"
+Sphinx = "^4.4.0"
+sphinxcontrib-apidoc = "0.3.0"
+sphinx-autodoc-typehints = "1.17.0"
+sphinx-rtd-theme = "^1.0.0"
+black = "^22.1.0"
+gsutil = "=4.66"
+
+[[tool.poetry.source]]
+name = "torch.org"
+url = "https://download.pytorch.org/whl/cu111/"
+secondary = true
+default = false
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 log_cli = true
 #log_cli_level = "INFO"  # Useful when debugging locally
 log_format = "%(asctime)s:\t%(message)s"
 log_date_format = "%H:%M:%S"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+

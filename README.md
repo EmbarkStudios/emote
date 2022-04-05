@@ -13,9 +13,8 @@ reinforcement learning
    
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://embark.dev)
 [![Embark](https://img.shields.io/badge/discord-ark-%237289da.svg?logo=discord)](https://discord.gg/dAuKfZS)
-[![Documentation Status](https://readthedocs.org/projects/emote/badge/?version=latest)](http://emote.readthedocs.io/?badge=latest)
-[![PyPI version fury.io](https://badge.fury.io/py/emote.svg)](https://pypi.python.org/pypi/emote/)
-[![Build status](https://github.com/EmbarkStudios/emote/workflows/CI/badge.svg)](https://github.com/EmbarkStudios/emote/actions)
+[![Build status](https://badge.buildkite.com/968ac3c0bb075fb878f9f973ed91406c8b257b0f050c197542.svg?theme=github&branch=ts/docs-poetry)](https://buildkite.com/embark-studios/emote)
+[![Docs status](https://img.shields.io/badge/Docs-latest-brightgreen)](https://static.embark.net/emote-docs/)
 
 🚧 This project is very much **work in progress and not yet ready for production use.** 🚧
 
@@ -109,13 +108,17 @@ class PolicyLoss(LossCallback):
 
 ## Installation
 
-For installation and environment handling we use `conda`. Install it from [here](https://docs.anaconda.com/anaconda/install/). After `conda` is set up, set up and activate the emote environment by running
+:warning: You currently **need** to use a pre-release version of the Poetry 1.2 series. :warning:
+
+For installation and environment handling we use `poetry`. Install it from [here](https://python-poetry.org/). After `poetry` is set up, set up and activate the emote environment by running
+
+
 
 ```bash
-conda env create -f environment.yml
-conda activate emote
-pip install -r pip-requirements.txt
+poetry install
 ```
+
+
 
 
 ## Contribution
