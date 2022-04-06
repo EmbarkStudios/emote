@@ -5,7 +5,7 @@ import torch
 
 # Construct a gamma matrix for optimised discount calculations.
 # Using this in combination with the discount() function below
-# provides 100x speedup over a non gamma matrix variant.
+# provides up to 100x speedup over a non gamma matrix variant.
 #
 # Gamma Matrix Form  [roll_length+1, roll_length]:
 #    [0.99^0, 0.0,    0.0   ]

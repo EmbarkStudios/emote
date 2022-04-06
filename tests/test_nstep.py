@@ -17,7 +17,7 @@ def simple_discount(rewards, gamma, value, masks):
 def test_simple_discount_works():
     rewards = [0.1, 0.2, 0.3, 0.4]
     masks = [1, 1, 1, 1]
-    gamma = 0.99
+    gamma = 0.9
     value = 10
 
     # Create the true values
@@ -49,7 +49,7 @@ def test_simple_discount_works():
 def test_gamma_matrix():
     rewards = [0.1, 0.2, 0.3, 0.4]
     masks = [1, 1, 1, 1]
-    gamma = 0.99
+    gamma = 0.9
     value = 10
     gamma_matrix = make_gamma_matrix(gamma, len(rewards))
 
@@ -63,6 +63,33 @@ def test_gamma_matrix():
     assert d_gamma.cpu().numpy() == approx(d_simple, 1e-5)
 
     masks = [1, 1, 1, 0]
+    d_simple = simple_discount(rewards, gamma, value, masks)
+    d_gamma = discount(
+        torch.tensor(rewards).unsqueeze(0),
+        torch.tensor([value * masks[-1]]).unsqueeze(0),
+        gamma_matrix,
+    )
+
+    assert d_gamma.cpu().numpy() == approx(d_simple, 1e-5)
+
+
+def test_gamma_matrix_roll1():
+    rewards = [0.1]
+    masks = [1]
+    gamma = 0.9
+    value = 10
+    gamma_matrix = make_gamma_matrix(gamma, len(rewards))
+
+    d_simple = simple_discount(rewards, gamma, value, masks)
+    d_gamma = discount(
+        torch.tensor(rewards).unsqueeze(0),
+        torch.tensor([value * masks[-1]]).unsqueeze(0),
+        gamma_matrix,
+    )
+
+    assert d_gamma.cpu().numpy() == approx(d_simple, 1e-5)
+
+    masks = [0]
     d_simple = simple_discount(rewards, gamma, value, masks)
     d_gamma = discount(
         torch.tensor(rewards).unsqueeze(0),

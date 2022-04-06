@@ -10,7 +10,7 @@ from emote import Trainer
 from emote.callbacks import FinalLossTestCheck, TensorboardLogger
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_
-from emote.memory.builder import DictObsNStepTable, DictObsTable
+from emote.memory.builder import DictObsNStepTable
 from emote.sac import (
     QLoss,
     QTarget,
@@ -69,20 +69,12 @@ def test_lunar_lander():
     max_grad_norm = 1
 
     env = DictGymWrapper(AsyncVectorEnv([_make_env(i) for i in range(n_env)]))
-    if rollout_len > 1:
-        table = DictObsNStepTable(
-            spaces=env.dict_space,
-            use_terminal_column=False,
-            maxlen=4_000_000,
-            device=device,
-        )
-    else:
-        table = DictObsTable(
-            spaces=env.dict_space,
-            use_terminal_column=False,
-            maxlen=4_000_000,
-            device=device,
-        )
+    table = DictObsNStepTable(
+        spaces=env.dict_space,
+        use_terminal_column=False,
+        maxlen=4_000_000,
+        device=device,
+    )
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(
         table, batch_size // rollout_len, rollout_len, "batch_size"
@@ -147,7 +139,7 @@ def test_lunar_lander():
 
     callbacks = logged_cbs + [
         TensorboardLogger(logged_cbs, SummaryWriter("runs/" + experiment_name), 100),
-        FinalLossTestCheck([logged_cbs[2]], [10.0], 300_000_000),
+        FinalLossTestCheck([logged_cbs[2]], [10.0], 50_000_000),
     ]
 
     trainer = Trainer(callbacks, dataloader)

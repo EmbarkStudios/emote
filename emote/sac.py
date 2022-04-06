@@ -101,10 +101,9 @@ class QTarget(LoggingCallback):
         self.tau = target_q_tau
         self.gamma = torch.tensor(gamma)
         self.rollout_len = roll_length
-        if self.rollout_len > 1:
-            self.gamma_matrix = make_gamma_matrix(self.gamma, self.rollout_len).to(
-                ln_alpha.device
-            )
+        self.gamma_matrix = make_gamma_matrix(self.gamma, self.rollout_len).to(
+            ln_alpha.device
+        )
 
     def begin_batch(self, next_observation, rewards, masks):
         next_p_sample, next_logp_pi = self.policy(**next_observation)
@@ -117,13 +116,10 @@ class QTarget(LoggingCallback):
         next_value = min_next_qt - alpha * next_logp_pi
         scaled_reward = self.reward_scale * rewards
 
-        if self.rollout_len > 1:
-            last_step_masks = split_rollouts(masks, self.rollout_len)[:, -1]
-            scaled_reward = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
-            next_value_masked = torch.multiply(next_value, last_step_masks)
-            qt = discount(scaled_reward, next_value_masked, self.gamma_matrix).detach()
-        else:
-            qt = (scaled_reward + self.gamma * masks * next_value).detach()
+        last_step_masks = split_rollouts(masks, self.rollout_len)[:, -1]
+        scaled_reward = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
+        next_value_masked = torch.multiply(next_value, last_step_masks)
+        qt = discount(scaled_reward, next_value_masked, self.gamma_matrix).detach()
         assert qt.shape == (bsz, 1)
 
         self.log_scalar("training/next_logp_pi", torch.mean(next_logp_pi))
