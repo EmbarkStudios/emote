@@ -21,7 +21,7 @@ pip install poetry==1.2.0b1
 poetry install
 poetry env info --path
 
-echo --- Running black
+echo --- Running isort
 EXIT_CODE=0
 poetry run isort --check --diff emote > diff.txt || EXIT_CODE=$?
 cat diff.txt
