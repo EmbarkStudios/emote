@@ -34,5 +34,9 @@ echo --- Building docs
 pushd docs
 poetry env info --path
 make deploy
-gsutil rsync -r ./_build/dirhtml gs://embark-static/emote-docs
+
+if [[ "$BUILDKITE_BRANCH" = "main" ]]; then
+	gsutil rsync -r ./_build/dirhtml gs://embark-static/emote-docs
+fi
+
 popd

@@ -14,8 +14,8 @@ common: &common
 steps:
   - label: 📚 Publish docs
     command: bash .buildkite/publish-docs.sh
-    branches: "main"
     << : *common
+
   - label: ":python-black: Validate black"
     command: bash .buildkite/run-black.sh
     << : *common
