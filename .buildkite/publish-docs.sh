@@ -35,6 +35,10 @@ pushd docs
 poetry env info --path
 make deploy
 
+if [[ "$BUILDKITE_BRANCH" = "ts/ci-tools" ]]; then
+	buildkite-agent annotate "✅ Docs built correctly" --style "success" --context "sphinx"
+fi
+
 if [[ "$BUILDKITE_BRANCH" = "main" ]]; then
 	gsutil rsync -r ./_build/dirhtml gs://embark-static/emote-docs
 fi
