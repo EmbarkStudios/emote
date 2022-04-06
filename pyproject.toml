@@ -34,6 +34,11 @@ name = "torch.org"
 url = "https://download.pytorch.org/whl/cu111/"
 secondary = true
 default = false
+indexed = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -42,28 +47,16 @@ log_cli = true
 log_format = "%(asctime)s:\t%(message)s"
 log_date_format = "%H:%M:%S"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.isort]
-py_version = 37
+py_version = 38
 profile = "black"
-force_single_line = true
 combine_as_imports = true
 lines_between_types = 1
 lines_after_imports = 2
-src_paths = ["src", "tests"]
-extend_skip = ["setup.py"]
-
+src_paths = ["emote"]
 
 [tool.black]
 target-version = ['py38']
-check = true
-force-exclude = '''
-.*/setup\.py$
-'''
-
 
 [tool.mypy]
 check_untyped_defs = true

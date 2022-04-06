@@ -33,6 +33,7 @@ to build other algorithms.
    :hidden:
 
    self
+   coding-standard
 
 .. toctree::
    :maxdepth: 6
