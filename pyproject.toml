@@ -13,7 +13,7 @@ license = "MIT"
 repository = "https://github.com/EmbarkStudios/emote"
 
 [tool.poetry.dependencies]
-python = "=3.8.13"
+python = "^3.8"
 torch = "1.10.2+cu111"
 tensorboard = "^2.8.0"
 gym = {extras = ["atari", "classic_control", "box2d"], version = "^0.21.0"}
