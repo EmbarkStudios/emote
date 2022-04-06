@@ -6,11 +6,12 @@ import threading
 from collections import deque
 
 from emote.callback import Callback
+from emote.callbacks import LoggingCallback
 from emote.proxies import AgentProxy, MemoryProxy
 from tests.gym.dict_gym_wrapper import DictGymWrapper
 
 
-class GymCollector(Callback):
+class GymCollector(LoggingCallback):
     MAX_NUMBER_REWARDS = 1000
 
     def __init__(
@@ -35,9 +36,13 @@ class GymCollector(Callback):
         if self._render:
             self._env.render()
         actions = self._agent(self._obs)
-        next_obs = self._env.dict_step(actions)
+        next_obs, ep_info = self._env.dict_step(actions)
+
         self._memory.add(self._obs, actions)
         self._obs = next_obs
+
+        if "reward" in ep_info:
+            self.log_scalar("episode/reward", ep_info["reward"])
 
     def collect_multiple(self, count: int):
         """Collect multiple rollouts

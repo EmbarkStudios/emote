@@ -15,6 +15,7 @@ class DictGymWrapper(VectorEnvWrapper):
         self._agent_ids: List[AgentId] = [
             next(self._next_agent) for i in range(self.num_envs)
         ]
+        self._episode_rewards: List[float] = [0.0 for i in range(self.num_envs)]
         assert isinstance(env.single_observation_space, gym.spaces.Box)
         os: gym.spaces.Box = env.single_observation_space
         self.dict_space = MDPSpace(
@@ -36,6 +37,11 @@ class DictGymWrapper(VectorEnvWrapper):
         next_obs, rewards, dones, info = super().step_wait()
         new_agents = []
         results = {}
+        completed_episode_rewards = []
+
+        for env_id, reward in enumerate(rewards):
+            self._episode_rewards[env_id] += reward
+
         for env_id, done in enumerate(dones):
             if done:
                 results[self._agent_ids[env_id]] = DictObservation(
@@ -47,10 +53,12 @@ class DictGymWrapper(VectorEnvWrapper):
                 results[new_agent] = DictObservation(
                     episode_state=EpisodeState.INITIAL,
                     array_data={"obs": next_obs[env_id]},
-                    rewards={"reward": 0.0},
+                    rewards={"reward": None},
                 )
                 new_agents.append(new_agent)
+                completed_episode_rewards.append(self._episode_rewards[env_id])
                 self._agent_ids[env_id] = new_agent
+                self._episode_rewards[env_id] = 0.0
 
         results.update(
             {
@@ -63,7 +71,14 @@ class DictGymWrapper(VectorEnvWrapper):
                 if agent_id not in new_agents
             }
         )
-        return results
+
+        ep_info = {}
+        if len(completed_episode_rewards) > 0:
+            ep_info["reward"] = sum(completed_episode_rewards) / len(
+                completed_episode_rewards
+            )
+
+        return results, ep_info
 
     def dict_reset(self) -> Dict[AgentId, DictObservation]:
         self._agent_ids = [next(self._next_agent) for i in range(self.num_envs)]
@@ -73,7 +88,7 @@ class DictGymWrapper(VectorEnvWrapper):
             agent_id: DictObservation(
                 episode_state=EpisodeState.INITIAL,
                 array_data={"obs": obs[i]},
-                rewards={"reward": 0.0},
+                rewards={"reward": None},
             )
             for i, agent_id in enumerate(self._agent_ids)
         }

@@ -35,9 +35,8 @@ class SquashStretchTransform(transforms.Transform):
 
     def _inverse(self, y):
         eps = torch.finfo(y.dtype).eps
-        return self._stretch * self.atanh(
-            (y / self._stretch).clamp(min=-1.0 + eps, max=1.0 - eps)
-        )
+        input_val = (y / self._stretch).clamp(min=-1.0 + eps, max=1.0 - eps)
+        return self._stretch * self.atanh(input_val)
 
     def log_abs_det_jacobian(self, x, y):
         return 2.0 * (
@@ -73,9 +72,6 @@ class GaussianPolicyHead(nn.Module):
         super(GaussianPolicyHead, self).__init__()
         self.action_dim = action_dim
         self.hidden_dim = hidden_dim
-        self.normal = dists.MultivariateNormal(
-            torch.zeros(self.action_dim), torch.eye(self.action_dim)
-        )
         self.squash = SquashStretchTransform(tanh_stretch_factor)
         self.mean = nn.Linear(hidden_dim, action_dim)
         self.log_std = nn.Linear(hidden_dim, action_dim)
@@ -92,14 +88,20 @@ class GaussianPolicyHead(nn.Module):
         assert x_dim == self.hidden_dim
         mean = self.mean(x)
         log_std = self.log_std(x)
+        log_std = log_std.clamp(min=-20, max=2)
+
         std = torch.exp(log_std)
-        raw_sample = self.normal.sample(sample_shape=[bsz])
-        log_prob = self.normal.log_prob(raw_sample)
+        normal = dists.MultivariateNormal(
+            torch.zeros(self.action_dim, device=x.device),
+            torch.eye(self.action_dim, device=x.device),
+        )
+        raw_sample = normal.sample(sample_shape=[bsz])
+        log_prob = normal.log_prob(raw_sample)
         comp = dists.transforms.ComposeTransform(
             [dists.AffineTransform(mean, std), self.squash]
         )
         sample = comp(raw_sample)
-        squash_and_move = dists.TransformedDistribution(self.normal, comp)
+        squash_and_move = dists.TransformedDistribution(normal, comp)
         assert sample.shape == (bsz, self.action_dim)
         log_prob = squash_and_move.log_prob(sample).view(bsz, 1)
         assert log_prob.shape == (bsz, 1)

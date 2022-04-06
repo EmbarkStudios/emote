@@ -57,9 +57,9 @@ class Policy(nn.Module):
 
 
 def test_htm():
-
+    device = torch.device("cpu")
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-    table = DictObsTable(spaces=env.dict_space, maxlen=1000)
+    table = DictObsTable(spaces=env.dict_space, maxlen=1000, device=device)
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(table, 100, 2, "batch_size")
 
@@ -67,7 +67,7 @@ def test_htm():
     q2 = QNet(2, 1)
     policy = Policy(2, 1)
     ln_alpha = torch.tensor(1.0, requires_grad=True)
-    agent_proxy = FeatureAgentProxy(policy)
+    agent_proxy = FeatureAgentProxy(policy, device)
 
     logged_cbs = [
         QLoss(name="q1", q=q1, opt=Adam(q1.parameters(), lr=8e-3)),
@@ -78,7 +78,9 @@ def test_htm():
     ]
 
     callbacks = logged_cbs + [
-        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
+        SimpleGymCollector(
+            env, agent_proxy, memory_proxy, warmup_steps=500, render=False
+        ),
         TerminalLogger(logged_cbs, 400),
         FinalLossTestCheck([logged_cbs[2]], [10.0], 2000),
     ]
