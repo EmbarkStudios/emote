@@ -34,7 +34,6 @@ name = "torch.org"
 url = "https://download.pytorch.org/whl/cu111/"
 secondary = true
 default = false
-indexed = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
