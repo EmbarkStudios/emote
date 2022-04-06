@@ -25,14 +25,11 @@ poetry install
 poetry env info --path
 
 echo --- Running black
-poetry run black --diff emote > diff.txt
-EXIT_CODE=$?
-
-
-buildkite-agent annotate ":check: Code formatted correctly " --style "error" --context "eslintasd"
+EXIT_CODE=0
+poetry run black --diff emote > diff.txt || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
-	cat << EOF | buildkite-agent annotate --style "error" --context "eslint-$cmd"
+	cat << EOF | buildkite-agent annotate --style "error" --context "eslint"
 :error: Your code isn't formatted by `black`. Please fix the below diffs, or run `poetry run black` to automatically format it.
 
 \`\`\`diff
@@ -41,5 +38,5 @@ $(cat diff.txt)
 
 EOF
 else
-	buildkite-agent annotate ":check: Code formatted correctly " --style "success" --context "eslint-$cmd"
+	buildkite-agent annotate ":check: Code formatted correctly " --style "success" --context "eslint"
 fi
