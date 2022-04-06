@@ -37,3 +37,5 @@ EOF
 else
 	buildkite-agent annotate "✅ Code formatted correctly " --style "success" --context "eslint"
 fi
+
+exit $EXIT_CODE

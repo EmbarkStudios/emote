@@ -32,8 +32,9 @@ if [ $EXIT_CODE -ne 0 ]; then
 \`\`\`diff
 $(cat diff.txt)
 \`\`\`
-
 EOF
 else
-	buildkite-agent annotate "✅ Code sorted correctly " --style "success" --context "eslint"
+	buildkite-agent annotate "✅ Imports sorted correctly " --style "success" --context "eslint"
 fi
+
+exit $EXIT_CODE

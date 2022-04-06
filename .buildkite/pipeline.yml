@@ -16,10 +16,10 @@ steps:
     command: bash .buildkite/publish-docs.sh
     branches: "main"
     << : *common
-  - label: ":python-black: Check black"
+  - label: ":python-black: `black`"
     command: bash .buildkite/run-black.sh
     << : *common
 
-  - label: ":isort: Check black"
+  - label: ":isort: `isort`"
     command: bash .buildkite/run-isort.sh
     << : *common
