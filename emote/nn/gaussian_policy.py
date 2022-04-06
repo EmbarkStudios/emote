@@ -34,10 +34,9 @@ class SquashStretchTransform(transforms.Transform):
         return self._stretch * torch.tanh(x / self._stretch)
 
     def _inverse(self, y):
-        eps = 1e-3
-        return self._stretch * self.atanh(
-            (y / self._stretch).clamp(min=-1.0 + eps, max=1.0 - eps)
-        )
+        eps = torch.finfo(y.dtype).eps
+        input_val = (y / self._stretch).clamp(min=-1.0 + eps, max=1.0 - eps)
+        return self._stretch * self.atanh(input_val)
 
     def log_abs_det_jacobian(self, x, y):
         return 2.0 * (
@@ -89,6 +88,8 @@ class GaussianPolicyHead(nn.Module):
         assert x_dim == self.hidden_dim
         mean = self.mean(x)
         log_std = self.log_std(x)
+        log_std = log_std.clamp(min=-20, max=2)
+
         std = torch.exp(log_std)
         normal = dists.MultivariateNormal(
             torch.zeros(self.action_dim, device=x.device),
