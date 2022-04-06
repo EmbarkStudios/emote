@@ -16,3 +16,6 @@ steps:
     command: bash .buildkite/publish-docs.sh
     branches: "main"
     << : *common
+  - label: :python-black: Check black
+    command: bash .buildkite/run-black.sh
+    << : *common

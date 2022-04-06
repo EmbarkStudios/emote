@@ -21,7 +21,6 @@ pip install poetry==1.2.0b1
 poetry install
 poetry env info --path
 
-
 echo --- Initializing gcloud
 
 curl https://sdk.cloud.google.com > install.sh && \
