@@ -19,3 +19,7 @@ steps:
   - label: ":python-black: Check black"
     command: bash .buildkite/run-black.sh
     << : *common
+
+  - label: ":isort: Check black"
+    command: bash .buildkite/run-isort.sh
+    << : *common

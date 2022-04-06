@@ -23,11 +23,11 @@ poetry env info --path
 
 echo --- Running black
 EXIT_CODE=0
-poetry run black --check --diff emote > diff.txt || EXIT_CODE=$?
+poetry run isort --check --diff emote > diff.txt || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "eslint"
-:warning: Your code isn't formatted by `black`. Please fix the below diffs, or run `poetry run black emote` to automatically format it.
+:warning: Your imports aren't sorted  by `isort`. Please fix the below diffs, or run `poetry run isort emote` to automatically format it.
 
 \`\`\`diff
 $(cat diff.txt)
@@ -35,5 +35,5 @@ $(cat diff.txt)
 
 EOF
 else
-	buildkite-agent annotate "✅ Code formatted correctly " --style "success" --context "eslint"
+	buildkite-agent annotate "✅ Code sorted correctly " --style "success" --context "eslint"
 fi
