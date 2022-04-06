@@ -19,9 +19,6 @@ tensorboard = "^2.8.0"
 gym = {extras = ["atari", "classic_control", "box2d"], version = "^0.21.0"}
 setuptools = "=59.5"
 
-[tool.poetry.group.dev.dependencies]
-isort = "^5.10.1"
-
 [tool.poetry.dev-dependencies]
 pytest = "^6.0"
 Sphinx = "^4.4.0"
@@ -30,6 +27,7 @@ sphinx-autodoc-typehints = "1.17.0"
 sphinx-rtd-theme = "^1.0.0"
 black = "^22.1.0"
 gsutil = "=4.66"
+isort = "^5.10.1"
 
 [[tool.poetry.source]]
 name = "torch.org"
