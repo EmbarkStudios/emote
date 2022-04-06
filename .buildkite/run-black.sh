@@ -2,6 +2,9 @@ set -eo pipefail
 
 echo --- Installing dependencies
 
+echo $(which buildkite-agent)
+exit 0
+
 apt-get update \
     && apt-get install --no-install-recommends -y \
         curl \
@@ -24,6 +27,7 @@ poetry env info --path
 echo --- Running black
 poetry run black --diff emote > diff.txt
 EXIT_CODE=$?
+
 
 buildkite-agent annotate ":check: Code formatted correctly " --style "error" --context "eslintasd"
 
