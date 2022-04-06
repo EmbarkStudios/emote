@@ -25,6 +25,8 @@ echo --- Running black
 poetry run black --diff emote > diff.txt
 EXIT_CODE=$?
 
+buildkite-agent annotate ":check: Code formatted correctly " --style "error" --context "eslintasd"
+
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "eslint-$cmd"
 :error: Your code isn't formatted by `black`. Please fix the below diffs, or run `poetry run black` to automatically format it.
@@ -34,6 +36,6 @@ $(cat diff.txt)
 \`\`\`
 
 EOF
-else 
+else
 	buildkite-agent annotate ":check: Code formatted correctly " --style "success" --context "eslint-$cmd"
 fi
