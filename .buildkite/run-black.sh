@@ -2,9 +2,6 @@ set -eo pipefail
 
 echo --- Installing dependencies
 
-echo $(which buildkite-agent)
-exit 0
-
 apt-get update \
     && apt-get install --no-install-recommends -y \
         curl \
