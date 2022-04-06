@@ -1,7 +1,9 @@
-from typing import List, Dict
 from dataclasses import dataclass
 from enum import Enum
+from typing import Dict, List
+
 from numpy.typing import ArrayLike
+
 
 # The AgentId is an application-defined integer
 AgentId = int

@@ -13,7 +13,7 @@ class Column:
     """A typed column for data storage."""
 
     name: str
-    '''The name of the column'''
+    """The name of the column"""
 
     shape: Tuple[int]
     dtype: type

@@ -2,17 +2,17 @@
 
 
 from threading import Lock
-from typing import Sequence, List, Tuple, Protocol, Optional
+from typing import List, Optional, Protocol, Sequence, Tuple
 
-import torch
 import numpy as np
+import torch
 
-from .core_types import SampleResult
-from .strategy import SampleStrategy, EjectionStrategy
-from .column import Column, TagColumn, VirtualColumn
-from .storage import BaseStorage, TagStorage, VirtualStorage
 from ..utils.timed_call import BlockTimers
 from .adaptors import Adaptor
+from .column import Column, TagColumn, VirtualColumn
+from .core_types import SampleResult
+from .storage import BaseStorage, TagStorage, VirtualStorage
+from .strategy import EjectionStrategy, SampleStrategy
 
 
 class Table(Protocol):
@@ -223,7 +223,9 @@ class ArrayTable:
     def store(self, path: str) -> bool:
         """Persist the whole table and all metadata into the designated name"""
         import zipfile
+
         import cloudpickle
+
         from atomicwrites import atomic_write
 
         with self._lock:
@@ -252,6 +254,7 @@ class ArrayTable:
     def restore(self, path: str) -> bool:
         """Restore the data table from the provided path. This currently implies a "clear" of the data stores."""
         import zipfile
+
         import cloudpickle
 
         with self._lock:

@@ -2,12 +2,13 @@
 
 """
 
-from typing import Sequence
-from collections import deque
 import random
 
-from .strategy import SampleStrategy, EjectionStrategy, Strategy
+from collections import deque
+from typing import Sequence
+
 from .core_types import SamplePoint
+from .strategy import EjectionStrategy, SampleStrategy, Strategy
 
 
 class FifoStrategyBase(Strategy):

@@ -2,7 +2,7 @@
 
 """
 
-from typing import Union, Tuple, Sequence
+from typing import Sequence, Tuple, Union
 
 import numpy as np
 

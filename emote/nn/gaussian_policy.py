@@ -1,11 +1,13 @@
 import math
+
 from typing import Tuple
 
 import torch
-import torch.nn as nn
 import torch.distributions as dists
 import torch.distributions.transforms as transforms
+import torch.nn as nn
 import torch.nn.functional as F
+
 from torch import Tensor
 
 from emote.nn.initialization import ortho_init_
@@ -116,7 +118,7 @@ class GaussianMLPPolicy(BasePolicy):
                 nn.Sequential(nn.Linear(n_in, n_out), nn.ReLU())
                 for n_in, n_out in zip([observation_dim] + hidden_dims, hidden_dims)
             ],
-            GaussianPolicyHead(hidden_dims[-1], action_dim)
+            GaussianPolicyHead(hidden_dims[-1], action_dim),
         )
         self.seq.apply(ortho_init_)
 

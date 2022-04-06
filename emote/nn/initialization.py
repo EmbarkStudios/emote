@@ -1,5 +1,6 @@
-from torch import nn
 import numpy as np
+
+from torch import nn
 
 
 def ortho_init_(m):

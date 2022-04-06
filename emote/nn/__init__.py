@@ -1,5 +1,5 @@
-from .gaussian_policy import GaussianMLPPolicy, GaussianPolicyHead
 from .action_value_mlp import ActionValue
+from .gaussian_policy import GaussianMLPPolicy, GaussianPolicyHead
 from .initialization import ortho_init_
 
 

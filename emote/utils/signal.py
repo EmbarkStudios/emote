@@ -2,13 +2,13 @@
 
 """
 
-from typing import Callable
-
-import signal
-import time
 import logging
-import threading
 import platform
+import signal
+import threading
+import time
+
+from typing import Callable
 
 
 if platform.system() in ["Linux", "Darwin"]:

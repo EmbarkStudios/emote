@@ -1,9 +1,10 @@
 import inspect
 import logging
-from typing import Any, Dict
 import warnings
+
 from abc import ABCMeta
 from functools import wraps
+from typing import Any, Dict
 
 
 def _get_complex(obj, func, arg_names):
@@ -182,12 +183,12 @@ class Callback(metaclass=CallbackMeta):
         self.cycle = cycle
 
     def begin_training(self, *args, **kwargs):
-        '''Called when training starts, both from scratch and when restoring
-        from a checkpoint.'''
+        """Called when training starts, both from scratch and when restoring
+        from a checkpoint."""
         pass
 
     def begin_cycle(self, *args, **kwargs):
-        '''Called at the start of each cycle.'''
+        """Called at the start of each cycle."""
         pass
 
     def begin_batch(self, *args, **kwargs):

@@ -1,8 +1,9 @@
-from .threading import LockedResource, AtomicInt, AtomicContainer
-from .timed_call import TimedBlock, BlockTimers
-from .weak_reference import WeakReference
 from .signal import ExitSignal
 from .spaces import MDPSpace
+from .threading import AtomicContainer, AtomicInt, LockedResource
+from .timed_call import BlockTimers, TimedBlock
+from .weak_reference import WeakReference
+
 
 __all__ = [
     "WeakReference",

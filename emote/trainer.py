@@ -1,6 +1,6 @@
+from itertools import count
 from typing import Any, Callable, Iterable, List, MutableMapping
 from weakref import ref
-from itertools import count
 
 from .callback import Callback
 from .utils import WeakReference

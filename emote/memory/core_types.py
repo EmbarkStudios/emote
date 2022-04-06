@@ -2,7 +2,8 @@
 Supporting types used for working with the memory
 """
 
-from typing import TypeVar, Generic, Tuple, Dict
+from typing import Dict, Generic, Tuple, TypeVar
+
 
 # Number is *either* an int or a float, but *not* covariant.
 # For example: Sequence[Union[int, float]] accepts [int, float]

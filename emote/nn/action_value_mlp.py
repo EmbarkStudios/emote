@@ -1,6 +1,6 @@
 import torch
-from torch import nn
-from torch import Tensor
+
+from torch import Tensor, nn
 
 from emote.nn.initialization import ortho_init_
 
@@ -17,7 +17,7 @@ class ActionValue(nn.Module):
                     [observation_dim + action_dim] + hidden_dims, hidden_dims
                 )
             ],
-            nn.Linear(hidden_dims[-1], 1)
+            nn.Linear(hidden_dims[-1], 1),
         )
         self.seq.apply(ortho_init_)
 
