@@ -14,10 +14,10 @@ common: &common
 steps:
   - group: :vertical-traffic-light:Validating PR
     steps:
-      - label: :clock: Validating branch age
+      - label: ":clock: Validating branch age"
         command: bash .buildkite/validate-branch-age.sh
 
-      - label: :lock: Checking lockfile
+      - label: ":lock: Checking lockfile"
         command: bash .buildkite/validate-lockfile.sh
 
   - wait
