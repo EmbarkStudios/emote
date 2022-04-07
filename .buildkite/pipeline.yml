@@ -12,6 +12,15 @@ common: &common
     size: small
 
 steps:
+  - group: :vertical-traffic-light:Validating PR
+    steps:
+      - label: :clock: Validating branch age
+        command: bash .buildkite/validate-branch-age.sh
+
+      - label: :lock: Checking lockfile
+        command: bash .buildkite/validate-lockfile.sh
+
+  - wait
   - label: 📚 Publish docs
     command: bash .buildkite/publish-docs.sh
     << : *common
