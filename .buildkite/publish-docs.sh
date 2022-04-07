@@ -47,5 +47,5 @@ else
 	else
 		buildkite-agent annotate "✅ Documentation built succesfully" --style "success" --context "sphinx"
 	fi
-
+fi
 popd
