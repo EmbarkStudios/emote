@@ -12,7 +12,7 @@ common: &common
     size: small
 
 steps:
-  - group: :vertical_traffic_light: Validating PR
+  - group: ":vertical_traffic_light: Validating PR"
     steps:
       - label: ":hourglass: Validating branch age"
         command: bash .buildkite/validate-branch-age.sh
