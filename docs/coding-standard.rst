@@ -1,5 +1,5 @@
 📄 Coding standard
----------------
+==================
 
 In emote we strive to maintain a consistent style, both visually and
 implementation-wise. In order to achieve this we rely on tools to
@@ -11,13 +11,13 @@ with your editor. We'll provide some example configurations below; and
 we welcome contributions to these pages. However, we strive to avoid
 *committing* editor configurations to the repository, as that'll more
 easily lead to mismatch between different editors - the description
-below is authoriative, not any specific editor configuration.
+below is authoritative, not any specific editor configuration.
 
 Tools
-#####
+-----
 
 black
-=====
+^^^^^
 
 [Black](https://github.com/psf/black) is an auto-formatter for Python,
 which mostly matches the PEP8 rules. We use black because it doesn't
@@ -32,7 +32,7 @@ To run black manually, you can use the command: ::
 Which will format all code in emote.
 
 isort
-=====
+^^^^^
 
 [isort](https://github.com/PyCQA/isort) is another formatting tool,
 but deals only with sorting imports. Isort is configured to be
@@ -44,10 +44,10 @@ To run isort manually, you can use the command: ::
 
 
 Example configurations
-######################
+----------------------
 
 emacs
-=====
+^^^^^
 
 .. code-block:: lisp
 
