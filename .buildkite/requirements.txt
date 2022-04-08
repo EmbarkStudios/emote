@@ -1,2 +1,2 @@
--f https://download.pytorch.org/whl/
+--extra-index-url https://download.pytorch.org/whl/
 torch==1.10.2+cpu
