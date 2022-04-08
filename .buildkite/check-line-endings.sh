@@ -1,4 +1,5 @@
-crlf_count=$(find . -not -type d -exec file "{}" ";" | grep CRLF | wc -l)
+cr="$(printf "\r")"
+crlf_count=$(grep -Ilsr "${cr}$" . | wc -l)
 
 if [[ $crlf_count -gt 0 ]]; then
     buildkite-agent annotate --style "error" --context validate-changes "Repository contains CRLF line-endings. To avoid diff issues and cross-platform issues we require that all commits are done using a LF-style. 
