@@ -22,7 +22,7 @@ steps:
         command: bash .buildkite/validate-lockfile.sh
         << : *common
 
-      - label: :straight_ruler: Checking line-endings
+      - label: ":straight_ruler: Checking line-endings"
         command: bash .buildkite/check-line-endings.sh
         << : *common
 
