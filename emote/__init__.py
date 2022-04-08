@@ -16,12 +16,11 @@ by a Trainer.
 
 """
 
+from . import nn, sac, utils
 from .callback import Callback
-from .callbacks import LossCallback, LoggingCallback
+from .callbacks import LoggingCallback, LossCallback
 from .trainer import Trainer, WeakReference
-from . import sac
-from . import nn
-from . import utils
+
 
 __all__ = [
     "Callback",

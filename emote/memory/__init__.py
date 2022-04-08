@@ -2,9 +2,9 @@
 
 """
 
-from .table import Table
-from .memory import TableMemoryProxy, MemoryLoader
 from .callbacks import MemoryExporterCallback, MemoryImporterCallback
+from .memory import MemoryLoader, TableMemoryProxy
+from .table import Table
 
 
 __all__ = [

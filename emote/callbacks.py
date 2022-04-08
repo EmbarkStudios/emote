@@ -1,12 +1,14 @@
-from typing import Union, Any, Optional, List, Dict
 import logging
 
+from typing import Any, Dict, List, Optional, Union
+
 import torch
+
 from torch import Tensor, nn, optim
 from torch.utils.tensorboard import SummaryWriter
 
-from .trainer import TrainingShutdownException
 from .callback import Callback
+from .trainer import TrainingShutdownException
 
 
 class LoggingCallback(Callback):

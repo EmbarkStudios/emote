@@ -2,8 +2,8 @@
 
 """
 
-from typing import Sequence, Optional
 from abc import ABC, abstractmethod
+from typing import Optional, Sequence
 
 from .core_types import Matrix, SamplePoint
 

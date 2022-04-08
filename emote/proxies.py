@@ -2,7 +2,7 @@
 Proxies are bridges between the world the agent acts in and the algorithm training loop.
 """
 
-from typing import Protocol, Dict
+from typing import Dict, Protocol
 
 from emote.typing import AgentId, DictObservation, DictResponse
 

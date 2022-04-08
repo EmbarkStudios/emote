@@ -2,12 +2,14 @@
 
 """
 
-from typing import Sequence
 import random
+
+from typing import Sequence
+
 import numpy as np
 
-from .strategy import SampleStrategy, EjectionStrategy, Strategy
 from .core_types import SamplePoint
+from .strategy import EjectionStrategy, SampleStrategy, Strategy
 
 
 class UniformStrategyBase(Strategy):

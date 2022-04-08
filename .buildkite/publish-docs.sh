@@ -21,7 +21,6 @@ pip install poetry==1.2.0b1
 poetry install
 poetry env info --path
 
-
 echo --- Initializing gcloud
 
 curl https://sdk.cloud.google.com > install.sh && \
@@ -34,6 +33,19 @@ gcloud config set account monorepo-ci@embark-builds.iam.gserviceaccount.com
 echo --- Building docs
 pushd docs
 poetry env info --path
-make deploy
-gsutil rsync -r ./_build/dirhtml gs://embark-static/emote-docs
+EXIT_CODE=0
+make deploy || EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+	cat << EOF | buildkite-agent annotate --style "error" --context "sphinx"
+:warning: Failed building documentation. Please check logs below, or build docs locally using `make deploy` to check for errors.
+EOF
+else
+	if [[ "$BUILDKITE_BRANCH" = "main" ]]; then
+		gsutil rsync -r ./_build/dirhtml gs://embark-static/emote-docs
+		buildkite-agent annotate "✅ New documentation deployed at https://static.embark.net/emote-docs/" --style "success" --context "sphinx"
+	else
+		buildkite-agent annotate "✅ Documentation built succesfully" --style "success" --context "sphinx"
+	fi
+fi
 popd

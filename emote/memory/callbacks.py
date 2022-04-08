@@ -1,6 +1,6 @@
+import logging
 import os
 import time
-import logging
 
 from emote import Callback
 from emote.callbacks import LoggingCallback

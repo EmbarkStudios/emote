@@ -14,8 +14,10 @@ Thread-related utilties and tools.
 """
 
 import threading
+
 from time import perf_counter
 from typing import Any, Generic, TypeVar
+
 
 T = TypeVar("T")
 

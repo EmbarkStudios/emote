@@ -8,12 +8,12 @@ import numpy as np
 import torch
 
 from ..utils import MDPSpace
-from .table import ArrayTable
+from .adaptors import DictObsAdaptor, TerminalAdaptor
 from .column import Column, TagColumn, VirtualColumn
 from .fifo_strategy import FifoEjectionStrategy
-from .uniform_strategy import UniformSampleStrategy
 from .storage import NextElementMapper, SyntheticDones
-from .adaptors import DictObsAdaptor, TerminalAdaptor
+from .table import ArrayTable
+from .uniform_strategy import UniformSampleStrategy
 
 
 class DictTable(ArrayTable):

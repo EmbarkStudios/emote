@@ -7,14 +7,15 @@ them into episodes before submission into the memory.
 """
 
 import logging
+
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Tuple
 
-from emote.memory.core_types import Matrix
-from emote.memory import Table
-from emote.typing import DictResponse, DictObservation, AgentId, EpisodeState
-from emote.utils import TimedBlock
+from ..typing import AgentId, DictObservation, DictResponse, EpisodeState
+from ..utils import TimedBlock
+from .core_types import Matrix
+from .table import Table
 
 
 @dataclass

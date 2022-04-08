@@ -15,11 +15,13 @@ print(time.sleep())
 # (1.000013, 1.3e-5)
 """
 
-from abc import abstractmethod, ABC
-from typing import Type, Tuple, Dict
-from collections import deque, defaultdict
 import time
+
+from abc import ABC, abstractmethod
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
+from typing import Dict, Tuple, Type
+
 import numpy as np
 
 
