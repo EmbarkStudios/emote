@@ -1,3 +1,5 @@
+set -eo pipefail
+
 cr="$(printf "\r")"
 crlf_count=$(grep -Ilsr "${cr}$" . | wc -l)
 
