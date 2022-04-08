@@ -17,12 +17,17 @@ steps:
       - label: ":hourglass: Validating branch age"
         command: bash .buildkite/validate-branch-age.sh
         << : *common
-        
+
       - label: ":lock: Checking lockfile"
         command: bash .buildkite/validate-lockfile.sh
         << : *common
-        
+
+      - label: :straight_ruler: Checking line-endings
+        command: bash .buildkite/check-line-endings.sh
+        << : *common
+
   - wait
+
   - label: 📚 Publish docs
     command: bash .buildkite/publish-docs.sh
     << : *common
