@@ -13,13 +13,17 @@ we welcome contributions to these pages. However, we strive to avoid
 easily lead to mismatch between different editors - the description
 below is authoritative, not any specific editor configuration.
 
+We also require that all commits are made using LF-only line endings. Windows users will need to configure using the below command, or set up their editor appropriately. This helps keep emote platform-generic, and reduces risk for spurious diffs or tools misbehaving. ::
+
+  $ git config --global core.autocrlf true
+
 Tools
 -----
 
 black
 ^^^^^
 
-[Black](https://github.com/psf/black) is an auto-formatter for Python,
+`Black <https://github.com/psf/black>`_ is an auto-formatter for Python,
 which mostly matches the PEP8 rules. We use black because it doesn't
 support a lot of configuration, and will format for you - instead of
 just complaining. We do allow overrides to these styles, nor do we
@@ -34,7 +38,7 @@ Which will format all code in emote.
 isort
 ^^^^^
 
-[isort](https://github.com/PyCQA/isort) is another formatting tool,
+`isort <https://github.com/PyCQA/isort>`_ is another formatting tool,
 but deals only with sorting imports. Isort is configured to be
 consistent with Black from within `pyproject.toml`. 
 
