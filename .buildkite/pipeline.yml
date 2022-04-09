@@ -19,15 +19,15 @@ steps:
     steps:
       - label: ":hourglass: Validating branch age"
         command: bash .buildkite/validate-branch-age.sh
-        << : *common
-
-      - label: ":lock: Checking lockfile"
-        command: bash .buildkite/validate-lockfile.sh
-        << : *common
+        << : *small
 
       - label: ":straight_ruler: Checking line-endings"
         command: bash .buildkite/check-line-endings.sh
         << : *small
+
+      - label: ":lock: Checking lockfile"
+        command: bash .buildkite/validate-lockfile.sh
+        << : *common
 
   - wait
 
