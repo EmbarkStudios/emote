@@ -47,6 +47,7 @@ gsutil = "=4.66"
 isort = "^5.10.1"
 gym = {extras = ["atari", "classic_control"], version = "^0.22.0"}
 box2d = { version = "2.3.10", markers = "sys_platform != 'darwin'" }
+box2d-py = { version = "2.3.8", markers = "sys_platform == 'darwin'" }
 pygame = "2.1.0"
 
 [[tool.poetry.source]]
