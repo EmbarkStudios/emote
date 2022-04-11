@@ -15,6 +15,13 @@ Poetry site. Then install the package using ::
 
    poetry install
 
+MacOS instructions
+------------------
+
+On MacOS specifically you'll need a working C/C++ compiler as well as `swig <https://www.swig.org/>`_. The easiest way to install it is via homebrew: ::
+
+  brew install swig
+
 
 Ideas and Philosophy
 ====================
