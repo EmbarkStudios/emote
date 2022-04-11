@@ -29,7 +29,10 @@ setuptools = "=59.5"
 # See https://github.com/python-poetry/poetry/issues/2613 for more
 # details.
 [tool.poetry.group.gpu.dependencies]
-torch = { version = "1.10.2+cu111", source = "torch.org" }
+torch = [
+    { version = "1.10.2+cu111", source = "torch.org", markers = "sys_platform != 'darwin'" },
+    { version = "1.10.2", source = "pypi", markers = "sys_platform == 'darwin'" }
+]
 
 # Pure development dependencies when installed via Poetry, but not
 # when sourcing from PIP etc.
@@ -43,12 +46,18 @@ black = "^22.1.0"
 gsutil = "=4.66"
 isort = "^5.10.1"
 gym = {extras = ["atari", "classic_control"], version = "^0.22.0"}
-box2d = "2.3.10"
+box2d = { version = "2.3.10", markers = "sys_platform != 'darwin'" }
 pygame = "2.1.0"
 
 [[tool.poetry.source]]
 name = "torch.org"
 url = "https://download.pytorch.org/whl/cu111/"
+secondary = true
+default = false
+
+[[tool.poetry.source]]
+name = "torch.org-cpu"
+url = "https://download.pytorch.org/whl/"
 secondary = true
 default = false
 
