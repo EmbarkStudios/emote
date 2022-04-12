@@ -73,7 +73,7 @@ class Policy(nn.Module):
 
 
 def setup_lunar_lander():
-    device = torch.device("cuda")
+    device = torch.device("cpu")
 
     hidden_layer = 256
     batch_size = 2000
