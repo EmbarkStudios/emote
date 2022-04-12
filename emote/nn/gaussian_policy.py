@@ -73,6 +73,9 @@ class GaussianPolicyHead(nn.Module):
         super(GaussianPolicyHead, self).__init__()
         self.action_dim = action_dim
         self.hidden_dim = hidden_dim
+        self.normal = dists.MultivariateNormal(
+            torch.zeros(self.action_dim).cuda(), torch.eye(self.action_dim).cuda()
+        )
         self.squash = SquashStretchTransform(tanh_stretch_factor)
         self.mean = nn.Linear(hidden_dim, action_dim)
         self.log_std = nn.Linear(hidden_dim, action_dim)
