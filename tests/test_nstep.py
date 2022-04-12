@@ -1,8 +1,10 @@
 # This file has been taken from https://github.com/jackharmer/agency (MIT License)
 
 import torch
-from emote.utils.gamma_matrix import make_gamma_matrix, discount
+
 from pytest import approx
+
+from emote.utils.gamma_matrix import discount, make_gamma_matrix
 
 
 def simple_discount(rewards, gamma, value, masks):

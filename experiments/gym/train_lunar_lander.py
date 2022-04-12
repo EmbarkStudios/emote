@@ -1,6 +1,10 @@
+import argparse
 import time
 
+from functools import partial
+
 import gym
+import numpy as np
 import torch
 
 from gym.vector import AsyncVectorEnv
@@ -15,7 +19,7 @@ from emote.callbacks import FinalLossTestCheck, TensorboardLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
-from emote.nn.initialization import ortho_init_
+from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 
@@ -31,36 +35,45 @@ def _make_env(rank):
 
 
 class QNet(nn.Module):
-    def __init__(self, num_obs, num_actions, num_hidden):
+    def __init__(self, num_obs, num_actions, hidden_dims):
         super().__init__()
-        self.q = nn.Sequential(
-            nn.Linear(num_obs + num_actions, num_hidden),
-            nn.ReLU(),
-            nn.Linear(num_hidden, num_hidden),
-            nn.ReLU(),
-            nn.Linear(num_hidden, 1),
+        all_dims = [num_obs + num_actions] + hidden_dims
+
+        self.encoder = nn.Sequential(
+            *[
+                nn.Sequential(nn.Linear(n_in, n_out), nn.ReLU())
+                for n_in, n_out in zip(all_dims, hidden_dims)
+            ],
         )
-        self.q.apply(ortho_init_)
+        self.encoder.apply(ortho_init_)
+
+        self.final_layer = nn.Linear(hidden_dims[-1], 1)
+        self.final_layer.apply(partial(ortho_init_, gain=1))
 
     def forward(self, action, obs):
         x = torch.cat([obs, action], dim=1)
-        return self.q(x)
+        return self.final_layer(self.encoder(x))
 
 
 class Policy(nn.Module):
-    def __init__(self, num_obs, num_actions, num_hidden):
+    def __init__(self, num_obs, num_actions, hidden_dims):
         super().__init__()
-        self.pi = nn.Sequential(
-            nn.Linear(num_obs, num_hidden),
-            nn.ReLU(),
-            nn.Linear(num_hidden, num_hidden),
-            nn.ReLU(),
-            GaussianPolicyHead(num_hidden, num_actions),
+        self.encoder = nn.Sequential(
+            *[
+                nn.Sequential(nn.Linear(n_in, n_out), nn.ReLU())
+                for n_in, n_out in zip([num_obs] + hidden_dims, hidden_dims)
+            ],
         )
-        self.pi.apply(ortho_init_)
+        self.policy = GaussianPolicyHead(
+            hidden_dims[-1],
+            num_actions,
+        )
+
+        self.encoder.apply(ortho_init_)
+        self.policy.apply(partial(xavier_uniform_init_, gain=0.01))
 
     def forward(self, obs):
-        sample, log_prob = self.pi(obs)
+        sample, log_prob = self.policy(self.encoder(obs))
         # TODO: Investigate the log_prob() logic of the pytorch distribution code.
         # The change below shouldn't be needed but significantly improves training
         # stability when training lunar lander.
@@ -68,24 +81,26 @@ class Policy(nn.Module):
         return sample, log_prob
 
 
-def setup_lunar_lander():
-    device = torch.device("cpu")
+def train_lunar_lander(args):
+    device = torch.device("cuda")
 
-    hidden_layer = 256
+    hidden_dims = [256, 256]
     batch_size = 2000
-    rollout_len = 20
     n_env = 10
-    learning_rate = 5e-3
     max_grad_norm = 1
+
+    rollout_len = 20
+    init_alpha = 1.0
+    learning_rate = 8e-3
 
     env = DictGymWrapper(AsyncVectorEnv([_make_env(i) for i in range(n_env)]))
     table = DictObsNStepTable(
         spaces=env.dict_space,
-        use_terminal_column=True,
+        use_terminal_column=False,
         maxlen=4_000_000,
         device=device,
     )
-    memory_proxy = TableMemoryProxy(table, use_terminal=True)
+    memory_proxy = TableMemoryProxy(table, use_terminal=False)
     dataloader = MemoryLoader(
         table, batch_size // rollout_len, rollout_len, "batch_size"
     )
@@ -93,11 +108,11 @@ def setup_lunar_lander():
     num_actions = env.dict_space.actions.shape[0]
     num_obs = list(env.dict_space.state.spaces.values())[0].shape[0]
 
-    q1 = QNet(num_obs, num_actions, hidden_layer)
-    q2 = QNet(num_obs, num_actions, hidden_layer)
-    policy = Policy(num_obs, num_actions, hidden_layer)
+    q1 = QNet(num_obs, num_actions, hidden_dims)
+    q2 = QNet(num_obs, num_actions, hidden_dims)
+    policy = Policy(num_obs, num_actions, hidden_dims)
 
-    ln_alpha = torch.tensor(1.0, requires_grad=True, device=device)
+    ln_alpha = torch.tensor(np.log(init_alpha), requires_grad=True, device=device)
     agent_proxy = FeatureAgentProxy(policy, device=device)
 
     q1 = q1.to(device)
@@ -127,9 +142,10 @@ def setup_lunar_lander():
         AlphaLoss(
             pi=policy,
             ln_alpha=ln_alpha,
-            opt=Adam([ln_alpha]),
+            opt=Adam([ln_alpha], lr=learning_rate),
             n_actions=num_actions,
             max_grad_norm=max_grad_norm,
+            max_alpha=10.0,
         ),
         QTarget(
             pi=policy,
@@ -137,6 +153,7 @@ def setup_lunar_lander():
             q1=q1,
             q2=q2,
             roll_length=rollout_len,
+            reward_scale=0.1,
         ),
         ThreadedGymCollector(
             env,
@@ -146,18 +163,25 @@ def setup_lunar_lander():
             render=False,
         ),
     ]
-    return logged_cbs, dataloader
 
-
-def test_lunar_lander_quick():
-    """Quick test that the code runs"""
-
-    experiment_name = "lunar_lander_test_" + str(time.time())
-    logged_cbs, dataloader = setup_lunar_lander()
     callbacks = logged_cbs + [
-        TensorboardLogger(logged_cbs, SummaryWriter("runs/" + experiment_name), 100),
-        FinalLossTestCheck([logged_cbs[2]], [1000.0], 1000),
+        TensorboardLogger(
+            logged_cbs,
+            SummaryWriter(
+                log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())
+            ),
+            100,
+        ),
     ]
 
     trainer = Trainer(callbacks, dataloader)
     trainer.train()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--name", type=str, default="ll")
+    parser.add_argument("--log_dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
+    args = parser.parse_args()
+
+    train_lunar_lander(args)

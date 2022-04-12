@@ -1,5 +1,6 @@
 from typing import List, Dict
 from itertools import count
+from typing import List, Dict
 import numpy as np
 import gym.spaces
 

@@ -1,5 +1,4 @@
-import math
-
+from functools import partial
 from typing import Tuple
 
 import torch
@@ -10,40 +9,14 @@ import torch.nn.functional as F
 
 from torch import Tensor
 
-from emote.nn.initialization import ortho_init_
+from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 
 
-class SquashStretchTransform(transforms.Transform):
-    r"""
-    Transform via the mapping :math:`y = \alpha \tanh(x/\alpha)`.
-    """
-    domain = transforms.constraints.real
-    bijective = True
-    sign = +1
-
-    def __init__(self, tanh_stretch_factor):
-        super().__init__()
-        self.codomain = transforms.constraints.interval(
-            -tanh_stretch_factor, tanh_stretch_factor
-        )
-        self._stretch = tanh_stretch_factor
-
-    @staticmethod
-    def atanh(x):
-        return 0.5 * (x.log1p() - (-x).log1p())
-
-    def _call(self, x):
-        return self._stretch * torch.tanh(x / self._stretch)
-
+class RobustTanhTransform(transforms.TanhTransform):
     def _inverse(self, y):
         eps = torch.finfo(y.dtype).eps
-        input_val = (y / self._stretch).clamp(min=-1.0 + eps, max=1.0 - eps)
-        return self._stretch * self.atanh(input_val)
-
-    def log_abs_det_jacobian(self, x, y):
-        return 2.0 * (
-            math.log(2.0) - x / self._stretch - F.softplus(-2.0 * x / self._stretch)
-        )
+        input_val = y.clamp(min=-1.0 + eps, max=1.0 - eps)
+        return torch.atanh(input_val)
 
 
 class BasePolicy(nn.Module):
@@ -69,58 +42,52 @@ class GaussianPolicyHead(nn.Module):
         self,
         hidden_dim: int,
         action_dim: int,
-        tanh_stretch_factor: float = 1.0,
     ):
         super(GaussianPolicyHead, self).__init__()
         self.action_dim = action_dim
         self.hidden_dim = hidden_dim
-        self.squash = SquashStretchTransform(tanh_stretch_factor)
         self.mean = nn.Linear(hidden_dim, action_dim)
         self.log_std = nn.Linear(hidden_dim, action_dim)
 
     def forward(self, x: Tensor) -> Tuple[Tensor, float]:
         """
-        Sample pre-actions and associated negative log-probabilities.
+        Sample pre-actions and associated log-probabilities.
 
         :return:
             Direct samples (pre-actions) from the policy
-            Negative log-probabilities associated to those samples
+            log-probabilities associated to those samples
         """
-        bsz, x_dim = x.shape
-        assert x_dim == self.hidden_dim
-        mean = self.mean(x)
-        log_std = self.log_std(x)
-        log_std = log_std.clamp(min=-20, max=2)
+        bsz, _ = x.shape
 
-        std = torch.exp(log_std)
-        normal = dists.MultivariateNormal(
-            torch.zeros(self.action_dim, device=x.device),
-            torch.eye(self.action_dim, device=x.device),
+        mean = self.mean(x).clamp(min=-5, max=5)  # equates to 0.99991 after tanh.
+        std = torch.exp(self.log_std(x).clamp(min=-20, max=2))
+
+        dist = dists.TransformedDistribution(
+            dists.Independent(dists.Normal(mean, std), 1),
+            RobustTanhTransform(),
         )
-        raw_sample = normal.sample(sample_shape=[bsz])
-        log_prob = normal.log_prob(raw_sample)
-        comp = dists.transforms.ComposeTransform(
-            [dists.AffineTransform(mean, std), self.squash]
-        )
-        sample = comp(raw_sample)
-        squash_and_move = dists.TransformedDistribution(normal, comp)
+        sample = dist.rsample()
+        log_prob = dist.log_prob(sample).view(bsz, 1)
+
         assert sample.shape == (bsz, self.action_dim)
-        log_prob = squash_and_move.log_prob(sample).view(bsz, 1)
         assert log_prob.shape == (bsz, 1)
-        return sample, -log_prob
+
+        return sample, log_prob
 
 
-class GaussianMLPPolicy(BasePolicy):
+class GaussianMlpPolicy(nn.Module):
     def __init__(self, observation_dim, action_dim, hidden_dims):
         super().__init__()
-        self.seq = nn.Sequential(
+        self.encoder = nn.Sequential(
             *[
                 nn.Sequential(nn.Linear(n_in, n_out), nn.ReLU())
                 for n_in, n_out in zip([observation_dim] + hidden_dims, hidden_dims)
             ],
-            GaussianPolicyHead(hidden_dims[-1], action_dim),
         )
-        self.seq.apply(ortho_init_)
+        self.policy = GaussianPolicyHead(hidden_dims[-1], action_dim)
+
+        self.encoder.apply(ortho_init_)
+        self.policy.apply(partial(xavier_uniform_init_, gain=0.01))
 
     def forward(self, obs):
-        return self.seq(obs)
+        return self.policy(self.encoder(obs))

@@ -103,7 +103,7 @@ class QTarget(LoggingCallback):
         self.tau = target_q_tau
         self.gamma = torch.tensor(gamma)
         self.rollout_len = roll_length
-        self.gamma_matrix = make_gamma_matrix(self.gamma, self.rollout_len).to(
+        self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len).to(
             ln_alpha.device
         )
 
@@ -253,10 +253,14 @@ class AlphaLoss(LossCallback):
         self.ln_alpha = ln_alpha  # This is log(alpha)
 
     def loss(self, observation):
-        _p_sample, logp_pi = self.policy(**observation)
-        alpha_loss = -torch.mean(self.ln_alpha * (logp_pi + self.t_entropy).detach())
+        with torch.no_grad():
+            _, logp_pi = self.policy(**observation)
+            entropy = -logp_pi
+            error = entropy - self.t_entropy
+        alpha_loss = torch.mean(self.ln_alpha * error.detach())
         assert alpha_loss.dim() == 0
         self.log_scalar("loss/alpha_loss", alpha_loss)
+        self.log_scalar("training/entropy", torch.mean(entropy).item())
         return alpha_loss
 
     def end_batch(self):
@@ -265,6 +269,7 @@ class AlphaLoss(LossCallback):
         self.ln_alpha = torch.clamp_max_(self.ln_alpha, self._max_ln_alpha)
         self.ln_alpha.requires_grad_(True)
         self.log_scalar("training/alpha_value", torch.exp(self.ln_alpha).item())
+        self.log_scalar("training/target_entropy", self.t_entropy)
 
     def state_dict(self):
         state = super().state_dict()
