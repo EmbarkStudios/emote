@@ -3,7 +3,7 @@ from functools import partial
 import time
 from pathlib import Path
 
-import isaacgym
+import isaacgym  # noqa
 import numpy as np
 import torch
 import yaml
@@ -51,7 +51,9 @@ def parse_input_args():
     return args, task_config, train_config
 
 
-def fixup_configs(args, train_config, task_config):
+def setup_configs(args, train_config, task_config):
+    """Create the config for the emit env."""
+
     use_gpu = not args.cpu
     if use_gpu:
         full_device_str = f"cuda:{args.device_id}"
@@ -111,7 +113,6 @@ class Policy(nn.Module):
         self.policy = GaussianPolicyHead(hidden_dims[-1], num_actions)
 
         self.encoder.apply(ortho_init_)
-        # self.policy.apply(partial(ortho_init_, gain=1))
         self.policy.apply(partial(xavier_uniform, gain=0.01))
 
     def forward(self, obs):
@@ -122,7 +123,7 @@ if __name__ == "__main__":
     msg = """
     Embark Modular Isaac Training.
 
-    - Training using emote and Soft Actor Critic
+    - Trains an emit environment using SAC with an MLP network.
     """
     print("-" * 20)
     print(msg)
@@ -130,7 +131,7 @@ if __name__ == "__main__":
     device = torch.device("cuda")
 
     args, task_config, train_config = parse_input_args()
-    task_config = fixup_configs(args, train_config, task_config)
+    task_config = setup_configs(args, train_config, task_config)
 
     num_features = (
         task_config["env"]["num_observations"]
@@ -184,32 +185,30 @@ if __name__ == "__main__":
 
     env = EmitWrapper(env, device, has_images=False)
 
-    eps = 1e-8
-
     logged_cbs = [
         QLoss(
             name="q1",
             q=q1,
-            opt=Adam(q1.parameters(), lr=learning_rate, eps=eps),
+            opt=Adam(q1.parameters(), lr=learning_rate),
             max_grad_norm=max_grad_norm,
         ),
         QLoss(
             name="q2",
             q=q2,
-            opt=Adam(q2.parameters(), lr=learning_rate, eps=eps),
+            opt=Adam(q2.parameters(), lr=learning_rate),
             max_grad_norm=max_grad_norm,
         ),
         PolicyLoss(
             pi=policy,
             ln_alpha=ln_alpha,
             q=q1,
-            opt=Adam(policy.parameters(), lr=learning_rate, eps=eps),
+            opt=Adam(policy.parameters(), lr=learning_rate),
             max_grad_norm=max_grad_norm,
         ),
         AlphaLoss(
             pi=policy,
             ln_alpha=ln_alpha,
-            opt=Adam([ln_alpha], lr=learning_rate, eps=eps),
+            opt=Adam([ln_alpha], lr=learning_rate),
             n_actions=num_actions,
             max_grad_norm=max_grad_norm,
             max_alpha=0.1,
@@ -227,7 +226,7 @@ if __name__ == "__main__":
             agent_proxy,
             memory_proxy,
             warmup_steps=batch_size * 2,
-            inf_steps_per_bp=batch_size // num_envs,  # Aim for 1:1 data reuse
+            inf_steps_per_bp=batch_size // num_envs,  # Aim for ~ 1:1 data reuse
         ),
     ]
 

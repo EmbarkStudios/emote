@@ -53,6 +53,7 @@ def test_networks_checkpoint():
     t1 = Trainer(c1, onestep_dataloader())
     t1.state["inf_step"] = 0
     t1.state["bp_step"] = 0
+    t1.state["batch_size"] = 0
     t1.train()
     n2 = nn.Linear(1, 1)
     test_data = torch.rand(5, 1)
@@ -73,7 +74,8 @@ def random_onestep_dataloader() -> Generator:
             "observation": {"obs": torch.rand(3, 2)},
             "actions": torch.rand(3, 1),
             "q_target": torch.ones(3, 1),
-        }
+        },
+        "batch_size": 3,
     }
     raise TrainingShutdownException()
 

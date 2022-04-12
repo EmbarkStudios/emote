@@ -22,8 +22,19 @@ from emote.sac import (
     FeatureAgentProxy,
 )
 from emote.memory import TableMemoryProxy, MemoryLoader
-from tests.gym.collector import SimpleGymCollector, ThreadedGymCollector
+from tests.gym.collector import ThreadedGymCollector
 from tests.gym import DictGymWrapper
+
+
+def _make_env(rank):
+    def _thunk():
+        env = gym.make("LunarLander-v2", continuous=True)
+        env = gym.wrappers.FrameStack(env, 3)
+        env = gym.wrappers.FlattenObservation(env)
+        env.seed(rank)
+        return env
+
+    return _thunk
 
 
 class QNet(nn.Module):
@@ -169,17 +180,6 @@ def train_lunar_lander(args):
 
     trainer = Trainer(callbacks, dataloader)
     trainer.train()
-
-
-def _make_env(rank):
-    def _thunk():
-        env = gym.make("LunarLander-v2", continuous=True)
-        env = gym.wrappers.FrameStack(env, 3)
-        env = gym.wrappers.FlattenObservation(env)
-        env.seed(rank)
-        return env
-
-    return _thunk
 
 
 if __name__ == "__main__":

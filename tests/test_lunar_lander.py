@@ -23,6 +23,17 @@ from tests.gym.collector import ThreadedGymCollector
 from tests.gym import DictGymWrapper
 
 
+def _make_env(rank):
+    def _thunk():
+        env = gym.make("LunarLander-v2", continuous=True)
+        env = gym.wrappers.FrameStack(env, 3)
+        env = gym.wrappers.FlattenObservation(env)
+        env.seed(rank)
+        return env
+
+    return _thunk
+
+
 class QNet(nn.Module):
     def __init__(self, num_obs, num_actions, num_hidden):
         super().__init__()
@@ -53,13 +64,16 @@ class Policy(nn.Module):
         self.pi.apply(ortho_init_)
 
     def forward(self, obs):
-        return self.pi(obs)
+        sample, log_prob = self.pi(obs)
+        # TODO: Investigate the log_prob() logic of the pytorch distribution code.
+        # The change below shouldn't be needed but significantly improves training
+        # stability when training lunar lander.
+        log_prob = log_prob.clamp(min=-2)
+        return sample, log_prob
 
 
-def test_lunar_lander():
+def setup_lunar_lander():
     device = torch.device("cuda")
-
-    experiment_name = "lunar_lander_test_" + str(time.time())
 
     hidden_layer = 256
     batch_size = 2000
@@ -132,30 +146,22 @@ def test_lunar_lander():
             env,
             agent_proxy,
             memory_proxy,
-            warmup_steps=batch_size * rollout_len,
+            warmup_steps=batch_size,
             render=False,
         ),
     ]
+    return logged_cbs, dataloader
 
+
+def test_lunar_lander_quick():
+    """Quick test that the code runs"""
+
+    experiment_name = "lunar_lander_test_" + str(time.time())
+    logged_cbs, dataloader = setup_lunar_lander()
     callbacks = logged_cbs + [
         TensorboardLogger(logged_cbs, SummaryWriter("runs/" + experiment_name), 100),
-        FinalLossTestCheck([logged_cbs[2]], [10.0], 50_000_000),
+        FinalLossTestCheck([logged_cbs[2]], [1000.0], 1000),
     ]
 
     trainer = Trainer(callbacks, dataloader)
     trainer.train()
-
-
-def _make_env(rank):
-    def _thunk():
-        env = gym.make("LunarLander-v2", continuous=True)
-        env = gym.wrappers.FrameStack(env, 3)
-        env = gym.wrappers.FlattenObservation(env)
-        env.seed(rank)
-        return env
-
-    return _thunk
-
-
-if __name__ == "__main__":
-    test_lunar_lander()
