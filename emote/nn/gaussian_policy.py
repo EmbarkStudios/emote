@@ -76,15 +76,15 @@ class GaussianPolicyHead(nn.Module):
 
 
 class GaussianMlpPolicy(nn.Module):
-    def __init__(self, num_obs, num_actions, hidden_dims):
+    def __init__(self, observation_dim, action_dim, hidden_dims):
         super().__init__()
         self.encoder = nn.Sequential(
             *[
                 nn.Sequential(nn.Linear(n_in, n_out), nn.ReLU())
-                for n_in, n_out in zip([num_obs] + hidden_dims, hidden_dims)
+                for n_in, n_out in zip([observation_dim] + hidden_dims, hidden_dims)
             ],
         )
-        self.policy = GaussianPolicyHead(hidden_dims[-1], num_actions)
+        self.policy = GaussianPolicyHead(hidden_dims[-1], action_dim)
 
         self.encoder.apply(ortho_init_)
         self.policy.apply(partial(xavier_uniform, gain=0.01))

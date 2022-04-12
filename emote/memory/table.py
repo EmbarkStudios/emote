@@ -194,16 +194,9 @@ class ArrayTable:
 
                     for name, value in sequence.items():
                         try:
-                            # TODO add datatype type to memory? np/torch
-                            dtype = self._columns[name].dtype
-                            if dtype in [torch.float32]:
-                                self._data[name][identity] = torch.stack(value).view(
-                                    -1, *self._columns[name].shape
-                                )
-                            else:
-                                self._data[name][identity] = np.array(
-                                    value, dtype=dtype
-                                ).reshape(-1, *self._columns[name].shape)
+                            self._data[name][identity] = np.array(
+                                value, dtype=self._columns[name].dtype
+                            ).reshape(-1, *self._columns[name].shape)
                         except:
                             print("foo")
 
