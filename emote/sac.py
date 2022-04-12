@@ -251,12 +251,14 @@ class AlphaLoss(LossCallback):
         self.ln_alpha = ln_alpha  # This is log(alpha)
 
     def loss(self, observation):
-        _p_sample, logp_pi = self.policy(**observation)
-        # alpha_loss = -torch.mean(self.ln_alpha * (logp_pi + self.t_entropy).detach())
-        alpha_loss = torch.mean(self.ln_alpha * (-logp_pi - self.t_entropy).detach())
-        # alpha_loss = torch.mean(self.ln_alpha * (logp_pi - self.t_entropy).detach())
+        with torch.no_grad():
+            _, logp_pi = self.policy(**observation)
+            entropy = -logp_pi
+            error = entropy - self.t_entropy
+        alpha_loss = torch.mean(self.ln_alpha * error.detach())
         assert alpha_loss.dim() == 0
         self.log_scalar("loss/alpha_loss", alpha_loss)
+        self.log_scalar("training/entropy", torch.mean(entropy).item())
         return alpha_loss
 
     def end_batch(self):

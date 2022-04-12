@@ -33,7 +33,7 @@ def parse_input_args():
     parser.add_argument("--emit_dir", type=str, required=True)
     parser.add_argument("--env_config", type=str, default="WasabiEnv")
     parser.add_argument("--rl_config", type=str, default="WasabiEmoteMlp")
-    parser.add_argument("--log_dir", type=str, default="/mnt/mllogs/emote")
+    parser.add_argument("--log_dir", type=str, default="/mnt/mllogs/emote/emit")
     parser.add_argument("--device_id", type=int, default=0)
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--infer", action="store_true")
@@ -111,12 +111,8 @@ class Policy(nn.Module):
         self.policy = GaussianPolicyHead(hidden_dims[-1], num_actions)
 
         self.encoder.apply(ortho_init_)
-
-        # self.policy.apply(ortho_init_)
-        # self.policy.mean.apply(partial(xavier_uniform, gain=0.01))
-        # self.policy.log_std.apply(partial(xavier_uniform, gain=0.01))
-        self.policy.mean.apply(partial(ortho_init_, gain=1))
-        self.policy.log_std.apply(partial(ortho_init_, gain=1))
+        # self.policy.apply(partial(ortho_init_, gain=1))
+        self.policy.apply(partial(xavier_uniform, gain=0.01))
 
     def forward(self, obs):
         return self.policy(self.encoder(obs))
