@@ -1,14 +1,13 @@
+from typing import Union, Any, Optional, List, Dict
 import logging
-
-from typing import Any, Dict, List, Optional, Union
+import time
 
 import torch
-
 from torch import Tensor, nn, optim
 from torch.utils.tensorboard import SummaryWriter
 
-from .callback import Callback
 from .trainer import TrainingShutdownException
+from .callback import Callback
 
 
 class LoggingCallback(Callback):
@@ -116,6 +115,9 @@ class TensorboardLogger(Callback):
         self._writer = writer
         self._log_samples = log_by_samples
 
+    def begin_training(self, *args, **kwargs):
+        self._start_time = time.monotonic()
+
     def log_scalars(self, step, suffix=None):
         """Logs scalar logs adding optional suffix on the first level.
 
@@ -130,8 +132,15 @@ class TensorboardLogger(Callback):
                     k = "/".join(k_split)
                 self._writer.add_scalar(k, v, step)
 
-    def end_cycle(self, bp_step):
+    def end_cycle(self, bp_step, bp_samples):
         self.log_scalars(bp_step, suffix="bp_step")
+        time_since_start = time.monotonic() - self._start_time
+        self._writer.add_scalar(
+            "performance/bp_samples_per_sec", bp_samples / time_since_start
+        )
+        self._writer.add_scalar(
+            "performance/bp_steps_per_sec", bp_step / time_since_start
+        )
 
 
 class TerminalLogger(Callback):

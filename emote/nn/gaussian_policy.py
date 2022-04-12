@@ -79,34 +79,28 @@ class GaussianPolicyHead(nn.Module):
 
     def forward(self, x: Tensor) -> Tuple[Tensor, float]:
         """
-        Sample pre-actions and associated negative log-probabilities.
+        Sample pre-actions and associated log-probabilities.
 
         :return:
             Direct samples (pre-actions) from the policy
-            Negative log-probabilities associated to those samples
+            log-probabilities associated to those samples
         """
-        bsz, x_dim = x.shape
-        assert x_dim == self.hidden_dim
-        mean = self.mean(x)
-        log_std = self.log_std(x)
-        log_std = log_std.clamp(min=-20, max=2)
+        bsz, _ = x.shape
 
-        std = torch.exp(log_std)
-        normal = dists.MultivariateNormal(
-            torch.zeros(self.action_dim, device=x.device),
-            torch.eye(self.action_dim, device=x.device),
+        mean = self.mean(x)
+        std = torch.exp(self.log_std(x).clamp(min=-20, max=2))
+
+        dist = dists.TransformedDistribution(
+            dists.Independent(dists.Normal(mean, std), 1),
+            self.squash,
         )
-        raw_sample = normal.sample(sample_shape=[bsz])
-        log_prob = normal.log_prob(raw_sample)
-        comp = dists.transforms.ComposeTransform(
-            [dists.AffineTransform(mean, std), self.squash]
-        )
-        sample = comp(raw_sample)
-        squash_and_move = dists.TransformedDistribution(normal, comp)
+        sample = dist.rsample()
+        log_prob = dist.log_prob(sample).view(bsz, 1)
+
         assert sample.shape == (bsz, self.action_dim)
-        log_prob = squash_and_move.log_prob(sample).view(bsz, 1)
         assert log_prob.shape == (bsz, 1)
-        return sample, -log_prob
+
+        return sample, log_prob
 
 
 class GaussianMLPPolicy(BasePolicy):

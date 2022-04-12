@@ -1,25 +1,18 @@
 """
 Collector types for running environments
 """
-from collections import deque, defaultdict
-import collections
 from itertools import count
-import threading
 from typing import Dict, List
-import time
 import torch
-import numpy as np
-import gym.spaces as gspaces
 from torch import nn
+import numpy as np
 
-from emote.callback import Callback
 from emote.callbacks import LoggingCallback
 from emote.typing import (
     DictResponse,
     EpisodeState,
     DictObservation,
     AgentId,
-    MetaData,
 )
 from emote.proxies import AgentProxy, MemoryProxy
 
@@ -41,19 +34,17 @@ class EmitWrapper:
             next(self._next_agent) for i in range(self.num_envs)
         ]
 
-        self._last_environment_rewards = deque(maxlen=1000)
         self._step_counter = np.zeros((self.num_envs,))
         self._has_images = has_images
-        self._episode_rewards: List[float] = [0.0 for i in range(self.num_envs)]
         self._device = device
 
     def reset(self, **kwargs):
         return self.venv.reset(**kwargs)
 
     def _copy_to_numpy(self, data):
-        return data.detach().clone().cpu().numpy()
+        return data.clone().detach().cpu().numpy()
 
-    def _copy_obs_to_numpy(self, data):
+    def _copy_dict_to_numpy(self, data):
         return {key: self._copy_to_numpy(val) for (key, val) in data.items()}
 
     def _obs_to_array_data(self, converted_obs, env_id):
@@ -73,22 +64,17 @@ class EmitWrapper:
             dtype=torch.float32,
             device=self._device,
         )
-        next_obs, rewards, dones, info = self.venv.step(batched_actions)
-
-        info["timeouts"] = info["time_outs"].cpu().numpy()
-        info["num_steps"] = info["num_steps"].cpu().numpy()
+        # batched_actions = torch.stack(
+        #     [actions[agent].list_data["actions"] for agent in self._agent_ids]
+        # )
+        next_obs, rewards, dones, infos = self.venv.step(batched_actions)
 
         new_agents = []
         results = {}
-        completed_episode_rewards = []
 
-        # actions = {key: self._copy_to_numpy(val) for (key, val) in actions.items()}
         rewards = self._copy_to_numpy(rewards)
         dones = self._copy_to_numpy(dones)
-        converted_next_obs = self._copy_obs_to_numpy(next_obs)
-
-        for env_id in range(self.num_envs):
-            self._episode_rewards[env_id] += rewards[env_id]
+        converted_next_obs = self._copy_dict_to_numpy(next_obs)
 
         self._step_counter += 1
 
@@ -117,9 +103,7 @@ class EmitWrapper:
                     rewards={"reward": None},
                 )
                 new_agents.append(new_agent)
-                completed_episode_rewards.append(self._episode_rewards[env_id])
                 self._agent_ids[env_id] = new_agent
-                self._episode_rewards[env_id] = 0.0
                 self._step_counter[env_id] = 0
 
         for env_id, agent_id in enumerate(self._agent_ids):
@@ -137,10 +121,9 @@ class EmitWrapper:
                 )
 
         ep_info = {}
-        if len(completed_episode_rewards) > 0:
-            ep_info["reward"] = sum(completed_episode_rewards) / len(
-                completed_episode_rewards
-            )
+        if "episode" in infos:
+            for k, v in infos["episode"].items():
+                ep_info[k] = self._copy_to_numpy(v)
 
         return results, ep_info
 
@@ -149,7 +132,7 @@ class EmitWrapper:
         self._step_counter = np.zeros((self.num_envs,))
 
         obs = self.venv.reset()
-        converted_obs = self._copy_obs_to_numpy(obs)
+        converted_obs = self._copy_dict_to_numpy(obs)
 
         results = {}
         for env_id, agent_id in enumerate(self._agent_ids):
@@ -164,14 +147,37 @@ class EmitWrapper:
             )
         return results
 
-    def close(self):
-        pass
 
-    def render(self):
-        pass
+class EmitAgentProxy:
+    """This AgentProxy assumes that the observations will contain flat array of observations names 'obs'"""
 
-    def step_wait(self):
-        pass
+    def __init__(self, policy: nn.Module, device: torch.device):
+        self.policy = policy
+        self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
+        self.device = device
+
+    def __call__(
+        self, observations: Dict[AgentId, DictObservation]
+    ) -> Dict[AgentId, DictResponse]:
+        """Runs the policy and returns the actions."""
+        # The network takes observations of size batch x obs for each observation space.
+        assert len(observations) > 0, "Observations must not be empty."
+        active_agents = [
+            agent_id
+            for agent_id, obs in observations.items()
+            if obs.episode_state not in self._end_states
+        ]
+        tensor_obs = torch.tensor(
+            np.array(
+                [observations[agent_id].array_data["obs"] for agent_id in active_agents]
+            )
+        ).to(self.device)
+        actions = self.policy(tensor_obs)[0].clone().detach().cpu().numpy()
+        # actions = self.policy(tensor_obs)[0]
+        return {
+            agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
+            for i, agent_id in enumerate(active_agents)
+        }
 
 
 class EmitCollector(LoggingCallback):
@@ -180,18 +186,15 @@ class EmitCollector(LoggingCallback):
         env: EmitWrapper,
         agent: AgentProxy,
         memory: MemoryProxy,
+        warmup_steps: int,
+        inf_steps_per_bp: int,
     ):
         super().__init__()
         self._agent = agent
         self._env = env
         self._memory = memory
-        self._stop = False
-        self._thread = None
-
-    def collect_forever(self):
-        self._obs = self._env.dict_reset()
-        while not self._stop:
-            self.collect_data()
+        self._warmup_steps = warmup_steps
+        self._inf_steps_per_bp = inf_steps_per_bp
 
     def collect_data(self):
         actions = self._agent(self._obs)
@@ -200,16 +203,14 @@ class EmitCollector(LoggingCallback):
         self._memory.add(self._obs, actions)
         self._obs = next_obs
 
-        if "reward" in ep_info:
-            self.log_scalar("episode/reward", ep_info["reward"])
+        for k, v in ep_info.items():
+            self.log_scalar("episode/" + k, v)
 
     def begin_training(self):
-        self._thread = threading.Thread(target=self.collect_forever)
-        self._thread.start()
+        self._obs = self._env.dict_reset()
+        while self._memory.size() < self._warmup_steps:
+            self.collect_data()
 
-    def end_training(self):
-        self._stop = True
-
-        if self._thread is not None:
-            self._thread.join()
-            self._thread = None
+    def begin_batch(self):
+        for _ in range(self._inf_steps_per_bp):
+            self.collect_data()

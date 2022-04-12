@@ -67,6 +67,9 @@ class TableMemoryProxy:
         self._term_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self._use_terminal = use_terminal
 
+    def size(self):
+        return self._table.size()
+
     def is_initial(self, identity: int):
         """Returns true if identity is not already used in a partial sequence. Does not
         validate if the identity is associated with a complete episode."""
@@ -151,7 +154,6 @@ class MemoryLoader:
 
     def is_ready(self):
         """True if the data loader has enough data to start providing data"""
-        print(self.table.size())
         return self.table.size() >= (self.rollout_count * self.rollout_length)
 
     def __iter__(self):

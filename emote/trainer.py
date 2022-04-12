@@ -36,11 +36,13 @@ class Trainer:
         self,
         callbacks: List[Callback],
         dataloader: Iterable,
+        batch_size_key: str = "batch_size",
     ):
         self.callbacks = sorted(callbacks, key=lambda cb: cb._order)
         self._cyclic_callbacks = [cb for cb in self.callbacks if cb.cycle > 0]
         self.dataloader = dataloader
         self.state = StateDict()
+        self._batch_size_key = batch_size_key
 
     def train(self, shutdown_signal: Callable = None):
         """The main training loop.
@@ -53,12 +55,14 @@ class Trainer:
         shutdown_signal = shutdown_signal or (lambda: False)
 
         self._begin_training()
+        self.state["bp_samples"] = 0
 
         try:
 
             for bp_step, batch in zip(count(1), self.dataloader):
-                self.state["bp_step"] = bp_step
                 self.state.update(batch)
+                self.state["bp_step"] = bp_step
+                self.state["bp_samples"] += self.state[self._batch_size_key]
 
                 if shutdown_signal():
                     raise TrainingShutdownException

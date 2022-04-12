@@ -108,19 +108,23 @@ class TerminalAdaptor:
         # reshapes the input data to [batch_size, time_dimension, ...]  so we
         # can correctly overlay the terminal tags - otherwise we get a dimension
         # mismatch.
-        result_shape = result[self.target_key].shape
-        new_result_shape = (-1, sequence_length, *result_shape[1:])
-        result_reshaped = torch.reshape(result[self.target_key], new_result_shape)
+        target = result[self.target_key]
+        value = result[self.value_key]
+
+        result_shape = target.shape
+
+        new_value_shape = (-1, sequence_length, *result_shape[1:])
+        value_reshaped = torch.reshape(value, new_value_shape)
 
         # compute a selection mask which is true for every non-end-of-episode step
-        indice_mask = result_reshaped == 1.0
+        indice_mask = target == 1.0
         # where it is true, simply use the existing value in
         # result[target_key], otherwise use the terminal-state tag value
         # from result[value_key]
         result_reshaped = torch.where(
             indice_mask,
-            result_reshaped,
-            torch.unsqueeze(torch.unsqueeze(result[self.value_key], -1), -1),
+            target,
+            value_reshaped[:, -1],
         )
 
         # reshape back

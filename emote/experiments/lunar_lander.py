@@ -19,7 +19,7 @@ from emote.sac import (
     FeatureAgentProxy,
 )
 from emote.memory import TableMemoryProxy, MemoryLoader
-from tests.gym.collector import ThreadedGymCollector
+from tests.gym.collector import SimpleGymCollector, ThreadedGymCollector
 from tests.gym import DictGymWrapper
 
 
@@ -128,11 +128,12 @@ def test_lunar_lander():
             q2=q2,
             roll_length=rollout_len,
         ),
-        ThreadedGymCollector(
+        # ThreadedGymCollector(
+        SimpleGymCollector(
             env,
             agent_proxy,
             memory_proxy,
-            warmup_steps=batch_size * rollout_len,
+            warmup_steps=batch_size,
             render=False,
         ),
     ]

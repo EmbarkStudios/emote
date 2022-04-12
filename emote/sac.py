@@ -1,13 +1,11 @@
 import copy
-
-from typing import Any, Dict, Optional
-
+from typing import Optional, Any, Dict
 import numpy as np
 import torch
+from torch import nn
+from torch import optim
 
-from torch import nn, optim
-
-from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
+from emote.typing import AgentId, EpisodeState, DictObservation, DictResponse
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 
 from .callbacks import LoggingCallback, LossCallback
@@ -103,7 +101,7 @@ class QTarget(LoggingCallback):
         self.tau = target_q_tau
         self.gamma = torch.tensor(gamma)
         self.rollout_len = roll_length
-        self.gamma_matrix = make_gamma_matrix(self.gamma, self.rollout_len).to(
+        self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len).to(
             ln_alpha.device
         )
 
@@ -254,7 +252,9 @@ class AlphaLoss(LossCallback):
 
     def loss(self, observation):
         _p_sample, logp_pi = self.policy(**observation)
-        alpha_loss = -torch.mean(self.ln_alpha * (logp_pi + self.t_entropy).detach())
+        # alpha_loss = -torch.mean(self.ln_alpha * (logp_pi + self.t_entropy).detach())
+        alpha_loss = torch.mean(self.ln_alpha * (-logp_pi - self.t_entropy).detach())
+        # alpha_loss = torch.mean(self.ln_alpha * (logp_pi - self.t_entropy).detach())
         assert alpha_loss.dim() == 0
         self.log_scalar("loss/alpha_loss", alpha_loss)
         return alpha_loss
@@ -265,6 +265,7 @@ class AlphaLoss(LossCallback):
         self.ln_alpha = torch.clamp_max_(self.ln_alpha, self._max_ln_alpha)
         self.ln_alpha.requires_grad_(True)
         self.log_scalar("training/alpha_value", torch.exp(self.ln_alpha).item())
+        self.log_scalar("training/target_entropy", self.t_entropy)
 
     def state_dict(self):
         state = super().state_dict()
@@ -300,7 +301,7 @@ class FeatureAgentProxy:
                 [observations[agent_id].array_data["obs"] for agent_id in active_agents]
             )
         ).to(self.device)
-        actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
+        actions = self.policy(tensor_obs)[0].clone().detach().cpu().numpy()
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
