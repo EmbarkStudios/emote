@@ -1,10 +1,11 @@
-'''
+"""
 Collector types for running environments
-'''
+"""
 from collections import deque, defaultdict
 import collections
+from itertools import count
 import threading
-from typing import Dict
+from typing import Dict, List
 import time
 import torch
 import numpy as np
@@ -13,20 +14,30 @@ from gym.vector import VectorEnvWrapper, VectorEnv
 from torch import nn
 
 from emote.callback import Callback
-from emote.typing import EpisodeState, HiveObservation, AgentId, HiveResponse, MetaData
+from emote.typing import (
+    DictResponse,
+    EpisodeState,
+    DictObservation,
+    AgentId,
+    HiveResponse,
+    MetaData,
+)
 from emote.proxies import AgentProxy, MemoryProxy
 
 
 class HiveEmitWrapper:
 
-    """ Wraps a vectorised gym env to make it compatible with the hive workflow.
+    """Wraps a vectorised gym env to make it compatible with the hive workflow.
 
     :param env: (VecEnv) The vectorised gym env.
     """
+
     def __init__(self, env):
         self.venv = env
         if isinstance(self.venv.observation_space, gspaces.Tuple):
-            raise NotImplementedError("Tuple observations spaces are not currently supported.")
+            raise NotImplementedError(
+                "Tuple observations spaces are not currently supported."
+            )
 
     def _create_array_data_from_state(self, state, idx):
         array_data = {}
@@ -36,9 +47,7 @@ class HiveEmitWrapper:
 
     def _create_numpy_state_dict(self, state_dict):
         # state_dict['features'] = state_dict.pop("obs")
-        state = {
-            k: v.cpu().numpy() for k, v in state_dict.items()
-        }
+        state = {k: v.cpu().numpy() for k, v in state_dict.items()}
         return state
 
     def reset(self, **kwargs):
@@ -51,9 +60,9 @@ class HiveEmitWrapper:
 
         # Use the index as the initial agent id.
         for idx in range(self.venv.num_envs):
-            obs_dict[idx] = HiveObservation(
+            obs_dict[idx] = DictObservation(
                 array_data=self._create_array_data_from_state(state, idx),
-                rewards={'reward': 0.0},
+                rewards={"reward": 0.0},
                 episode_state=EpisodeState.INITIAL,
                 metadata=MetaData(),
             )
@@ -65,7 +74,7 @@ class HiveEmitWrapper:
 
     def step(self, actions_dict):
         agent_ids, agent_actions = zip(*actions_dict.items())
-        agent_actions = [_act.list_data['actions'] for _act in agent_actions]
+        agent_actions = [_act.list_data["actions"] for _act in agent_actions]
         agent_actions = torch.tensor(agent_actions, device=self.venv.device)
 
         state_dict, rewards, dones, infos = self.venv.step(agent_actions)
@@ -80,22 +89,22 @@ class HiveEmitWrapper:
             done = bool(dones[cc])
 
             info = {
-                'instant/reward': rewards[cc],
-                'instant/time-alive': self._episode_lengths[idx],
+                "instant/reward": rewards[cc],
+                "instant/time-alive": self._episode_lengths[idx],
             }
 
             self._cumulative_reward[idx] += rewards[cc]
             self._episode_lengths[idx] += 1
 
             if done:
-                info['episode/reward'] = self._cumulative_reward.pop(idx)
-                info['episode/length'] = self._episode_lengths.pop(idx)
+                info["episode/reward"] = self._cumulative_reward.pop(idx)
+                info["episode/length"] = self._episode_lengths.pop(idx)
 
-            obs = HiveObservation(
+            obs = DictObservation(
                 array_data=self._create_array_data_from_state(state, cc),
-                rewards={'reward': rewards[cc]},
+                rewards={"reward": rewards[cc]},
                 episode_state=EpisodeState.TERMINAL if done else EpisodeState.RUNNING,
-                metadata=MetaData(info=info)
+                metadata=MetaData(info=info),
             )
             obs_dict[idx] = obs
 
@@ -103,14 +112,16 @@ class HiveEmitWrapper:
                 # Create a unique id for the new episode.
                 new_id = idx + self.venv.num_envs
                 assert new_id not in obs_dict
-                new_obs = HiveObservation(
+                new_obs = DictObservation(
                     array_data=self._create_array_data_from_state(state, cc),
-                    rewards={'reward': 0.0},
+                    rewards={"reward": 0.0},
                     episode_state=EpisodeState.INITIAL,
-                    metadata=MetaData(info={
-                        'instant/reward': 0.0,
-                        'instant/time-alive': 0,
-                    })
+                    metadata=MetaData(
+                        info={
+                            "instant/reward": 0.0,
+                            "instant/time-alive": 0,
+                        }
+                    ),
                 )
 
                 obs_dict[new_id] = new_obs
@@ -167,15 +178,21 @@ class EmitCollector(Callback):
         start = time.perf_counter()
         update_step = 0
         for inf_step in range(0, self._total_inf_steps, self.num_envs):
-            if self._log and (inf_step % self._log_interval == 0) and (len(self._reward_buffer) > 0):
-                print(f"Step: {inf_step}, Mean Reward: {sum(self._reward_buffer)/len(self._reward_buffer)}")
+            if (
+                self._log
+                and (inf_step % self._log_interval == 0)
+                and (len(self._reward_buffer) > 0)
+            ):
+                print(
+                    f"Step: {inf_step}, Mean Reward: {sum(self._reward_buffer)/len(self._reward_buffer)}"
+                )
 
             actions_dict = self._agent(obs_dict)
             self._memory.add(obs_dict, actions_dict)
             obs_dict, _, done_dict = self._env.step(actions_dict)
 
             for idx in obs_dict.keys():
-                episode_rewards[idx] += obs_dict[idx].rewards['reward']
+                episode_rewards[idx] += obs_dict[idx].rewards["reward"]
                 if done_dict[idx]:
                     self._reward_buffer.append(episode_rewards.pop(idx))
 
@@ -207,10 +224,11 @@ class EmitCollector(Callback):
 
 
 class EmitWrapper2:
-    """ Wraps a vectorised isaac gym env to make it compatible with the hive workflow.
+    """Wraps a vectorised isaac gym env to make it compatible with the hive workflow.
 
     :param env: (VecEnv) The vectorised gym env.
     """
+
     def __init__(self, venv):
         self.venv = venv
         self.num_envs = venv.num_envs
@@ -267,15 +285,20 @@ class EmitCollector2(Callback):
         self._env = EmitWrapper2(env)
         self._memory = memory
 
+        self._next_agent = count()
+        self._agent_ids: List[AgentId] = [
+            next(self._next_agent) for i in range(self.num_envs)
+        ]
+
         self._env = env
         self._num_envs = env.num_envs
         self._last_environment_rewards = deque(maxlen=1000)
         self._stop = False
         self._thread = None
-        self._agent_episode_counter = defaultdict(int)
-        self._inf_steps = 0
         self._step_counter = np.zeros((self._num_envs,))
         self._has_images = has_images
+
+        self._episode_rewards: List[float] = [0.0 for i in range(self._num_envs)]
 
     def _convert_data(self, data):
         return data.detach().clone().cpu().numpy()
@@ -283,93 +306,115 @@ class EmitCollector2(Callback):
     def _convert_obs_data(self, data):
         return {key: self._convert_data(val) for (key, val) in data.items()}
 
-    def _step(self):
-        ep_infos = {'agent_metrics': []}
+    def dict_step(
+        self, actions: Dict[AgentId, DictResponse]
+    ) -> Dict[AgentId, DictObservation]:
 
-        actions = self._agent_proxy(self._obs)
-
-        next_obs, rewards, dones, infos = self._env.step(actions)
+        next_obs, rewards, dones, info = self._env.step(actions)
+        new_agents = []
+        results = {}
+        completed_episode_rewards = []
 
         actions = self._convert_data(actions)
         rewards = self._convert_data(rewards)
         dones = self._convert_data(dones)
-        converted_obs = self._convert_obs_data(self._obs)
         converted_next_obs = self._convert_obs_data(next_obs)
 
+        for env_id in range(self._num_envs):
+            self._episode_rewards[env_id] += rewards[agent_id]
+
         self._step_counter += 1
-        self._inf_steps += rewards.shape[0]
 
-        completed_episodes = 0
-
-        for agent_id in range(self._num_envs):
-            agent_episode_id = agent_id + self._agent_episode_counter[agent_id] * self._num_envs
-
-            completed_full_episode = dones[agent_id] > 0
-
+        for env_id in range(self._num_envs):
+            completed_full_episode = dones[env_id] > 0
             # Break the episode into a series of smaller chunks in memory.
             # This makes training feasible when using isaac gym.
             # Note: This isn't ideal, since currently we lose the final reward.
             # of split episodes. TODO: fix this.
-            completed_split_episode = self._step_counter[agent_id] > 100
+            completed_split_episode = self._step_counter[env_id] > 100
 
-            hive_array_data = {
-                'obs': converted_obs['obs'][agent_id][None][0]
-            }
+            array_data = {"obs": converted_next_obs["obs"][env_id][None][0]}
             if self._has_images:
-                hive_array_data["images"] = converted_obs['images'][agent_id]
-
-            hive_obs = HiveObservation(
-                array_data=hive_array_data,
-                rewards={'reward': rewards[agent_id]},
-                episode_state=EpisodeState.RUNNING if self._step_counter[agent_id] > 1 else EpisodeState.INITIAL,
-            )
-            hive_actions = HiveResponse(
-                list_data={
-                    "actions": actions[agent_id]
-                },
-                scalar_data={}
-            )
-            self._memory.add({agent_episode_id: hive_obs}, {agent_episode_id: hive_actions})
+                array_data["images"] = converted_next_obs["images"][env_id]
 
             if completed_full_episode or completed_split_episode:
-                if agent_id == 0:
-                    print(f"inf steps: {self._inf_steps}")
+                results[self._agent_ids[env_id]] = DictObservation(
+                    episode_state=EpisodeState.TERMINAL
+                    if completed_full_episode
+                    else EpisodeState.INTERRUPTED,
+                    array_data=array_data,
+                    rewards={"reward": rewards[env_id]},
+                )
+                new_agent = next(self._next_agent)
+                results[new_agent] = DictObservation(
+                    episode_state=EpisodeState.INITIAL,
+                    array_data=array_data,
+                    rewards={"reward": None},
+                )
+                new_agents.append(new_agent)
+                completed_episode_rewards.append(self._episode_rewards[env_id])
+                self._agent_ids[env_id] = new_agent
+                self._episode_rewards[env_id] = 0.0
+                self._step_counter[env_id] = 0
 
-                hive_array_data = {
-                    'obs': converted_next_obs['obs'][agent_id][None][0]
-                }
+        for env_id, agent_id in enumerate(self._agent_ids):
+            if agent_id not in new_agents:
+                array_data = {"obs": converted_next_obs["obs"][env_id][None][0]}
                 if self._has_images:
-                    hive_array_data["images"] = converted_next_obs['images'][agent_id]
-
-                term_hive_obs = HiveObservation(
-                    array_data=hive_array_data,
-                    rewards={'reward': 0},
-                    episode_state=EpisodeState.TERMINAL if completed_full_episode else EpisodeState.INTERRUPTED,
+                    array_data["images"] = converted_next_obs["images"][env_id]
+                results.update(
+                    {
+                        agent_id: DictObservation(
+                            episode_state=EpisodeState.RUNNING,
+                            array_data=array_data,
+                            rewards={"reward": rewards[env_id]},
+                        )
+                    }
                 )
-                term_hive_actions = HiveResponse(
-                    list_data={
-                        "actions": actions[agent_id] * 0.0
-                    },
-                    scalar_data={}
-                )
-                self._memory.add({agent_episode_id: term_hive_obs}, {agent_episode_id: term_hive_actions})
 
-                self._agent_episode_counter[agent_id] += 1
-                self._step_counter[agent_id] = 0
-                if completed_full_episode:
-                    completed_episodes += 1
+        ep_info = {}
+        if len(completed_episode_rewards) > 0:
+            ep_info["reward"] = sum(completed_episode_rewards) / len(
+                completed_episode_rewards
+            )
 
-        # maybe_ep_info = infos.get('episode')
-        # if maybe_ep_info is not None:
-        #     ep_infos['agent_metrics'].append({
-        #         f'episode/{k}': v.cpu().numpy() for k, v in maybe_ep_info.items()
-        #     })
-        self._obs = next_obs
+        return results, ep_info
 
     def collect_forever(self):
-        self._obs = self._env.reset()
+        self._obs = self.dict_reset()
+
         while not self._stop:
-            self._step()
+            actions = self._agent_proxy(self._obs)
+            next_obs, ep_info = self.dict_step(actions)
+
+            self._memory.add(self._obs, actions)
+            self._obs = next_obs
+
+            if "reward" in ep_info:
+                self.log_scalar("episode/reward", ep_info["reward"])
+
+    def dict_reset(self) -> Dict[AgentId, DictObservation]:
+        self._agent_ids = [next(self._next_agent) for i in range(self._num_envs)]
+        self._step_counter = np.zeros((self._num_envs,))
+
+        obs = self._env.reset()
+        converted_obs = self._convert_obs_data(obs)
+
+        results = {}
+        for env_id, agent_id in enumerate(self._agent_ids):
+            array_data = {"obs": converted_obs["obs"][env_id][None][0]}
+            if self._has_images:
+                array_data["images"] = converted_obs["images"][env_id]
+            results.update(
+                {
+                    agent_id: DictObservation(
+                        episode_state=EpisodeState.INITIAL,
+                        array_data=array_data,
+                        rewards={"reward": None},
+                    )
+                }
+            )
+        return results
 
     def begin_training(self):
         self._thread = threading.Thread(target=self.collect_forever)
