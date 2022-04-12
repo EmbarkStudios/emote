@@ -51,7 +51,6 @@ class GymCollector(LoggingCallback):
         """
         for _ in range(count):
             self.collect_data()
-        print("done")
 
     def begin_training(self):
         "Make sure all envs work and collect warmup steps."

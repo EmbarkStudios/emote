@@ -1,30 +1,28 @@
 import argparse
-from functools import partial
 import time
+
+from functools import partial
 from pathlib import Path
 
 import isaacgym  # noqa
 import numpy as np
 import torch
 import yaml
+
+from emit.utils.env import env_creator
+from torch import nn
+from torch.optim import Adam
+from torch.utils.tensorboard import SummaryWriter
+
 from emote import Trainer
 from emote.callbacks import TensorboardLogger
-from emote.collectors.emit_collector import (
-    EmitAgentProxy,
-    EmitCollector,
-    EmitWrapper,
-)
+from emote.collectors.emit_collector import EmitAgentProxy, EmitCollector, EmitWrapper
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_, xavier_uniform
 from emote.sac import AlphaLoss, PolicyLoss, QLoss, QTarget
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
-from torch import nn
-from torch.optim import Adam
-from torch.utils.tensorboard import SummaryWriter
-
-from emit.utils.env import env_creator
 
 
 def parse_input_args():

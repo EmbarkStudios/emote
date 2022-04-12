@@ -1,11 +1,13 @@
 import copy
-from typing import Optional, Any, Dict
+
+from typing import Any, Dict, Optional
+
 import numpy as np
 import torch
-from torch import nn
-from torch import optim
 
-from emote.typing import AgentId, EpisodeState, DictObservation, DictResponse
+from torch import nn, optim
+
+from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 
 from .callbacks import LoggingCallback, LossCallback

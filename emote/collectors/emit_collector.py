@@ -3,22 +3,22 @@ Collector types for running environments
 """
 from itertools import count
 from typing import Dict, List
-import torch
-from torch import nn
+
 import numpy as np
+import torch
+
+from torch import nn
 
 from emote.callbacks import LoggingCallback
-from emote.typing import (
-    DictResponse,
-    EpisodeState,
-    DictObservation,
-    AgentId,
-)
 from emote.proxies import AgentProxy, MemoryProxy
+from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 
 
 class EmitWrapper:
-    """Wraps a vectorised isaac gym env to make it compatible with the hive workflow.
+    """Wraps a vectorised Emit isaac gym env.
+
+    This currently converts the data back and forth between numpy torch. We should
+    eventually convert this to keep the data on the GPU as pytorch tensors.
 
     :param env: (VecEnv) The vectorised gym env.
     """
@@ -64,9 +64,6 @@ class EmitWrapper:
             dtype=torch.float32,
             device=self._device,
         )
-        # batched_actions = torch.stack(
-        #     [actions[agent].list_data["actions"] for agent in self._agent_ids]
-        # )
         next_obs, rewards, dones, infos = self.venv.step(batched_actions)
 
         new_agents = []
@@ -82,8 +79,8 @@ class EmitWrapper:
             completed_full_episode = dones[env_id] > 0
             # Break the episode into a series of smaller chunks in memory.
             # This makes training feasible when using isaac gym.
-            # Note: This isn't ideal, since currently we lose the final reward.
-            # of split episodes. TODO: fix this.
+            # TODO: add memory logic that supports sampling from incomplete episodes
+            # and then remove this split episode logic
             completed_split_episode = self._step_counter[env_id] > 100
 
             array_data = self._obs_to_array_data(converted_next_obs, env_id)
@@ -173,7 +170,6 @@ class EmitAgentProxy:
             )
         ).to(self.device)
         actions = self.policy(tensor_obs)[0].clone().detach().cpu().numpy()
-        # actions = self.policy(tensor_obs)[0]
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)

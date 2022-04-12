@@ -1,29 +1,26 @@
 import argparse
+import time
+
 from functools import partial
+
+import gym
 import numpy as np
 import torch
-from torch.utils.tensorboard import SummaryWriter
+
+from gym.vector import AsyncVectorEnv
+from tests.gym import DictGymWrapper
+from tests.gym.collector import ThreadedGymCollector
 from torch import nn
 from torch.optim import Adam
-from gym.vector import AsyncVectorEnv
-import gym
-import time
+from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
 from emote.callbacks import FinalLossTestCheck, TensorboardLogger
+from emote.memory import MemoryLoader, TableMemoryProxy
+from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_, xavier_uniform
-from emote.memory.builder import DictObsNStepTable
-from emote.sac import (
-    QLoss,
-    QTarget,
-    PolicyLoss,
-    AlphaLoss,
-    FeatureAgentProxy,
-)
-from emote.memory import TableMemoryProxy, MemoryLoader
-from tests.gym.collector import ThreadedGymCollector
-from tests.gym import DictGymWrapper
+from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 
 def _make_env(rank):
