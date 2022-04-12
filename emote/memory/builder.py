@@ -2,7 +2,7 @@
 
 """
 
-from typing import List
+from typing import Any, List
 
 import numpy as np
 import torch
