@@ -9,7 +9,7 @@ def ortho_init_(m, gain=np.sqrt(2)):
         nn.init.constant_(m.bias.data, 0.0)
 
 
-def xavier_uniform(m, gain):
+def xavier_uniform_init_(m, gain):
     if isinstance(m, nn.Linear):
         nn.init.xavier_uniform_(m.weight.data, gain)
         nn.init.constant_(m.bias.data, 0.0)

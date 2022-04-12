@@ -19,7 +19,7 @@ from emote.callbacks import FinalLossTestCheck, TensorboardLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
-from emote.nn.initialization import ortho_init_, xavier_uniform
+from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 
@@ -70,7 +70,7 @@ class Policy(nn.Module):
         )
 
         self.encoder.apply(ortho_init_)
-        self.policy.apply(partial(xavier_uniform, gain=0.01))
+        self.policy.apply(partial(xavier_uniform_init_, gain=0.01))
 
     def forward(self, obs):
         sample, log_prob = self.policy(self.encoder(obs))
@@ -172,7 +172,6 @@ def train_lunar_lander(args):
             ),
             100,
         ),
-        FinalLossTestCheck([logged_cbs[2]], [10.0], 50_000_000),
     ]
 
     trainer = Trainer(callbacks, dataloader)

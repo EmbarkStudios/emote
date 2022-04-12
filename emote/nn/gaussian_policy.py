@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 from torch import Tensor
 
-from emote.nn.initialization import ortho_init_, xavier_uniform
+from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 
 
 class RobustTanhTransform(transforms.TanhTransform):
@@ -87,7 +87,7 @@ class GaussianMlpPolicy(nn.Module):
         self.policy = GaussianPolicyHead(hidden_dims[-1], action_dim)
 
         self.encoder.apply(ortho_init_)
-        self.policy.apply(partial(xavier_uniform, gain=0.01))
+        self.policy.apply(partial(xavier_uniform_init_, gain=0.01))
 
     def forward(self, obs):
         return self.policy(self.encoder(obs))

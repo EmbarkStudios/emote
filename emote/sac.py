@@ -305,7 +305,7 @@ class FeatureAgentProxy:
                 [observations[agent_id].array_data["obs"] for agent_id in active_agents]
             )
         ).to(self.device)
-        actions = self.policy(tensor_obs)[0].clone().detach().cpu().numpy()
+        actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
