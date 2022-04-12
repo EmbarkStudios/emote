@@ -6,9 +6,8 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from emote.experiments.emit.emit_collector import (
     EmitCollector,
-    EmitCollector2,
     EmitFeatureAgentProxy,
-    HiveEmitWrapper,
+    EmitWrapper,
 )
 from emote.nn.initialization import ortho_init_
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
@@ -17,17 +16,14 @@ from pathlib import Path
 import yaml
 from torch import nn
 from torch.optim import Adam
-import gym
-from gym.vector import SyncVectorEnv
-from emit.train_on_cog import create_cog_hive_config, fixup_configs
-from emit.utils.rlgames_utils import get_rlgames_env_creator
+from emit.utils.env import env_creator
 
 import argparse
 
 from emote import Trainer
 from emote.callbacks import TensorboardLogger, TerminalLogger
 from emote.nn import GaussianPolicyHead
-from emote.memory.builder import DictObsNStepTable, DictObsTable
+from emote.memory.builder import DictObsNStepTable
 from emote.sac import (
     QLoss,
     QTarget,
@@ -74,6 +70,7 @@ class Policy(nn.Module):
 def parse_input_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", type=str, default="emote")
+    parser.add_argument("--emit_dir", type=str, required=True)
     parser.add_argument("--env_config", type=str, default="WasabiEnv")
     parser.add_argument("--rl_config", type=str, default="WasabiCogMlp")
     parser.add_argument("--log_dir", type=str, default="/mnt/mllogs")
@@ -83,16 +80,56 @@ def parse_input_args():
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--checkpoint", type=str)
     args = parser.parse_args()
-    emit_dir = "/home/jack/Soft/projects/isaac-cloud-build/emit"
 
-    config_dir = Path(emit_dir + "/config").resolve()
+    config_dir = Path(args.emit_dir + "/config").resolve()
 
     file_path = config_dir / (args.env_config + ".yaml")
-    task_config = yaml.load(file_path.read_text())
+    task_config = yaml.load(file_path.read_text(), Loader=yaml.Loader)
 
     file_path = config_dir / (args.rl_config + ".yaml")
-    train_config = yaml.load(file_path.read_text())
+    train_config = yaml.load(file_path.read_text(), Loader=yaml.Loader)
     return args, task_config, train_config
+
+
+def fixup_configs(args, train_config, task_config):
+    use_gpu = not args.cpu
+    if use_gpu:
+        full_device_str = f"cuda:{args.device_id}"
+    else:
+        full_device_str = "cpu"
+
+    task_config["sim"]["use_gpu_pipeline"] = use_gpu
+    task_config["sim"]["physx"]["use_gpu"] = use_gpu
+    task_config["device_id"] = args.device_id
+    task_config["rl_device"] = full_device_str
+    task_config["sim_device"] = full_device_str
+
+    task_config["headless"] = not (args.infer or args.render)
+
+    if args.infer:
+        task_config["env"]["num_envs"] = train_config["isaac"]["num_inf_envs"]
+        task_config["env"]["env_spacing"] = 200
+    else:
+        task_config["env"]["num_envs"] = train_config["isaac"]["num_envs"]
+        task_config["env"]["viewer"]["ref_env_start_stop_step"] = [0, 1, 1]
+
+    num_observations = task_config["env"]["num_observations"]
+    vision_config = task_config["env"]["vision"]
+    vision_width = vision_config["width"]
+
+    train_config["action_count"] = task_config["env"]["num_actions"]
+
+    protocol_kind = train_config["isaac"]["protocol_kind"]
+
+    if protocol_kind == "isaacsacmlp":
+        task_config["env"]["vision"]["flatten"] = True
+        train_config["input_shapes"]["features"]["shape"] = [
+            num_observations + vision_width**2
+        ]
+    else:
+        assert False
+
+    return train_config, task_config
 
 
 if __name__ == "__main__":
@@ -109,9 +146,11 @@ if __name__ == "__main__":
     device = torch.device("cuda")
 
     args, task_config, train_config = parse_input_args()
+    train_config, task_config = fixup_configs(args, train_config, task_config)
 
     num_features = train_config["input_shapes"]["features"]["shape"][0]
     num_actions = train_config["action_count"]
+    print(f"num_actions: {num_actions}")
 
     num_hidden = 1024
     rollout_len = 10
@@ -119,18 +158,6 @@ if __name__ == "__main__":
     learning_rate = 2e-3
     max_grad_norm = 0.5
     gamma = 0.99
-
-    protocol_config, task_config = fixup_configs(args, train_config, task_config)
-    hive_config = create_cog_hive_config(args, task_config, protocol_config)
-    hive_config["protocol_config"]["task_config"] = task_config
-
-    env = get_rlgames_env_creator(
-        task_config=task_config,
-        task_name=task_config["name"],
-        sim_device=f"cuda:{args.device_id}",
-        graphics_device_id=args.device_id,
-        headless=task_config["headless"],
-    )()
 
     emit_space = MDPSpace(
         BoxSpace(np.float32, (1,)),
@@ -149,9 +176,9 @@ if __name__ == "__main__":
         table, batch_size // rollout_len, rollout_len, "batch_size"
     )
 
-    q1 = QNet(num_features, num_actions, num_hidden).to(env.device)
-    q2 = QNet(num_features, num_actions, num_hidden).to(env.device)
-    policy = Policy(num_features, num_actions).to(env.device)
+    q1 = QNet(num_features, num_actions, num_hidden).to(device)
+    q2 = QNet(num_features, num_actions, num_hidden).to(device)
+    policy = Policy(num_features, num_actions, num_hidden).to(device)
 
     ln_alpha = torch.tensor(1.0, requires_grad=True, device=device)
     agent_proxy = FeatureAgentProxy(policy, device=device)
@@ -197,18 +224,27 @@ if __name__ == "__main__":
         ),
     ]
 
+    env = env_creator(
+        task_config=task_config,
+        task_name=task_config["name"],
+        sim_device=f"cuda:{args.device_id}",
+        graphics_device_id=args.device_id,
+        headless=task_config["headless"],
+    )()
+
+    env = EmitWrapper(env, device, has_images=False)
+
     callbacks = logged_cbs + [
-        EmitCollector2(env, agent_proxy, memory_proxy),
+        EmitCollector(env, agent_proxy, memory_proxy),
         TerminalLogger(logged_cbs, 10),
         TensorboardLogger(
             logged_cbs,
             SummaryWriter(
                 log_dir=args.log_dir + "/" + args.experiment + "_{}".format(time.time())
             ),
-            step_log_interval=10,
-            samples_log_interval=10_000_000,
+            log_interval=100,
         ),
     ]
 
-    trainer = Trainer(callbacks, dataloader, 200)
+    trainer = Trainer(callbacks, dataloader)
     trainer.train()
