@@ -31,7 +31,7 @@ setuptools = "=59.5"
 [tool.poetry.group.gpu.dependencies]
 torch = [
     { version = "1.10.2+cu111", source = "torch.org", markers = "sys_platform != 'darwin'" },
-    { version = "1.10.2+cpu", source = "torch.org-cpu", markers = "sys_platform == 'darwin'" }
+    { url = "https://download.pytorch.org/whl/cpu/torch-1.10.2-cp38-none-macosx_11_0_arm64.whl", platform = "darwin" }
 ]
 
 # Pure development dependencies when installed via Poetry, but not
