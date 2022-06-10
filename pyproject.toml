@@ -42,7 +42,7 @@ sphinx-rtd-theme = "^1.0.0"
 black = "^22.1.0"
 gsutil = "=4.66"
 isort = "^5.10.1"
-gym = {extras = ["atari", "classic_control"], version = "^0.22.0"}
+gym = {extras = ["atari", "classic_control", "box2d"], version = "^0.22.0"}
 box2d = "2.3.10"
 pygame = "2.1.0"
 
