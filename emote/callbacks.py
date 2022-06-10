@@ -1,7 +1,7 @@
 import logging
-from optparse import Option
 import time
 
+from optparse import Option
 from typing import Any, Dict, List, Optional, Union
 
 import torch
