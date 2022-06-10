@@ -38,12 +38,14 @@ class QLoss(LossCallback):
         name: str,
         q: nn.Module,
         opt: optim.Optimizer,
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler],
         max_grad_norm: float = 10.0,
         data_group: str = "default",
     ):
         super().__init__(
             name=name,
             optimizer=opt,
+            lr_schedule=lr_schedule,
             network=q,
             max_grad_norm=max_grad_norm,
             data_group=data_group,
@@ -165,6 +167,7 @@ class PolicyLoss(LossCallback):
         ln_alpha: torch.tensor,
         q: nn.Module,
         opt: optim.Optimizer,
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler],
         q2: Optional[nn.Module] = None,
         max_grad_norm: float = 10.0,
         name: str = "policy",
@@ -173,6 +176,7 @@ class PolicyLoss(LossCallback):
         super().__init__(
             name=name,
             optimizer=opt,
+            lr_schedule=lr_schedule,
             network=pi,
             max_grad_norm=max_grad_norm,
             data_group=data_group,
@@ -229,6 +233,7 @@ class AlphaLoss(LossCallback):
         pi: nn.Module,
         ln_alpha: torch.tensor,
         opt: optim.Optimizer,
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler],
         n_actions: int,
         max_grad_norm: float = 10.0,
         entropy_eps: float = 0.089,
@@ -239,6 +244,7 @@ class AlphaLoss(LossCallback):
         super().__init__(
             name=name,
             optimizer=opt,
+            lr_schedule=lr_schedule,
             network=None,
             max_grad_norm=max_grad_norm,
             data_group=data_group,
