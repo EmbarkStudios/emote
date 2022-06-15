@@ -28,6 +28,8 @@ class QLoss(LossCallback):
     :param q (torch.nn.Module): A deep neural net that outputs the discounted loss
         given the current observations and a given action.
     :param opt (torch.optim.Optimizer): An optimizer for q.
+    :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning rate schedule
+        for the optimizer of q.
     :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
     :param data_group (str): The name of the data group from which this Loss takes its data.
     """
@@ -150,6 +152,8 @@ class PolicyLoss(LossCallback):
         soft Q.
     :param q (torch.nn.Module): A deep neural net that outputs the discounted loss
         given the current observations and a given action.
+    :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning rate schedule
+        for the optimizer of policy.
     :param opt (torch.optim.Optimizer): An optimizer for pi.
     :param q2 (torch.nn.Module): A second deep neural net that outputs the discounted
         loss given the current observations and a given action. This is not necessary
@@ -216,6 +220,8 @@ class AlphaLoss(LossCallback):
         probability given a state.
     :param ln_alpha (torch.tensor): The current weight for the entropy part of the
         soft Q.
+    :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning rate schedule
+        for the optimizer of alpha.
     :param opt (torch.optim.Optimizer): An optimizer for ln_alpha.
     :param n_actions (int): The dimension of the action space. Scales the target
         entropy.
