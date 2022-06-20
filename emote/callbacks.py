@@ -1,6 +1,7 @@
 import logging
 import time
 
+from optparse import Option
 from typing import Any, Dict, List, Optional, Union
 
 import torch
@@ -56,6 +57,7 @@ class LossCallback(LoggingCallback):
         name: str,
         network: Optional[nn.Module],
         optimizer: Optional[optim.Optimizer],
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler],
         max_grad_norm: float,
         data_group: str,
     ):
@@ -64,6 +66,7 @@ class LossCallback(LoggingCallback):
         self.name = name
         self.network = network
         self.optimizer = optimizer
+        self.lr_schedule = lr_schedule
         self.parameters = [
             p for param_group in optimizer.param_groups for p in param_group["params"]
         ]
@@ -75,7 +78,9 @@ class LossCallback(LoggingCallback):
         loss.backward()
         grad_norm = nn.utils.clip_grad_norm_(self.parameters, self._max_grad_norm)
         self.optimizer.step()
+        self.lr_schedule.step()
 
+        self.log_scalar(f"loss/{self.name}_lr", self.lr_schedule.get_last_lr()[0])
         self.log_scalar(f"loss/{self.name}_loss", loss)
         self.log_scalar(f"loss/{self.name}_gradient_norm", grad_norm)
 
