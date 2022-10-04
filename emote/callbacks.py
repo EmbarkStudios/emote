@@ -2,8 +2,9 @@ import logging
 import time
 
 from optparse import Option
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import torch
 
 from torch import Tensor, nn, optim
@@ -25,6 +26,7 @@ class LoggingCallback(Callback):
         super().__init__()
         self.scalar_logs: Dict[str, Union[float, torch.Tensor]] = {}
         self.hist_logs: Dict[str, Union[float, torch.Tensor]] = {}
+        self.video_logs: Dict[str, Tuple[np.ndarray, int]] = {}
 
     def log_scalar(self, key: str, value: Union[float, torch.Tensor]):
         """Use log_scalar to periodically log scalar data."""
@@ -32,6 +34,10 @@ class LoggingCallback(Callback):
             self.scalar_logs[key] = value.item()
         else:
             self.scalar_logs[key] = value
+
+    def log_video(self, key: str, value: Tuple[np.ndarray, int]):
+        """Use log_scalar to periodically log scalar data."""
+        self.video_logs[key] = value
 
     def log_histogram(self, key: str, value: torch.Tensor):
         self.hist_logs[key] = value.detach()
@@ -139,8 +145,24 @@ class TensorboardLogger(Callback):
                     k = "/".join(k_split)
                 self._writer.add_scalar(k, v, step)
 
+    def log_videos(self, step, suffix=None):
+        """Logs videos.
+
+        **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
+        'training_bp_step/loss'.
+        """
+        for cb in self._cbs:
+            for k, (video_array, fps) in cb.video_logs.items():
+                if suffix:
+                    k_split = k.split("/")
+                    k_split[0] = k_split[0] + "_" + suffix
+                    k = "/".join(k_split)
+                self._writer.add_video(k, video_array, step, fps=fps, walltime=None)
+
     def end_cycle(self, bp_step, bp_samples):
         self.log_scalars(bp_step, suffix="bp_step")
+        self.log_videos(bp_step, suffix="bp_step")
+
         time_since_start = time.monotonic() - self._start_time
         self._writer.add_scalar(
             "performance/bp_samples_per_sec", bp_samples / time_since_start, bp_step
