@@ -38,6 +38,10 @@ steps:
     command: bash .buildkite/run-black.sh
     << : *common
 
+  - label: ":bandit: Validate bandit"
+    command: bash .buildkite/run-bandit.sh
+    << : *common
+
   - label: ":isort: Validate isort"
     command: bash .buildkite/run-isort.sh
     << : *common

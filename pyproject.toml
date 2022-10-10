@@ -45,6 +45,7 @@ isort = "^5.10.1"
 gym = {extras = ["atari", "classic_control"], version = "^0.22.0"}
 box2d = "2.3.10"
 pygame = "2.1.0"
+bandit = "1.7.4"
 
 [[tool.poetry.source]]
 name = "torch.org"
