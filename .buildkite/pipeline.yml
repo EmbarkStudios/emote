@@ -32,18 +32,15 @@ steps:
 
   - group: ":vertical_traffic_light: Validating changes"
     steps:
-      - name: docs
-        label: 📚 Publish docs
+      - label: 📚 Publish docs
         command: bash .buildkite/publish-docs.sh
         << : *common
 
-      - name: black
-        label: ":python-black: Validate black"
+      - label: ":python-black: Validate black"
         command: bash .buildkite/run-black.sh
         << : *common
 
-      - name: isort
-        label: ":isort: Validate isort"
+      - label: ":isort: Validate isort"
         command: bash .buildkite/run-isort.sh
         << : *common
 
@@ -51,11 +48,9 @@ steps:
         command: bash .buildkite/run-bandit.sh
         << : *common
 
-      - name: tests
-        label: ":pytest: Run tests"
+      - label: ":pytest: Run tests"
         command: bash .buildkite/run-pytest.sh
         << : *common
-
 
   - wait
 
