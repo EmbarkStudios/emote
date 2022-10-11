@@ -54,7 +54,6 @@ steps:
 
   - wait
 
-  - name: package
-    label: ":package: Validate packaging"
+  - label: ":package: Validate packaging"
     command: bash .buildkite/run-package.sh
     depends_on: ["docs", "black", "isort"]
