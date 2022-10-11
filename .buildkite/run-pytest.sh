@@ -10,7 +10,7 @@ pdm run pytest --color=yes tests emote > errors.txt || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "pytest"
-:warning: Tests failed. Please see below errors and correct any issues. You can run tests locally with `pdm run pytest tests emote`.
+:warning: Tests failed. Please see below errors and correct any issues. You can run tests locally with \`pdm run pytest tests emote\`.
 
 \`\`\`term
 $(cat errors.txt)
