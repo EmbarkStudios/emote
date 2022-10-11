@@ -30,18 +30,34 @@ steps:
 
   - wait
 
-  - label: 📚 Publish docs
-    command: bash .buildkite/publish-docs.sh
-    << : *common
+  - group: ":vertical_traffic_light: Validating changes"
+    - name: docs
+      label: 📚 Publish docs
+      command: bash .buildkite/publish-docs.sh
+      << : *common
 
-  - label: ":python-black: Validate black"
-    command: bash .buildkite/run-black.sh
-    << : *common
+    - name: black
+      label: ":python-black: Validate black"
+      command: bash .buildkite/run-black.sh
+      << : *common
 
-  - label: ":bandit: Validate bandit"
-    command: bash .buildkite/run-bandit.sh
-    << : *common
+    - name: isort
+      label: ":isort: Validate isort"
+      command: bash .buildkite/run-isort.sh
+      << : *common
 
-  - label: ":isort: Validate isort"
-    command: bash .buildkite/run-isort.sh
-    << : *common
+    - label: ":bandit: Validate bandit"
+      command: bash .buildkite/run-bandit.sh
+      << : *common
+
+    - name: tests
+      label: ":pytest: Run tests"
+      command: bash .buildkite/run-pytest.sh
+      << : *common
+
+  - wait
+
+  - name: package
+    label: ":package: Validate packaging"
+    command: bash .buildkite/run-package.sh
+    depends_on: ["docs", "black", "isort"]
