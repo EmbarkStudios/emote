@@ -30,7 +30,7 @@ def fill_table_from_legacy_file(
         path += ".pickle"
 
     with open(path, "rb") as file_:
-        state = pickle.load(file_)
+        state = pickle.load(file_)  # nosec B301
 
     for k in ["dones", "actions", "rewards", "next_obs", "obs"]:
         array = np.array(state[k])
