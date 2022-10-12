@@ -16,6 +16,6 @@ RUN apt-get -y update && \
 
 RUN pip install \
 	--no-cache-dir \
-	poetry==1.2.0b1
+	poetry==1.2.2
 
 ENTRYPOINT bash

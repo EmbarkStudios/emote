@@ -8,7 +8,7 @@ common: &common
   plugins:
   - EmbarkStudios/k8s#1.2.10:
       service-account-name: monorepo-ci
-      image: gcr.io/embark-shared/ml/ci-runner@sha256:8943c6b150813cce844a87dd528bed4a997814c9a5302b9562aed76814998dbb
+      image: gcr.io/embark-shared/ml/ci-runner@sha256:dc0c033b862fa2ff9ac328ca2aa9b89d4bad248188d79d55ccaa12659766e809
       default-secret-name: buildkite-k8s-plugin
       always-pull: false
   << : *small
