@@ -2,4 +2,4 @@ set -eo pipefail
 
 echo --- Installing dependencies
 
-pdm install -d -g ci
+pdm install -d -G ci
