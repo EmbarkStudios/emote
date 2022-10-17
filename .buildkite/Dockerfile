@@ -4,9 +4,7 @@ ENV PYTHONUNBUFFERED=1 \
 	PYTHONDONTWRITEBYTECODE=1 \
 	PIP_NO_CACHE_DIR=off \
 	PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100 \
-
-
+    PIP_DEFAULT_TIMEOUT=100
 
 RUN apt-get -y update && \
     apt-get -y install curl build-essential gcc git && \
