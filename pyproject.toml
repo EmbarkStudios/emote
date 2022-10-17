@@ -1,5 +1,5 @@
 [project]
-name = "emote"
+name = "emote-rl"
 version = "0.1.0"
 description = "A modular reinforcement learning library"
 authors = [
@@ -10,8 +10,8 @@ readme = "README.md"
 license = {text = "MIT"}
 
 dependencies = [
-    "tensorboard~=2.8.0",
-    "setuptools>=59.5",
+    "tensorboard>=2.8.0",
+    "setuptools==59.5",
 ]
 
 [project.optional-dependencies]
@@ -21,7 +21,7 @@ atari = [
     "box2d~=2.3.10",
     "pygame~=2.1.0"
 ]
-ci = ["gsutil>=4.66", "emote[atari,torch-cpu]"]
+ci = ["gsutil>=4.66", "emote-rl[atari,torch-cpu]"]
 
 [tool.pdm.dev-dependencies]
 tools = [

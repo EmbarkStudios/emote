@@ -15,7 +15,7 @@ gcloud config set account monorepo-ci@embark-builds.iam.gserviceaccount.com
 echo --- Building docs
 pushd docs
 EXIT_CODE=0
-make deploy || EXIT_CODE=$?
+pdm run make deploy || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "sphinx"
@@ -23,7 +23,7 @@ if [ $EXIT_CODE -ne 0 ]; then
 EOF
 else
 	if [[ "$BUILDKITE_BRANCH" = "main" ]]; then
-		pdm run gsutil rsync -r ./_build/dirhtml gs://embark-static/emote-docs
+		gsutil rsync -r ./_build/dirhtml gs://embark-static/emote-docs
 		buildkite-agent annotate "✅ New documentation deployed at https://static.embark.net/emote-docs/" --style "success" --context "sphinx"
 	else
 		buildkite-agent annotate "✅ Documentation built succesfully" --style "success" --context "sphinx"
