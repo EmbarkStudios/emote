@@ -9,7 +9,7 @@ fi
 
 GIT_STATUS=$(git status --porcelain --untracked-files=no -- pdm.lock)
 if [ -n "$GIT_STATUS" ]; then
-	lock_diff=$(diff pdm.lock)
+	lock_diff=$(git diff pdm.lock)
 	cat << EOF | buildkite-agent annotate --style "error" --context "lockfile"
 ":lock: Lockfile is outdated. Please run \`pdm lock --no-update\` and commit the result."
 
