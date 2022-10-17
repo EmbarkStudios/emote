@@ -34,7 +34,7 @@ docs = [
         "sphinx-autodoc-typehints~=1.17",
         "sphinx-rtd-theme~=1.0.0",
 ]
-ci = ["gsutil>=4.66", "emote[docs, torch]"]
+ci = ["gsutil>=4.66", "emote[docs, torch-cpu]"]
 
 [[tool.pdm.source]]
 type = "index"

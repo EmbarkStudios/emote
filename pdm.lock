@@ -130,7 +130,7 @@ dependencies = [
 [[package]]
 name = "emote"
 version = "0.1.0"
-extras = ["docs"]
+extras = ["docs", "torch-cpu"]
 requires_python = "~=3.8"
 summary = "A A modular reinforcement learning library\u0001"
 dependencies = [
@@ -139,6 +139,7 @@ dependencies = [
     "sphinx-autodoc-typehints~=1.17",
     "sphinx-rtd-theme~=1.0.0",
     "sphinxcontrib-apidoc~=0.3",
+    "torch",
 ]
 
 [[package]]
@@ -642,7 +643,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:b54dc6bf7265749d71001fa91ba4464950918e9b718de29619cf939514e10858"
+content_hash = "sha256:f9cb32f2686c42713e2b0dcacbdba56c5a442ab3a2a2d4dc2a9616fb288a71e3"
 
 [metadata.files]
 "absl-py 1.3.0" = [
