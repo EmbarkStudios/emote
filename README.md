@@ -13,7 +13,7 @@ reinforcement learning
 
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://embark.dev)
 [![Embark](https://img.shields.io/badge/discord-ark-%237289da.svg?logo=discord)](https://discord.gg/dAuKfZS)
-[![Build status](https://badge.buildkite.com/968ac3c0bb075fb878f9f973ed91406c8b257b0f050c197542.svg?theme=github&branch=ts/docs-poetry)](https://buildkite.com/embark-studios/emote)
+[![Build status](https://badge.buildkite.com/968ac3c0bb075fb878f9f973ed91406c8b257b0f050c197542.svg?theme=github&branch=main)](https://buildkite.com/embark-studios/emote)
 [![Docs status](https://img.shields.io/badge/Docs-latest-brightgreen)](https://static.embark.net/emote-docs/)
 
 🚧 This project is very much **work in progress and not yet ready for production use.** 🚧
@@ -109,18 +109,12 @@ class PolicyLoss(LossCallback):
 
 ## Installation
 
-:warning: You currently **need** to use a pre-release version of the Poetry 1.2 series. :warning:
 
-For installation and environment handling we use `poetry`. Install it from [here](https://python-poetry.org/). After `poetry` is set up, set up and activate the emote environment by running
-
-
+For installation and environment handling we use `pdm`. Install it from [pdm](https://pdm.fming.dev/latest/#installation). After `pdm` is set up, set up and activate the emote environment by running
 
 ```bash
-poetry install
+pdm install
 ```
-
-
-
 
 ## Contribution
 

@@ -1,61 +1,52 @@
-[tool.poetry]
+[project]
 name = "emote"
 version = "0.1.0"
-description = "A modular reinforcement learning library."
+description = "A A modular reinforcement learning library\u0001"
 authors = [
-    "Martin Singh-Blom <martin.singh-blom@embark-studios.com>",
-    "Tom Solberg <tom.solberg@embark-studios.com>",
-    "Jack Harmer <jack.harmer@embark-studios.com>",
-    "Jorge Del Val <jorge.delval@embark-studios.com>",
-    "Riley Miladi <riley.miladi@embark-studios.com>",
+    {name = "Embark Studios", email = "python@embark-studios.com"},
 ]
-license = "MIT"
+
+requires-python = "~=3.8"
+readme = "README.md"
+license = {text = "MIT"}
+
+dependencies = [
+    "tensorboard~=2.8.0",
+    "setuptools>=59.5",
+]
+
+dev-dependencies = [
+   "pytest~=6.0",
+   "black~=22.1",
+   "gym[atari,classic_control]~=0.22",
+   "box2d~=2.3.10",
+   "pygame~=2.1.0",
+   "bandit~=1.7",
+   "isort~=5.10",
+]
+
+
+[project.optional-dependencies]
+torch-cpu = ["torch"]
+docs = [
+        "Sphinx~=4.4",
+        "sphinxcontrib-apidoc~=0.3",
+        "sphinx-autodoc-typehints~=1.17",
+        "sphinx-rtd-theme~=1.0.0",
+]
+ci = ["gsutil>=4.66", "emote[docs, torch]"]
+
+[[tool.pdm.source]]
+type = "index"
+url = "https://download.pytorch.org/whl/cpu/"
+name = "torch"
+
+[project.urls]
 repository = "https://github.com/EmbarkStudios/emote"
 
-# These dependencies + GPU group will be installed by default.
-[tool.poetry.dependencies]
-python = "^3.8"
-tensorboard = "^2.8.0"
-setuptools = "=59.5"
-
-# NOTE[TSolberg]: This group is used to help keep high speeds on CI.
-# On CI; this group will be *disabled* since we do not have GPUs
-# there.  Instead, the CI runners will use .buildkite/requirements.txt
-# to install dependencies directly from PyPi, since Poetry doesn't
-# deal with mutually exclusive dependencies. This means that we need
-# to ensure that all GPU dependencies are kept in sync with that file,
-# and kept exact.
-#
-# See https://github.com/python-poetry/poetry/issues/2613 for more
-# details.
-[tool.poetry.group.gpu.dependencies]
-torch = { version = "1.10.2+cu111", source = "torch.org" }
-
-# Pure development dependencies when installed via Poetry, but not
-# when sourcing from PIP etc.
-[tool.poetry.dev-dependencies]
-pytest = "^6.0"
-Sphinx = "^4.4.0"
-sphinxcontrib-apidoc = "0.3.0"
-sphinx-autodoc-typehints = "1.17.0"
-sphinx-rtd-theme = "^1.0.0"
-black = "^22.1.0"
-gsutil = "=4.66"
-isort = "^5.10.1"
-gym = {extras = ["atari", "classic_control"], version = "^0.22.0"}
-box2d = "2.3.10"
-pygame = "2.1.0"
-bandit = "1.7.4"
-
-[[tool.poetry.source]]
-name = "torch.org"
-url = "https://download.pytorch.org/whl/cu111/"
-secondary = true
-default = false
-
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-pep517>=1.0.0"]
+build-backend = "pdm.pep517.api"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

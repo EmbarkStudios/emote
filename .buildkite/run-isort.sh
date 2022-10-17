@@ -5,12 +5,12 @@ source .buildkite/install-repo.sh
 echo --- Running isort
 
 EXIT_CODE=0
-poetry run isort --check --diff emote > diff.txt || EXIT_CODE=$?
+pdm run isort --check --diff emote > diff.txt || EXIT_CODE=$?
 cat diff.txt
 
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "isort"
-:warning: Your imports aren't sorted  by \`isort\`. Please fix the below diffs, or run \`poetry run isort emote\` to automatically format it.
+:warning: Your imports aren't sorted  by \`isort\`. Please fix the below diffs, or run \`pdm run isort emote\` to automatically format it.
 
 \`\`\`diff
 $(cat diff.txt)
