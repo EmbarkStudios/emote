@@ -31,7 +31,7 @@ allow disabling of formatting anywhere.
 
 To run black manually, you can use the command: ::
 
-   poetry run black emote/
+   pdm run black emote/ tests/
 
 Which will format all code in emote.
 
@@ -40,11 +40,11 @@ isort
 
 `isort <https://github.com/PyCQA/isort>`_ is another formatting tool,
 but deals only with sorting imports. Isort is configured to be
-consistent with Black from within `pyproject.toml`. 
+consistent with Black from within `pyproject.toml`.
 
 To run isort manually, you can use the command: ::
 
-   poetry run isort emote/
+   pdm run isort emote/ tests/
 
 
 Example configurations
@@ -59,7 +59,7 @@ emacs
        :demand t
        :after python
        :hook (python-mode . python-black-on-save-mode-enable-dwim))
-	   
+
    (use-package python-isort
        :demand t
        :after python

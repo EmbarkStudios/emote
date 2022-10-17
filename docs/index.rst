@@ -8,12 +8,10 @@ for reinforcement learning written at Embark.
 Installation
 ============
 
-.. warning:: You'll need to use a pre-release Poetry 1.2 version, e.g. 1.2.0a1 or later. Older versions will crash while installing our dependencies.
+Install `PDM <https://pdm.fming.dev/latest/#installation>`_ following the instructions on the
+PDM site. Then install the package using ::
 
-Install `Poetry <https://python-poetry.org/>`_ following the instructions on the
-Poetry site. Then install the package using ::
-
-   poetry install
+   pdm install
 
 
 Ideas and Philosophy
