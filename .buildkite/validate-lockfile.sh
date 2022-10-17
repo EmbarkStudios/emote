@@ -2,6 +2,10 @@ set -eo pipefail
 
 EXIT_CODE=0
 pdm lock --refresh || EXIT_CODE=$?
+if [ $EXIT_CODE -ne 0 ]; then
+    buildkite-agent annotate --style "error" --context "lockfile" ":lock: Failed validating lockfile. See logs for more info."
+	exit 1
+fi
 
 GIT_STATUS=$(git status --porcelain --untracked-files=no -- pdm.lock)
 if [ -n "$GIT_STATUS" ]; then
