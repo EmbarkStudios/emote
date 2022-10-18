@@ -182,24 +182,24 @@ requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 summary = "Docutils -- Python Documentation Utilities"
 
 [[package]]
-name = "emote"
+name = "emote-rl"
 version = "0.1.0"
 requires_python = "~=3.8"
 summary = "A modular reinforcement learning library"
 dependencies = [
-    "setuptools>=59.5",
-    "tensorboard~=2.8.0",
+    "setuptools==59.5",
+    "tensorboard>=2.8.0",
 ]
 
 [[package]]
-name = "emote"
+name = "emote-rl"
 version = "0.1.0"
 extras = ["atari", "torch-cpu"]
 requires_python = "~=3.8"
 summary = "A modular reinforcement learning library"
 dependencies = [
     "box2d~=2.3.10",
-    "emote==0.1.0",
+    "emote-rl==0.1.0",
     "gym[atari,classic_control]~=0.22",
     "pygame~=2.1.0",
     "torch==1.10.2",
@@ -511,9 +511,9 @@ summary = "plugin and hook calling mechanisms for python"
 
 [[package]]
 name = "protobuf"
-version = "4.21.7"
-requires_python = ">=3.7"
-summary = ""
+version = "3.19.6"
+requires_python = ">=3.5"
+summary = "Protocol Buffers"
 
 [[package]]
 name = "py"
@@ -640,8 +640,8 @@ dependencies = [
 
 [[package]]
 name = "setuptools"
-version = "65.5.0"
-requires_python = ">=3.7"
+version = "59.5.0"
+requires_python = ">=3.6"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
 
 [[package]]
@@ -761,7 +761,7 @@ dependencies = [
 
 [[package]]
 name = "tensorboard"
-version = "2.8.0"
+version = "2.10.1"
 requires_python = ">=3.6"
 summary = "TensorBoard lets you watch Tensors Flow"
 dependencies = [
@@ -771,12 +771,12 @@ dependencies = [
     "grpcio>=1.24.3",
     "markdown>=2.6.8",
     "numpy>=1.12.0",
-    "protobuf>=3.6.0",
+    "protobuf<3.20,>=3.9.2",
     "requests<3,>=2.21.0",
     "setuptools>=41.0.0",
     "tensorboard-data-server<0.7.0,>=0.6.0",
     "tensorboard-plugin-wit>=1.6.0",
-    "werkzeug>=0.11.15",
+    "werkzeug>=1.0.1",
     "wheel>=0.26",
 ]
 
@@ -857,7 +857,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:cde31a4396c7195a4f0212ae15094dd84c74460b11d4adf485236e313d939dc1"
+content_hash = "sha256:86dd2d93c7267cf8856b82804173933690c6e1ff186ae10ec8b4bcc7452aff0b"
 
 [metadata.files]
 "absl-py 1.3.0" = [
@@ -1532,21 +1532,32 @@ content_hash = "sha256:cde31a4396c7195a4f0212ae15094dd84c74460b11d4adf485236e313
     {url = "https://files.pythonhosted.org/packages/9e/01/f38e2ff29715251cf25532b9082a1589ab7e4f571ced434f98d0139336dc/pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},
     {url = "https://files.pythonhosted.org/packages/a1/16/db2d7de3474b6e37cbb9c008965ee63835bba517e22cdb8c35b5116b5ce1/pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
 ]
-"protobuf 4.21.7" = [
-    {url = "https://files.pythonhosted.org/packages/0b/d0/9dcc20484936170711f9e19aa7dd5b89111716310986044ad11ed4ede347/protobuf-4.21.7-cp38-cp38-win_amd64.whl", hash = "sha256:9e355f2a839d9930d83971b9f562395e13493f0e9211520f8913bd11efa53c02"},
-    {url = "https://files.pythonhosted.org/packages/16/b0/d9bb59c23d7695c30acdc110abd0712444f0b3d1f89bae3f28001b18c704/protobuf-4.21.7-cp38-cp38-win32.whl", hash = "sha256:8e09d1916386eca1ef1353767b6efcebc0a6859ed7f73cb7fb974feba3184830"},
-    {url = "https://files.pythonhosted.org/packages/36/32/13f22c179ccdd42c66e33516514bcbe838b33fda488986cf7160be904978/protobuf-4.21.7-cp37-cp37m-win32.whl", hash = "sha256:d3f89ccf7182293feba2de2739c8bf34fed1ed7c65a5cf987be00311acac57c1"},
-    {url = "https://files.pythonhosted.org/packages/44/4c/8dff463cf2722a0775f91a667c2c175a48cbe3e7e576f541a6931a8c9242/protobuf-4.21.7-cp39-cp39-win_amd64.whl", hash = "sha256:9643684232b6b340b5e63bb69c9b4904cdd39e4303d498d1a92abddc7e895b7f"},
-    {url = "https://files.pythonhosted.org/packages/56/23/f716074d2ed0af82c0d1da1eaa5e4bb086236568405f13ab0bbaaa6307fb/protobuf-4.21.7.tar.gz", hash = "sha256:71d9dba03ed3432c878a801e2ea51e034b0ea01cf3a4344fb60166cb5f6c8757"},
-    {url = "https://files.pythonhosted.org/packages/66/4f/965be350e19ebb807f210853b696d3da1456884837d2537f3d783277ea4f/protobuf-4.21.7-cp310-abi3-win32.whl", hash = "sha256:c7cb105d69a87416bd9023e64324e1c089593e6dae64d2536f06bcbe49cd97d8"},
-    {url = "https://files.pythonhosted.org/packages/8e/f4/f7118951bed32a1c2d4d1d54034c725a1f54bcb85689897a91ae119f54e0/protobuf-4.21.7-cp310-abi3-win_amd64.whl", hash = "sha256:3ec85328a35a16463c6f419dbce3c0fc42b3e904d966f17f48bae39597c7a543"},
-    {url = "https://files.pythonhosted.org/packages/90/e7/66a3cc24ee3eab6e81f0d26246aa965de1fe1ee79beeb76522cdbfd408d9/protobuf-4.21.7-cp37-abi3-manylinux2014_aarch64.whl", hash = "sha256:ca200645d6235ce0df3ccfdff1567acbab35c4db222a97357806e015f85b5744"},
-    {url = "https://files.pythonhosted.org/packages/98/a1/e13cbc34f08fac52ee13d7a92d3ecd77f492c73d3c0b3e3af3e15a5f2329/protobuf-4.21.7-cp39-cp39-win32.whl", hash = "sha256:f370c0a71712f8965023dd5b13277444d3cdfecc96b2c778b0e19acbfd60df6e"},
-    {url = "https://files.pythonhosted.org/packages/9a/99/3be5a99beb2f72e1a8c2fe680f0853044de1ee1219310a1a95460e41a3c2/protobuf-4.21.7-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:db9056b6a11cb5131036d734bcbf91ef3ef9235d6b681b2fc431cbfe5a7f2e56"},
-    {url = "https://files.pythonhosted.org/packages/b7/1c/2d9ea79c2221732fca8433e048fe6f65caf8cf3e7f6d6d67f77b41984717/protobuf-4.21.7-cp37-abi3-manylinux2014_x86_64.whl", hash = "sha256:b019c79e23a80735cc8a71b95f76a49a262f579d6b84fd20a0b82279f40e2cc1"},
-    {url = "https://files.pythonhosted.org/packages/ce/37/64196aa65493d52332e45d1980ba6d443c99f5facaf05bd2e202ceb17451/protobuf-4.21.7-py2.py3-none-any.whl", hash = "sha256:8066322588d4b499869bf9f665ebe448e793036b552f68c585a9b28f1e393f66"},
-    {url = "https://files.pythonhosted.org/packages/dd/e6/c189b1ca5808923cbdf731f3912f9c4182593eb2d0afe31d8a73fc57806f/protobuf-4.21.7-cp37-cp37m-win_amd64.whl", hash = "sha256:a74d96cd960b87b4b712797c741bb3ea3a913f5c2dc4b6cbe9c0f8360b75297d"},
-    {url = "https://files.pythonhosted.org/packages/ef/87/67f99fbd3848cfbbd20e70644e134b33ad6f908c47f6461da03517f122f6/protobuf-4.21.7-py3-none-any.whl", hash = "sha256:58b81358ec6c0b5d50df761460ae2db58405c063fd415e1101209221a0a810e1"},
+"protobuf 3.19.6" = [
+    {url = "https://files.pythonhosted.org/packages/0c/0f/004d5881285a31e3400bbe20246a946a5de9a862bbbb7cf03f9e5f447f48/protobuf-3.19.6-cp37-cp37m-win32.whl", hash = "sha256:4bc98de3cdccfb5cd769620d5785b92c662b6bfad03a202b83799b6ed3fa1fa7"},
+    {url = "https://files.pythonhosted.org/packages/17/e6/9554fb822d60c513898234722635d0c29a51f252b359449cfb351b16172a/protobuf-3.19.6-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:c0ccd3f940fe7f3b35a261b1dd1b4fc850c8fde9f74207015431f174be5976b3"},
+    {url = "https://files.pythonhosted.org/packages/26/6b/e2aca5a4e83f95796bc65ee81d3a2c06b13dcdba0db294517cad5e71b3f9/protobuf-3.19.6-cp39-cp39-win32.whl", hash = "sha256:5a0d7539a1b1fb7e76bf5faa0b44b30f812758e989e59c40f77a7dab320e79b9"},
+    {url = "https://files.pythonhosted.org/packages/26/ef/bd6ba3b4ff9a35944bdd325e2c9ee56f71e855757f7d43938232499f0278/protobuf-3.19.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:11478547958c2dfea921920617eb457bc26867b0d1aa065ab05f35080c5d9eb6"},
+    {url = "https://files.pythonhosted.org/packages/32/27/1141a8232723dcb10a595cc0ce4321dcbbd5215300bf4acfc142343205bf/protobuf-3.19.6-py2.py3-none-any.whl", hash = "sha256:14082457dc02be946f60b15aad35e9f5c69e738f80ebbc0900a19bc83734a5a4"},
+    {url = "https://files.pythonhosted.org/packages/3c/f8/b6d7fd81464553e24a07f9d444126db3beb902b6bff6fcd6524d8284097f/protobuf-3.19.6-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7a552af4dc34793803f4e735aabe97ffc45962dfd3a237bdde242bff5a3de684"},
+    {url = "https://files.pythonhosted.org/packages/46/d3/45da5d8d838ca59ec0b2f3aac8dc41a1f53c920861fb01ae710c19c24027/protobuf-3.19.6-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:a8ce5ae0de28b51dff886fb922012dad885e66176663950cb2344c0439ecb473"},
+    {url = "https://files.pythonhosted.org/packages/4a/25/85bcc155980b5d7754ebdf4cb32039105f6020b6b2b8f7536a866113fc1c/protobuf-3.19.6-cp310-cp310-win32.whl", hash = "sha256:559670e006e3173308c9254d63facb2c03865818f22204037ab76f7a0ff70b5f"},
+    {url = "https://files.pythonhosted.org/packages/4b/3b/90f805b9e5ecacf8a216f2e5acabc2d3ad965b62803510be41804e6bfbfe/protobuf-3.19.6-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:010be24d5a44be7b0613750ab40bc8b8cedc796db468eae6c779b395f50d1fa1"},
+    {url = "https://files.pythonhosted.org/packages/51/61/e80b7a04f4e1b4eecc86582335205fd876abca0abafee4a6c001f70a375e/protobuf-3.19.6-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:878b4cd080a21ddda6ac6d1e163403ec6eea2e206cf225982ae04567d39be7b0"},
+    {url = "https://files.pythonhosted.org/packages/51/d1/79bfd1f481469b661a2eddab551255536401892722189433282bfb13cfb1/protobuf-3.19.6.tar.gz", hash = "sha256:5f5540d57a43042389e87661c6eaa50f47c19c6176e8cf1c4f287aeefeccb5c4"},
+    {url = "https://files.pythonhosted.org/packages/70/ee/e3562fd4e692afc6ed396b60ce3a177bc4ce6506ac8ac2413886198880e3/protobuf-3.19.6-cp37-cp37m-win_amd64.whl", hash = "sha256:aa3b82ca1f24ab5326dcf4ea00fcbda703e986b22f3d27541654f749564d778b"},
+    {url = "https://files.pythonhosted.org/packages/8f/8e/06fc0df62dd80a32739b51bb3256f1417349eb5c3899f6ccab3796937458/protobuf-3.19.6-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:90b0d02163c4e67279ddb6dc25e063db0130fc299aefabb5d481053509fae5c8"},
+    {url = "https://files.pythonhosted.org/packages/93/ff/f65aade3a1a5af11736c7e63a8a54b66f247d3849b09a1cc5aab75d4e9e0/protobuf-3.19.6-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:bb6776bd18f01ffe9920e78e03a8676530a5d6c5911934c6a1ac6eb78973ecb6"},
+    {url = "https://files.pythonhosted.org/packages/97/f9/a14bac5331f3e55bcbbed906a0c8b112f554152ddf09efeb6f5f95653ffd/protobuf-3.19.6-cp310-cp310-win_amd64.whl", hash = "sha256:347b393d4dd06fb93a77620781e11c058b3b0a5289262f094379ada2920a3730"},
+    {url = "https://files.pythonhosted.org/packages/98/f4/b21be85a824309351356c9a229cf9614d521620e26202a36d5fff2353c37/protobuf-3.19.6-cp36-cp36m-win_amd64.whl", hash = "sha256:0c0714b025ec057b5a7600cb66ce7c693815f897cfda6d6efb58201c472e3437"},
+    {url = "https://files.pythonhosted.org/packages/9b/6e/ffecb6488629407ac44ec956990c616eb56fd0069a81a9e28feeed8a2ca2/protobuf-3.19.6-cp39-cp39-win_amd64.whl", hash = "sha256:bbf5cea5048272e1c60d235c7bd12ce1b14b8a16e76917f371c718bd3005f045"},
+    {url = "https://files.pythonhosted.org/packages/9c/c3/6768e798cc7e08301ec0a5ef59a30dc49f5f0df2d3950cd5585cecf246a8/protobuf-3.19.6-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:84a04134866861b11556a82dd91ea6daf1f4925746b992f277b84013a7cc1229"},
+    {url = "https://files.pythonhosted.org/packages/ac/dd/b5e3b826322295afd5153fadd2c0ee5ab1ed2ddefa6a7f49f935ca9b51d3/protobuf-3.19.6-cp38-cp38-win32.whl", hash = "sha256:0469bc66160180165e4e29de7f445e57a34ab68f49357392c5b2f54c656ab25e"},
+    {url = "https://files.pythonhosted.org/packages/af/53/7e26bb62753910e98243725c2348c5c37914596dd52d53b1d3287662dbe2/protobuf-3.19.6-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:d0b635cefebd7a8a0f92020562dead912f81f401af7e71f16bf9506ff3bdbb38"},
+    {url = "https://files.pythonhosted.org/packages/bc/db/8b33c9558f1f27dd74e7f9ad730c6b32efab431419af556b1659e125b041/protobuf-3.19.6-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:30a15015d86b9c3b8d6bf78d5b8c7749f2512c29f168ca259c9d7727604d0e39"},
+    {url = "https://files.pythonhosted.org/packages/e9/57/0e6260097352a2cee576cb1a03dea57ff3f4ecb5e2a14f8f7a0d38a7b5ac/protobuf-3.19.6-cp36-cp36m-win32.whl", hash = "sha256:30f5370d50295b246eaa0296533403961f7e64b03ea12265d6dfce3a391d8992"},
+    {url = "https://files.pythonhosted.org/packages/ea/fe/82cf68917308b208731487f986db209e56903c30e324499b6bf0cc6a6203/protobuf-3.19.6-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:5057c64052a1f1dd7d4450e9aac25af6bf36cfbfb3a1cd89d16393a036c49157"},
+    {url = "https://files.pythonhosted.org/packages/f4/c3/3e7c48cd8e5b0ce9c2e57f38a166cc1b894b9b6a92f28f14a3fa48766ee7/protobuf-3.19.6-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:2b2d2913bcda0e0ec9a784d194bc490f5dc3d9d71d322d070b11a0ade32ff6ba"},
+    {url = "https://files.pythonhosted.org/packages/fd/38/cb53f28950a386c8d7e17fc305c97a158cf85d51d7e6caffe4f37336c138/protobuf-3.19.6-cp38-cp38-win_amd64.whl", hash = "sha256:91d5f1e139ff92c37e0ff07f391101df77e55ebb97f46bbc1535298d72019462"},
 ]
 "py 1.11.0" = [
     {url = "https://files.pythonhosted.org/packages/98/ff/fec109ceb715d2a6b4c4a85a61af3b40c723a961e8828319fbcb15b868dc/py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719"},
@@ -1704,9 +1715,9 @@ content_hash = "sha256:cde31a4396c7195a4f0212ae15094dd84c74460b11d4adf485236e313
     {url = "https://files.pythonhosted.org/packages/db/b5/475c45a58650b0580421746504b680cd2db4e81bc941e94ca53785250269/rsa-4.7.2.tar.gz", hash = "sha256:9d689e6ca1b3038bc82bf8d23e944b6b6037bc02301a574935b2dd946e0353b9"},
     {url = "https://files.pythonhosted.org/packages/e9/93/0c0f002031f18b53af7a6166103c02b9c0667be528944137cc954ec921b3/rsa-4.7.2-py3-none-any.whl", hash = "sha256:78f9a9bf4e7be0c5ded4583326e7461e3a3c5aae24073648b4bdfa797d78c9d2"},
 ]
-"setuptools 65.5.0" = [
-    {url = "https://files.pythonhosted.org/packages/41/82/7f54bbfe5c247a8c9f78d8d1d7c051847bcb78843c397b866dba335c1e88/setuptools-65.5.0-py3-none-any.whl", hash = "sha256:f62ea9da9ed6289bfe868cd6845968a2c854d1427f8548d52cae02a42b4f0356"},
-    {url = "https://files.pythonhosted.org/packages/c5/41/247814d8b7a044717164c74080725a6c8f3d2b5fc82b34bd825b617df663/setuptools-65.5.0.tar.gz", hash = "sha256:512e5536220e38146176efb833d4a62aa726b7bbff82cfbc8ba9eaa3996e0b17"},
+"setuptools 59.5.0" = [
+    {url = "https://files.pythonhosted.org/packages/40/a9/7deac76c58fa47c95360116a06b53b9b62f6db11336fe61b6ab53784d98b/setuptools-59.5.0-py3-none-any.whl", hash = "sha256:6d10741ff20b89cd8c6a536ee9dc90d3002dec0226c78fb98605bfb9ef8a7adf"},
+    {url = "https://files.pythonhosted.org/packages/e6/e2/f2bfdf364e016f7a464db709ea40d1101c4c5a463dd7019dae0a42dbd1c6/setuptools-59.5.0.tar.gz", hash = "sha256:d144f85102f999444d06f9c0e8c737fd0194f10f2f7e5fdb77573f6e2fa4fad0"},
 ]
 "six 1.16.0" = [
     {url = "https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
@@ -1764,8 +1775,8 @@ content_hash = "sha256:cde31a4396c7195a4f0212ae15094dd84c74460b11d4adf485236e313
     {url = "https://files.pythonhosted.org/packages/60/3f/3c89c6041460f06c83dcbd5992f796e9c034312558c935dd73226aa250f2/stevedore-4.0.1-py3-none-any.whl", hash = "sha256:01645addb67beff04c7cfcbb0a6af8327d2efc3380b0f034aa316d4576c4d470"},
     {url = "https://files.pythonhosted.org/packages/7e/82/3fdbc3acec9871a7a6845538b5870a0cd80cf9fe5c76041fef4969bf4425/stevedore-4.0.1.tar.gz", hash = "sha256:9a23111a6e612270c591fd31ff3321c6b5f3d5f3dabb1427317a5ab608fc261a"},
 ]
-"tensorboard 2.8.0" = [
-    {url = "https://files.pythonhosted.org/packages/f7/fd/67c61276de025801cfa8a1b9af2d7c577e7f27c17b6bff2baca20bf03543/tensorboard-2.8.0-py3-none-any.whl", hash = "sha256:65a338e4424e9079f2604923bdbe301792adce2ace1be68da6b3ddf005170def"},
+"tensorboard 2.10.1" = [
+    {url = "https://files.pythonhosted.org/packages/80/49/a5ec29886ef823718c8ae54ed0b3ad7e19066b5bf21cec5038427e6a04c4/tensorboard-2.10.1-py3-none-any.whl", hash = "sha256:fb9222c1750e2fa35ef170d998a1e229f626eeced3004494a8849c88c15d8c1c"},
 ]
 "tensorboard-data-server 0.6.1" = [
     {url = "https://files.pythonhosted.org/packages/3e/48/dd135dbb3cf16bfb923720163493cab70e7336db4b5f3103d49efa730404/tensorboard_data_server-0.6.1-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:fa8cef9be4fcae2f2363c88176638baf2da19c5ec90addb49b1cde05c95c88ee"},
