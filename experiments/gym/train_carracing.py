@@ -54,7 +54,8 @@ class Policy(nn.Module):
         return sample, log_prob
 
     def non_shared_parameters(self):
-        # This prevents gradients from the policy from training the shared encoder.
+        # ** This is critical for training! **
+        # Prevent the policy loss from training the shared encoder.
         return list(self.mlp_encoder.parameters()) + list(self.policy.parameters())
 
 
