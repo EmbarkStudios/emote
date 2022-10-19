@@ -23,9 +23,7 @@ class LoggingCallback(Callback):
     care how the data is logged, it only provides a standard
     interface for storing the data to be handled by a Logger."""
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         super().__init__()
         self.scalar_logs: Dict[str, Union[float, torch.Tensor]] = {}
         self.image_logs: Dict[str, torch.Tensor] = {}
