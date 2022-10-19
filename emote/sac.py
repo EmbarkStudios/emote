@@ -89,6 +89,8 @@ class QTarget(LoggingCallback):
         ln_alpha: torch.tensor,
         q1: nn.Module,
         q2: nn.Module,
+        q1t: Optional[nn.Module] = None,
+        q2t: Optional[nn.Module] = None,
         gamma: float = 0.99,
         reward_scale: float = 1.0,
         target_q_tau: float = 0.005,
@@ -98,8 +100,8 @@ class QTarget(LoggingCallback):
         super().__init__()
         self.data_group = data_group
         self.policy = pi
-        self.q1t = copy.deepcopy(q1)
-        self.q2t = copy.deepcopy(q2)
+        self.q1t = copy.deepcopy(q1) if q1t is None else q1t
+        self.q2t = copy.deepcopy(q2) if q2t is None else q2t
         self.ln_alpha = ln_alpha
         self.q1 = q1
         self.q2 = q2
