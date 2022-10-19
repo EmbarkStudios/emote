@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import List, Tuple
 
 import numpy as np
@@ -12,33 +11,40 @@ class Conv2dEncoder(nn.Module):
     """
     Multi-layer 2D convolutional encoder.
 
-    :param input_channels: (int) The number of input channels
-    :param params: (Conv2dParams) The parameters for the conv2d layers
+    :param input_shape: (Tuple[int, int, int]) The input image shape, this should be consistent with channels_last.
+    :param channels: List[int] The number of channels for each conv layer.
+    :param kernels: List[int] The kernel size for each conv layer.
+    :param strides: List[int] The strides for each conv layer.
+    :param padding: List[int] The padding.
+    :param channels_last: bool Whether the input image has channels as the last dim, else first.
+    :param activation: torch.nn.Module The activation function.
     """
 
     def __init__(
         self,
-        input_shape: Tuple[
-            int, int, int
-        ],  # (Tuple(int, int, int)) The input image shape (w, h, c).
-        channels: List[int],  # (List[int]) The number of channels for each conv layer.
-        kernels: List[int],  # (List[int]) The kernel size for each conv layer.
-        strides: List[int],  # (List[int]) The strides for each conv layer.
-        padding: List[int],  # (List[in]) The padding.
-        permute_obs_channels: bool = True,
+        input_shape: Tuple[int, int, int],
+        channels: List[int],
+        kernels: List[int],
+        strides: List[int],
+        padding: List[int],
+        channels_last: bool = True,
         activation: torch.nn.Module = torch.nn.ReLU,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self._input_shape = input_shape
+        self._channels_last = channels_last
+        if channels_last:
+            self._img_shape_cwh = [input_shape[2], input_shape[0], input_shape[1]]
+        else:
+            self._img_shape_cwh = input_shape
+
         self._channels = channels
         self._kernels = kernels
         self._strides = strides
         self._padding = padding
-        self._permute_obs_channels = permute_obs_channels
 
         num_layers = len(channels)
-        channels = [input_shape[2]] + channels
+        channels = [self._img_shape_cwh[0]] + channels
 
         self._layers = torch.nn.ModuleList()
         for i in range(num_layers):
@@ -57,14 +63,14 @@ class Conv2dEncoder(nn.Module):
 
     def forward(self, obs: torch.Tensor):
         x = obs
-        if self._permute_obs_channels:
+        if self._channels_last:
             x = x.permute(0, 3, 1, 2)
         for layer in self._layers:
             x = layer(x)
         return x
 
     def get_encoder_output_size(self, flatten: bool = False):
-        curr_size_x, curr_size_y = self._input_shape[0], self._input_shape[1]
+        curr_size_x, curr_size_y = self._img_shape_cwh[1], self._img_shape_cwh[2]
 
         """Calculate the outputs size of a conv encoder."""
         for k, s, p in zip(self._kernels, self._strides, self._padding):
