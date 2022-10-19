@@ -1,4 +1,5 @@
 from functools import partial
+from typing import List
 
 import torch
 
@@ -35,3 +36,21 @@ class ActionValueMlp(nn.Module):
         out = self.final_layer(self.encoder(x))
         assert (bsz, 1) == out.shape
         return out
+
+
+class SharedEncoderActionValueNet(nn.Module):
+    def __init__(
+        self,
+        shared_enc: nn.Module,
+        encoder_out_dim: int,
+        action_dim: int,
+        hidden_dims: List[int],
+    ):
+        super().__init__()
+        self.shared_enc = shared_enc
+        self.action_value_mlp = ActionValueMlp(encoder_out_dim, action_dim, hidden_dims)
+
+    def forward(self, action: torch.Tensor, obs: torch.Tensor):
+        x = self.shared_enc(obs)
+        value = self.action_value_mlp(action, x)
+        return value

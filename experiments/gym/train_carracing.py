@@ -10,6 +10,7 @@ import numpy as np
 import torch
 
 from gym.vector import AsyncVectorEnv
+from emote.nn.action_value_mlp import SharedEncoderActionValueNet
 from emote.nn.layers import Conv2dEncoder
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
@@ -25,29 +26,6 @@ from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 from emote.sac import AlphaLoss, PolicyLoss, QLoss, QTarget, VisionAgentProxy
-
-
-class QNet(nn.Module):
-    def __init__(self, shared_enc, num_obs, num_actions, hidden_dims):
-        super().__init__()
-        all_dims = [num_obs + num_actions] + hidden_dims
-
-        self.shared_enc = shared_enc
-        self.encoder = nn.Sequential(
-            *[
-                nn.Sequential(nn.Linear(n_in, n_out), nn.ReLU())
-                for n_in, n_out in zip(all_dims, hidden_dims)
-            ],
-        )
-        self.encoder.apply(ortho_init_)
-
-        self.final_layer = nn.Linear(hidden_dims[-1], 1)
-        self.final_layer.apply(partial(ortho_init_, gain=1))
-
-    def forward(self, action, obs):
-        x = self.shared_enc(obs)
-        x = torch.cat([x, action], dim=1)
-        return self.final_layer(self.encoder(x))
 
 
 class Policy(nn.Module):
@@ -131,11 +109,16 @@ def train_carracing(args):
         strides=cfg.strides,
         padding=cfg.padding,
     )
-    flat_shared_conv_enc = nn.Sequential(shared_conv_enc, nn.Flatten())
     flat_enc_out_size = shared_conv_enc.get_encoder_output_size(flatten=True)
 
-    q1 = QNet(flat_shared_conv_enc, flat_enc_out_size, num_actions, cfg.hidden_dims)
-    q2 = QNet(flat_shared_conv_enc, flat_enc_out_size, num_actions, cfg.hidden_dims)
+    flat_shared_conv_enc = nn.Sequential(shared_conv_enc, nn.Flatten())
+
+    q1 = SharedEncoderActionValueNet(
+        flat_shared_conv_enc, flat_enc_out_size, num_actions, cfg.hidden_dims
+    )
+    q2 = SharedEncoderActionValueNet(
+        flat_shared_conv_enc, flat_enc_out_size, num_actions, cfg.hidden_dims
+    )
 
     policy = Policy(
         flat_shared_conv_enc, flat_enc_out_size, num_actions, cfg.hidden_dims
