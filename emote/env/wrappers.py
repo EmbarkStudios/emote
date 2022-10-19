@@ -195,7 +195,7 @@ class ClipRewardEnv(gym.RewardWrapper):
         return np.sign(reward)
 
 
-class ParameterisedClipRewardEnv(gym.RewardWrapper):
+class ParameterizedClipRewardEnv(gym.RewardWrapper):
     def __init__(self, env, min_clip=-10.0, max_clip=10.0):
         """
         clips the reward to:   min_clip <= reward <= max_clip
@@ -249,7 +249,7 @@ class FrameStack(gym.Wrapper):
 
         See Also
         --------
-        embarkrl.lib.atari_wrappers.LazyFrames
+        LazyFrames (Below)
 
         :param env: (Gym Environment) the environment
         :param n_frames: (int) the number of frames to stack
@@ -327,7 +327,7 @@ class LazyFrames(object):
         return self._force()[i]
 
 
-class TupeliserFrame(gym.ObservationWrapper):
+class TupelizerFrame(gym.ObservationWrapper):
     def __init__(self, env):
         gym.ObservationWrapper.__init__(self, env)
         if isinstance(env.observation_space, spaces.Tuple):

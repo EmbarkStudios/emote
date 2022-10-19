@@ -10,7 +10,7 @@ from emote.env.wrappers import (
     MaxAndSkipEnv,
     NoopResetEnv,
     ScaledFloatFrame,
-    TupeliserFrame,
+    TupelizerFrame,
     WarpFrame,
 )
 
@@ -57,7 +57,7 @@ def make_vision_atari_env(
         if frame_stack > 1:
             env = FrameStack(env, frame_stack)
         if make_tuple:
-            return TupeliserFrame(env)
+            return TupelizerFrame(env)
         else:
             return env
 
