@@ -261,7 +261,9 @@ class AlphaLoss(LossCallback):
         self._max_ln_alpha = torch.log(torch.tensor(max_alpha, device=ln_alpha.device))
         # TODO(singhblom) Check number of actions
         # self.t_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
-        self.t_entropy = n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
+        self.t_entropy = (
+            n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
+        )
         self.ln_alpha = ln_alpha  # This is log(alpha)
 
     def loss(self, observation):

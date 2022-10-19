@@ -286,9 +286,9 @@ class CurlLoss(LossCallback):
             # CURL paper but it seems to give better results. This technique is also used
             # in SimCLR v2.
             logits = logits / self._temperature
-        else:
-            # remove max for numerical stability
-            logits = logits - torch.amax(logits, dim=1)
+
+        # remove max for numerical stability
+        logits = logits - torch.amax(logits, dim=1)
 
         # LOSS
         # One neat trick!: Diags are positive examples, off-diag are negative examples!
@@ -301,5 +301,7 @@ class CurlLoss(LossCallback):
     def end_batch(self):
         if self._use_projection_layer:
             soft_update_from_to(
-                self._proj_layer_source_vars, self._proj_layer_target_vars, tau=self._tau
+                self._proj_layer_source_vars,
+                self._proj_layer_target_vars,
+                tau=self._tau,
             )
