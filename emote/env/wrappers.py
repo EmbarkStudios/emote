@@ -18,7 +18,7 @@ cv2.ocl.setUseOpenCL(False)
 class WarpFrame(gym.ObservationWrapper):
     def __init__(self, env, width: int = 84, height: int = 84):
         """
-        Warp frames to widthxheight
+        Warp frames to width x height
 
         :param env: (Gym Environment) the environment
         """
