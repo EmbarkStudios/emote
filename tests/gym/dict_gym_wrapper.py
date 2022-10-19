@@ -1,11 +1,12 @@
-from typing import List, Dict
 from itertools import count
-from typing import List, Dict
-import numpy as np
-import gym.spaces
+from typing import Dict, List
 
-from gym.vector import VectorEnvWrapper, VectorEnv
-from emote.typing import EpisodeState, DictObservation, AgentId, DictResponse
+import gym.spaces
+import numpy as np
+
+from gym.vector import VectorEnv, VectorEnvWrapper
+
+from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 
@@ -19,6 +20,10 @@ class DictGymWrapper(VectorEnvWrapper):
         self._episode_rewards: List[float] = [0.0 for i in range(self.num_envs)]
         assert isinstance(env.single_observation_space, gym.spaces.Box)
         os: gym.spaces.Box = env.single_observation_space
+        if len(env.single_action_space.shape) > 0:
+            action_space_shape = env.single_action_space.shape
+        else:
+            action_space_shape = (1,)
         self.dict_space = MDPSpace(
             BoxSpace(np.float32, (1,)),
             BoxSpace(env.single_action_space.dtype, env.single_action_space.shape),

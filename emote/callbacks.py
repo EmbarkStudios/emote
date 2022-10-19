@@ -8,6 +8,7 @@ import numpy as np
 import torch
 
 from torch import Tensor, nn, optim
+from torch.optim import lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 
 from .callback import Callback
@@ -22,9 +23,12 @@ class LoggingCallback(Callback):
     care how the data is logged, it only provides a standard
     interface for storing the data to be handled by a Logger."""
 
-    def __init__(self):
+    def __init__(
+        self,
+    ):
         super().__init__()
         self.scalar_logs: Dict[str, Union[float, torch.Tensor]] = {}
+        self.image_logs: Dict[str, torch.Tensor] = {}
         self.hist_logs: Dict[str, Union[float, torch.Tensor]] = {}
         self.video_logs: Dict[str, Tuple[np.ndarray, int]] = {}
 
@@ -34,6 +38,11 @@ class LoggingCallback(Callback):
             self.scalar_logs[key] = value.item()
         else:
             self.scalar_logs[key] = value
+
+    def log_image(self, key: str, value: torch.Tensor):
+        """Use log_image to periodically log image data."""
+        if len(value.shape) == 3:
+            self.image_logs[key] = value
 
     def log_video(self, key: str, value: Tuple[np.ndarray, int]):
         """Use log_scalar to periodically log scalar data."""
@@ -46,11 +55,15 @@ class LoggingCallback(Callback):
         state_dict = super().state_dict()
         state_dict["scalar_logs"] = self.scalar_logs
         state_dict["hist_logs"] = self.hist_logs
+        state_dict["image_logs"] = self.image_logs
+        state_dict["video_logs"] = self.video_logs
         return state_dict
 
     def load_state_dict(self, state_dict: Dict[str, Any]):
         self.scalar_logs = state_dict.pop("scalar_logs")
         self.hist_logs = state_dict.pop("hist_logs")
+        self.video_logs = state_dict.pop("video_logs")
+        self.image_logs = state_dict.pop("image_logs")
         super().load_state_dict(state_dict)
 
 
@@ -59,11 +72,11 @@ class LossCallback(LoggingCallback):
 
     def __init__(
         self,
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
         *,
         name: str,
         network: Optional[nn.Module],
         optimizer: Optional[optim.Optimizer],
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler],
         max_grad_norm: float,
         data_group: str,
     ):
@@ -72,6 +85,8 @@ class LossCallback(LoggingCallback):
         self.name = name
         self.network = network
         self.optimizer = optimizer
+        if lr_schedule is None:
+            lr_schedule = lr_scheduler.ConstantLR(optimizer, factor=1.0)
         self.lr_schedule = lr_schedule
         self.parameters = [
             p for param_group in optimizer.param_groups for p in param_group["params"]
@@ -85,7 +100,6 @@ class LossCallback(LoggingCallback):
         grad_norm = nn.utils.clip_grad_norm_(self.parameters, self._max_grad_norm)
         self.optimizer.step()
         self.lr_schedule.step()
-
         self.log_scalar(f"loss/{self.name}_lr", self.lr_schedule.get_last_lr()[0])
         self.log_scalar(f"loss/{self.name}_loss", loss)
         self.log_scalar(f"loss/{self.name}_gradient_norm", grad_norm)
@@ -145,6 +159,20 @@ class TensorboardLogger(Callback):
                     k = "/".join(k_split)
                 self._writer.add_scalar(k, v, step)
 
+    def log_images(self, step, suffix=None):
+        """Logs images adding optional suffix on the first level.
+
+        **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
+        'training_bp_step/loss'.
+        """
+        for cb in self._cbs:
+            for k, v in cb.image_logs.items():
+                if suffix:
+                    k_split = k.split("/")
+                    k_split[0] = k_split[0] + "_" + suffix
+                    k = "/".join(k_split)
+                self._writer.add_image(k, v, step, dataformats="HWC")
+
     def log_videos(self, step, suffix=None):
         """Logs videos.
 
@@ -161,6 +189,7 @@ class TensorboardLogger(Callback):
 
     def end_cycle(self, bp_step, bp_samples):
         self.log_scalars(bp_step, suffix="bp_step")
+        self.log_images(bp_step, suffix="bp_step")
         self.log_videos(bp_step, suffix="bp_step")
 
         time_since_start = time.monotonic() - self._start_time
