@@ -1,10 +1,6 @@
 import gym
 
-from emote.env.wrappers import (
-    FrameStack,
-    ScaledFloatFrame,
-    WarpFrame,
-)
+from emote.env.wrappers import FrameStack, ScaledFloatFrame, WarpFrame
 
 
 def make_vision_box2d_env(

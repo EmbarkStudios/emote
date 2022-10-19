@@ -1,10 +1,11 @@
 from collections import deque
 
 import cv2
+import gym
 import numpy as np
 
-import gym
 from gym import spaces
+
 
 cv2.ocl.setUseOpenCL(False)
 

@@ -1,7 +1,9 @@
 from typing import List
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from torch.optim.lr_scheduler import LinearLR
 
 from emote.callbacks import LossCallback
@@ -60,13 +62,19 @@ class ImageAugmentor:
             minval=self._min_mask_size, maxval=self._max_mask_size, shape=[1]
         )[0]
         mask_size: List[int] = [int(image_size_x * size), int(image_size_y * size)]
-        start_i = torch.randint(low=0, high=image_size_x - mask_size[0], size=num_slices)
-        start_j = torch.randint(low=0, high=image_size_y - mask_size[1], size=num_slices)
+        start_i = torch.randint(
+            low=0, high=image_size_x - mask_size[0], size=num_slices
+        )
+        start_j = torch.randint(
+            low=0, high=image_size_y - mask_size[1], size=num_slices
+        )
         end_i = start_i + mask_size[0]
         end_j = start_j + mask_size[1]
         return start_i, start_j, end_i, end_j
 
-    def _maybe_add_noise(self, image: torch.Tensor, noise_std: float, noise_prob: float):
+    def _maybe_add_noise(
+        self, image: torch.Tensor, noise_std: float, noise_prob: float
+    ):
         prob_sample = rand_uniform(minval=0.0, maxval=1.0, shape=[1])[0]
         # Add noise to the image from a normal distribution.
         if prob_sample < noise_prob:

@@ -1,16 +1,14 @@
-from typing import Generator
-from tempfile import mkdtemp
 from os.path import join
+from tempfile import mkdtemp
+from typing import Generator
+
 import torch
+
 from torch import nn
 from torch.optim import Adam
 
 from emote import Trainer
-from emote.callbacks import (
-    BackPropStepsTerminator,
-    CheckpointLoader,
-    Checkpointer,
-)
+from emote.callbacks import BackPropStepsTerminator, Checkpointer, CheckpointLoader
 from emote.sac import QLoss
 from emote.trainer import TrainingShutdownException
 

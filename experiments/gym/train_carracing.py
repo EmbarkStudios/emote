@@ -10,8 +10,6 @@ import numpy as np
 import torch
 
 from gym.vector import AsyncVectorEnv
-from emote.nn.action_value_mlp import SharedEncoderActionValueNet
-from emote.nn.layers import Conv2dEncoder
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import nn
@@ -24,7 +22,9 @@ from emote.env.box2d import make_vision_box2d_env
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
+from emote.nn.action_value_mlp import SharedEncoderActionValueNet
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
+from emote.nn.layers import Conv2dEncoder
 from emote.sac import AlphaLoss, PolicyLoss, QLoss, QTarget, VisionAgentProxy
 
 
