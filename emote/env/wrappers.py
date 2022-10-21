@@ -13,6 +13,8 @@ cv2.ocl.setUseOpenCL(False)
 #
 # Most of these wrappers are from the openai baselines repository:
 # https://github.com/openai/baselines/blob/master/baselines/common/atari_wrappers.py
+#
+# Copyright (c) 2017 OpenAI (http://openai.com), used under the MIT license
 
 
 class WarpFrame(gym.ObservationWrapper):
