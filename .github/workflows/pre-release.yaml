@@ -42,4 +42,4 @@ jobs:
           title: "Latest release"
           files: |
             LICENSE*
-            sdist/*
+            dist/*
