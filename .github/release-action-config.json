@@ -17,6 +17,6 @@
 			"labels": ["a: ci", "documentation"]
 		}
 	],
-    "template": "Merged PRs since last release: ${{CHANGELOG}}\n\n##Uncategorized: ${{UNCATEGORIZED}}\n",
-	"pr_template": "- ${{TITLE}}\n   - PR: #${{NUMBER}}"
+    "template": "Merged PRs since last release:\n\n${{CHANGELOG}}\n\n##Uncategorized:\n\n${{UNCATEGORIZED}}\n",
+	"pr_template": "- ${{AUTHOR}}: ${{TITLE}} (#${{NUMBER}})"
 }
