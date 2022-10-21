@@ -15,7 +15,7 @@
 		{
 			"title": "## 🧪 Development",
 			"labels": ["a: ci", "documentation"]
-		},
+		}
 	],
     "template": "Merged PRs since last release: ${{CHANGELOG}}\n\n##Uncategorized: ${{UNCATEGORIZED}}\n",
 	"pr_template": "- ${{TITLE}}\n   - PR: #${{NUMBER}}",
