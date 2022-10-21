@@ -1,27 +1,21 @@
-# Simple workflow for deploying static content to GitHub Pages
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches: ["main"]
+    branches: ["gh-docs"]
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow one concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: true
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
     environment:
       name: github-pages
@@ -35,11 +29,11 @@ jobs:
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM
         with:
-          python-version: 3.8  # Version range or exact version of a Python version to use, the same as actions/setup-python
-          architecture: x64    # The target architecture (x86, x64) of the Python interpreter. the same as actions/setup-python
-          version: 2.1.5       # The version of PDM to install. Leave it as empty to use the latest version from PyPI, or 'head' to use the latest version from GitHub
-          prerelease: true     # Allow prerelease versions to be installed
-          enable-pep582: true  # Enable PEP 582 package loading globally
+          python-version: 3.8
+          architecture: x64
+          version: 2.1.5
+          prerelease: false
+          enable-pep582: true
           cache: true
           cache-dependency-path: '**/pdm.lock'
       - name: Install dependencies

@@ -1,0 +1,45 @@
+name: Publish pre-release package
+
+on:
+  push:
+    branches: ["ts/gh-docs"]
+
+  workflow_dispatch:
+
+concurrency:
+  group: "pre-release"
+  cancel-in-progress: true
+
+jobs:
+  pre-release:
+    name: "Pre Release"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+      - uses: pdm-project/setup-pdm@v3
+        name: Setup PDM
+        with:
+          python-version: 3.8
+          architecture: x64
+          version: 2.1.5
+          prerelease: true
+          enable-pep582: true
+          cache: true
+          cache-dependency-path: '**/pdm.lock'
+      - name: Install dependencies
+        run: pdm install -d -G ci
+      - name: Build Packages
+        run: pdm build
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Latest release"
+          files: |
+            LICENSE*
+            sdist/*
