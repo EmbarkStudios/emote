@@ -1,0 +1,3 @@
+{
+    "template": "${{CHANGELOG}}\n\n<details>\n<summary>Other</summary>\n\n${{UNCATEGORIZED}}\n</details>"
+}
