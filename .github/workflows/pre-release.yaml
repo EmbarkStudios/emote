@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Fetch tags
-        run: git fetch --prune --unshallow
+        run: git fetch --prune --unshallow --tags
 
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM
@@ -60,8 +60,6 @@ jobs:
 
       - name: "Build Changelog"
         uses: mikepenz/release-changelog-builder-action@v3.4.0
-        with:
-          configuration: "configuration.json"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create Release
@@ -69,7 +67,7 @@ jobs:
         with:
           body: ${{steps.github_release.outputs.changelog}}
           prerelease: true
-          removeArtifacts: true
+          tag: "latest"
           files: |
             dist/*
             LICENSE-*
