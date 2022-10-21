@@ -41,7 +41,7 @@ jobs:
           prerelease: true     # Allow prerelease versions to be installed
           enable-pep582: true  # Enable PEP 582 package loading globally
       - name: Install dependencies
-        run: pdm install -d -G ci
+        run: pdm install -d
       - name: Build docs
         run: cd docs && make deploy
       - name: Upload artifact
