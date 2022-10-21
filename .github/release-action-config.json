@@ -1,3 +1,22 @@
 {
-    "template": "${{CHANGELOG}}\n\n<details>\n<summary>Other</summary>\n\n${{UNCATEGORIZED}}\n</details>"
+	"categories": [
+		{
+			"title": "## 🚀 Features",
+			"labels": ["enhancement"]
+		},
+		{
+			"title": "## 🐛 Fixes",
+			"labels": ["bug", "t: bug"]
+		},
+		{
+			"title": "## 🧪 Tests",
+			"labels": ["test", "a: test"]
+		},
+		{
+			"title": "## 🧪 Development",
+			"labels": ["a: ci", "documentation"]
+		},
+	],
+    "template": "Merged PRs since last release: ${{CHANGELOG}}\n\n##Uncategorized: ${{UNCATEGORIZED}}\n",
+	"pr_template": "- ${{TITLE}}\n   - PR: #${{NUMBER}}",
 }
