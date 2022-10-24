@@ -1,6 +1,7 @@
-from .hit_the_middle import HitTheMiddle
 from .collector import SimpleGymCollector, ThreadedGymCollector
 from .dict_gym_wrapper import DictGymWrapper
+from .hit_the_middle import HitTheMiddle
+
 
 __all__ = [
     "HitTheMiddle",

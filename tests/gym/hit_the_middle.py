@@ -1,7 +1,8 @@
 import random
+
 import numpy as np
-from gym import spaces
-from gym import Env
+
+from gym import Env, spaces
 from gym.utils import seeding
 
 

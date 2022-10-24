@@ -40,7 +40,7 @@ class QLoss(LossCallback):
         name: str,
         q: nn.Module,
         opt: optim.Optimizer,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler],
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
         max_grad_norm: float = 10.0,
         data_group: str = "default",
     ):
@@ -89,6 +89,8 @@ class QTarget(LoggingCallback):
         ln_alpha: torch.tensor,
         q1: nn.Module,
         q2: nn.Module,
+        q1t: Optional[nn.Module] = None,
+        q2t: Optional[nn.Module] = None,
         gamma: float = 0.99,
         reward_scale: float = 1.0,
         target_q_tau: float = 0.005,
@@ -98,8 +100,8 @@ class QTarget(LoggingCallback):
         super().__init__()
         self.data_group = data_group
         self.policy = pi
-        self.q1t = copy.deepcopy(q1)
-        self.q2t = copy.deepcopy(q2)
+        self.q1t = copy.deepcopy(q1) if q1t is None else q1t
+        self.q2t = copy.deepcopy(q2) if q2t is None else q2t
         self.ln_alpha = ln_alpha
         self.q1 = q1
         self.q2 = q2
@@ -171,7 +173,7 @@ class PolicyLoss(LossCallback):
         ln_alpha: torch.tensor,
         q: nn.Module,
         opt: optim.Optimizer,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler],
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
         q2: Optional[nn.Module] = None,
         max_grad_norm: float = 10.0,
         name: str = "policy",
@@ -239,7 +241,7 @@ class AlphaLoss(LossCallback):
         pi: nn.Module,
         ln_alpha: torch.tensor,
         opt: optim.Optimizer,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler],
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
         n_actions: int,
         max_grad_norm: float = 10.0,
         entropy_eps: float = 0.089,
@@ -317,6 +319,36 @@ class FeatureAgentProxy:
                 [observations[agent_id].array_data["obs"] for agent_id in active_agents]
             )
         ).to(self.device)
+        actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
+        return {
+            agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
+            for i, agent_id in enumerate(active_agents)
+        }
+
+
+class VisionAgentProxy:
+    """This AgentProxy assumes that the observations will contain image observations 'obs'"""
+
+    def __init__(self, policy: nn.Module, device: torch.device):
+        self.policy = policy
+        self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
+        self.device = device
+
+    def __call__(
+        self, observations: Dict[AgentId, DictObservation]
+    ) -> Dict[AgentId, DictResponse]:
+        """Runs the policy and returns the actions."""
+        # The network takes observations of size batch x obs for each observation space.
+        assert len(observations) > 0, "Observations must not be empty."
+        active_agents = [
+            agent_id
+            for agent_id, obs in observations.items()
+            if obs.episode_state not in self._end_states
+        ]
+        np_obs = np.array(
+            [observations[agent_id].array_data["obs"] for agent_id in active_agents]
+        )
+        tensor_obs = torch.tensor(np_obs).to(self.device)
         actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})

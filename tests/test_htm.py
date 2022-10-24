@@ -1,25 +1,17 @@
 import torch
+
+from gym.vector import AsyncVectorEnv
 from torch import nn
 from torch.optim import Adam
-from gym.vector import AsyncVectorEnv
 
 from emote import Trainer
-from emote.callbacks import (
-    FinalLossTestCheck,
-    TerminalLogger,
-)
-from emote.nn import GaussianPolicyHead
+from emote.callbacks import FinalLossTestCheck, TerminalLogger
+from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
-from emote.sac import (
-    QLoss,
-    QTarget,
-    PolicyLoss,
-    AlphaLoss,
-    FeatureAgentProxy,
-)
-from emote.memory import TableMemoryProxy, MemoryLoader
+from emote.nn import GaussianPolicyHead
+from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
-from .gym import SimpleGymCollector, HitTheMiddle, DictGymWrapper
+from .gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
 
 
 N_HIDDEN = 10

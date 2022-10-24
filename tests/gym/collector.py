@@ -3,12 +3,14 @@ Collectors for running OpenAI gym environments
 """
 
 import threading
+
 from collections import deque
+
+from tests.gym.dict_gym_wrapper import DictGymWrapper
 
 from emote.callback import Callback
 from emote.callbacks import LoggingCallback
 from emote.proxies import AgentProxy, MemoryProxy
-from tests.gym.dict_gym_wrapper import DictGymWrapper
 
 
 class GymCollector(LoggingCallback):
