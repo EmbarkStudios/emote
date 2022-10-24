@@ -16,3 +16,5 @@ docs/coverage.rst
 *.onnx
 runs/**
 /.pdm.toml
+/dist/
+/.buildkite/digest.txt
