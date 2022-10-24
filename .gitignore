@@ -17,3 +17,4 @@ docs/coverage.rst
 runs/**
 /.pdm.toml
 /dist/
+/.buildkite/digest.txt
