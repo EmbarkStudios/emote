@@ -1,4 +1,4 @@
-# 2. Releases flow
+# 2. Versioning
 
 Date: 2022-10-24
 

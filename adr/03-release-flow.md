@@ -1,4 +1,4 @@
-# 2. Releases flow
+# 3. Releases flow
 
 Date: 2022-10-24
 
