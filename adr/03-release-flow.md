@@ -13,7 +13,8 @@ is easy to follow and reproducible for all users.
 
 ## Decision
 
-We will use tagged releases on GitHub to publish to PyPi. These releases will follow SemVer.
+We will use tagged releases on GitHub to publish to PyPi. These releases will follow the versioning scheme described in
+[02-versioning.md](versioning-scheme.md).
 
 ## Consequences
 
