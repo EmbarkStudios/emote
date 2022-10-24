@@ -140,48 +140,6 @@ def write_lockfile(
         project.core.ui.echo(f"Torch locks are written to [success]{lockfile_file}[/].")
 
 
-class LockCommand(BaseCommand):
-    """Generate a lockfile for torch specifically."""
-
-    def handle(self, project, options):
-        plugin_config = project.pyproject["tool"]["pdm"]["plugins"]["torch"]
-        torch_version_spec = plugin_config["torch-version"]
-        resolves = {
-            cuda: (f"https://download.pytorch.org/whl/{cuda}/", f"+{cuda}")
-            for cuda in plugin_config["cuda-versions"]
-        }
-
-        if plugin_config.get("enable-rocm", False):
-            for rocm_version in plugin_config.get("rocm-versions", ["4.2"]):
-                resolves[f"rocm{rocm_version}"] = (
-                    "https://download.pytorch.org/whl/",
-                    f"+rocm{rocm_version}",
-                )
-
-        if plugin_config.get("enable-cpu", False):
-            resolves["cpu"] = ("https://download.pytorch.org/whl/cpu", "")
-
-        results = {}
-        for (api, (url, local_version)) in resolves.items():
-            local_req = f"{torch_version_spec}{local_version}"
-
-            req = parse_requirement(local_req, False)
-
-            results[local_version] = do_lock(
-                project,
-                [
-                    {
-                        "name": "torch",
-                        "url": url,
-                        "type": "index",
-                    }
-                ],
-                requirements=[req],
-            )
-
-        write_lockfile(project, plugin_config["lockfile"], results)
-
-
 def resolve_candidates_from_lockfile(
     project: Project,
     requirements: Iterable[Requirement],
@@ -248,15 +206,37 @@ def read_lockfile(project: Project, lock_name: str) -> None:
     return data
 
 
-class InstallCommand(BaseCommand):
+class TorchCommand(BaseCommand):
     """Generate a lockfile for torch specifically."""
 
     def add_arguments(self, parser):
-        parser.add_argument(
+        subparsers = parser.add_subparsers(help="sub-command help", dest="command")
+        subparsers.required = True
+
+        parser_install = subparsers.add_parser(
+            "install", help="install a torch variant"
+        )
+        parser_install.add_argument(
             "--api", help="the api to use, e.g. cuda version or rocm", required=True
         )
+        parser_install.set_defaults(command="install")
+
+        parser_lock = subparsers.add_parser("lock", help="update lockfile")
+        parser_lock.add_argument(
+            "--check",
+            help="validate that the lockfile is up to date",
+            action="store_true",
+        )
+        parser_lock.set_defaults(command="lock")
 
     def handle(self, project, options):
+        if options.command == "install":
+            self.handle_install(project, options)
+
+        elif options.command == "lock":
+            self.handle_lock(project, options)
+
+    def handle_install(self, project, options):
         plugin_config = project.pyproject["tool"]["pdm"]["plugins"]["torch"]
         torch_version_spec = plugin_config["torch-version"]
         resolves = {
@@ -294,8 +274,45 @@ class InstallCommand(BaseCommand):
             lockfile=spec_for_version,
         )
 
+    def handle_lock(self, project, options):
+        plugin_config = project.pyproject["tool"]["pdm"]["plugins"]["torch"]
+        torch_version_spec = plugin_config["torch-version"]
+        resolves = {
+            cuda: (f"https://download.pytorch.org/whl/{cuda}/", f"+{cuda}")
+            for cuda in plugin_config["cuda-versions"]
+        }
+
+        if plugin_config.get("enable-rocm", False):
+            for rocm_version in plugin_config.get("rocm-versions", ["4.2"]):
+                resolves[f"rocm{rocm_version}"] = (
+                    "https://download.pytorch.org/whl/",
+                    f"+rocm{rocm_version}",
+                )
+
+        if plugin_config.get("enable-cpu", False):
+            resolves["cpu"] = ("https://download.pytorch.org/whl/cpu", "")
+
+        results = {}
+        for (api, (url, local_version)) in resolves.items():
+            local_req = f"{torch_version_spec}{local_version}"
+
+            req = parse_requirement(local_req, False)
+
+            results[local_version] = do_lock(
+                project,
+                [
+                    {
+                        "name": "torch",
+                        "url": url,
+                        "type": "index",
+                    }
+                ],
+                requirements=[req],
+            )
+
+        write_lockfile(project, plugin_config["lockfile"], results)
+
 
 def torch_plugin(core: Core):
-    core.register_command(LockCommand, "torch-lock")
-    core.register_command(InstallCommand, "torch-install")
+    core.register_command(TorchCommand, "torch")
     core.add_config("hello.name", ConfigItem("The person's name", "John"))
