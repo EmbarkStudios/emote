@@ -36,6 +36,9 @@ docs = [
     "sphinx-autodoc-typehints~=1.17",
     "sphinx-rtd-theme~=1.0.0",
 ]
+plugins = [
+    "plugins/pdm-plugin-pytorch",
+]
 
 [[tool.pdm.source]]
 type = "index"
@@ -44,6 +47,18 @@ name = "torch"
 
 [tool.pdm.resolution]
 respect-source-order = true
+
+[tool.pdm.plugins.torch]
+torch-version = "torch==1.10.2"
+lockfile = "torch.lock"
+enable-cpu = true
+
+enable-rocm = true
+rocm-versions = ["4.2"]
+
+enable-cuda = true
+cuda-versions = ["cu111", "cu113"]
+
 
 [project.urls]
 repository = "https://github.com/EmbarkStudios/emote"

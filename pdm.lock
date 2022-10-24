@@ -35,13 +35,14 @@ summary = "A configurable sidebar-enabled Sphinx theme"
 
 [[package]]
 name = "ale-py"
-version = "0.7.5"
+version = "0.8.0"
 requires_python = ">=3.7"
 summary = "The Arcade Learning Environment (ALE) - a platform for AI research."
 dependencies = [
     "importlib-metadata>=4.10.0; python_version < \"3.10\"",
     "importlib-resources",
     "numpy",
+    "typing-extensions; python_version < \"3.11\"",
 ]
 
 [[package]]
@@ -334,13 +335,13 @@ dependencies = [
 
 [[package]]
 name = "gym"
-version = "0.23.1"
-requires_python = ">=3.7"
+version = "0.26.2"
+requires_python = ">=3.6"
 summary = "Gym: A universal API for reinforcement learning environments"
 dependencies = [
     "cloudpickle>=1.2.0",
     "gym-notices>=0.0.4",
-    "importlib-metadata>=4.10.0; python_version < \"3.10\"",
+    "importlib-metadata>=4.8.0; python_version < \"3.10\"",
     "numpy>=1.18.0",
 ]
 
@@ -351,13 +352,13 @@ summary = "Notices for gym"
 
 [[package]]
 name = "gym"
-version = "0.23.1"
+version = "0.26.2"
 extras = ["atari", "classic_control"]
-requires_python = ">=3.7"
+requires_python = ">=3.6"
 summary = "Gym: A universal API for reinforcement learning environments"
 dependencies = [
-    "ale-py~=0.7.4",
-    "gym==0.23.1",
+    "ale-py~=0.8.0",
+    "gym==0.26.2",
     "pygame==2.1.0",
 ]
 
@@ -495,6 +496,13 @@ name = "pbr"
 version = "5.11.0"
 requires_python = ">=2.6"
 summary = "Python Build Reasonableness"
+
+[[package]]
+name = "pdm-plugin-pytorch"
+version = "0.1.0"
+requires_python = "~=3.8"
+path = "./plugins/pdm-plugin-pytorch"
+summary = "A plugin to help installing pytorch versions"
 
 [[package]]
 name = "platformdirs"
@@ -856,7 +864,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:9ab73fbf11d9ffafbb6b16facd9f684fb2b4578a9c9c293f0223cb1e72bf6683"
+content_hash = "sha256:e4c200a9df59aacc5b33745b1bc44ddec6b4fdef34de7b5af7b0242d2ab1e63f"
 
 [metadata.files]
 "absl-py 1.3.0" = [
@@ -960,22 +968,26 @@ content_hash = "sha256:9ab73fbf11d9ffafbb6b16facd9f684fb2b4578a9c9c293f0223cb1e7
     {url = "https://files.pythonhosted.org/packages/10/ad/00b090d23a222943eb0eda509720a404f531a439e803f6538f35136cae9e/alabaster-0.7.12-py2.py3-none-any.whl", hash = "sha256:446438bdcca0e05bd45ea2de1668c1d9b032e1a9154c2c259092d77031ddd359"},
     {url = "https://files.pythonhosted.org/packages/cc/b4/ed8dcb0d67d5cfb7f83c4d5463a7614cb1d078ad7ae890c9143edebbf072/alabaster-0.7.12.tar.gz", hash = "sha256:a661d72d58e6ea8a57f7a86e37d86716863ee5e92788398526d58b26a4e4dc02"},
 ]
-"ale-py 0.7.5" = [
-    {url = "https://files.pythonhosted.org/packages/1f/1b/4694238733bc7609fceffe68d1df190d1a5464e888799c93ebe280b34c7b/ale_py-0.7.5-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:da5be311285a00e587b886805ea56762d44bf4f1da672229c1fbaff209bfcdc2"},
-    {url = "https://files.pythonhosted.org/packages/25/87/e284ab173389d9acee86de8486afc217811dab00cbca60b4dbb7e7de808a/ale_py-0.7.5-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:b2680b9a3c577865572dd9b8f24303189bb22c67b1b9668dcad3c20f59285e78"},
-    {url = "https://files.pythonhosted.org/packages/34/96/5e615823c0b3611a09bc5cee30c2f00bac523497b28d5b211a5fd3d2a3e5/ale_py-0.7.5-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1f97301b89a8b49b9d2cc034f8a7df55eb6b1930126fb6cb6c6d6239bab8a89d"},
-    {url = "https://files.pythonhosted.org/packages/35/b6/8126a3dd8299db4f4575bd9798b41d3087c16cc001e234c3f94e5086d50c/ale_py-0.7.5-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:003725a8b6f02353066564ab417f4228adc886434aa4c8d314489a7f79fe9dfd"},
-    {url = "https://files.pythonhosted.org/packages/3e/87/4b98e37febfc8e0e11f947c165964b1b5187a258f6aee3f322a5a286193b/ale_py-0.7.5-cp39-cp39-win_amd64.whl", hash = "sha256:9976ceea0251ccad7e562e2021c337d5e9a9b24b5f9eecfe82573c2279337016"},
-    {url = "https://files.pythonhosted.org/packages/47/fb/093d3f4e49e965ae8ddcd4c2f497268e2b47f820b2b9f267225ceb4e0ce6/ale_py-0.7.5-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:48c5abf2c59bed0b46f17ac60ec6c940e6e7d4abc6ff7e5296246286f80e4a23"},
-    {url = "https://files.pythonhosted.org/packages/6c/ac/eb6bd862984f1c81bf08e39e138ad0b061f19dd50b1ffed45df7ceff7fcd/ale_py-0.7.5-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e513799fbb5128fa045cfb9a31cffa7f7c188dbe885665188b6c4cb50e9d983c"},
-    {url = "https://files.pythonhosted.org/packages/80/29/0533c3e1e55ab1a16c3f8f43ea48c1d9f217c99af5d3ea4f2fc4e0fa17f2/ale_py-0.7.5-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:910c5443a836bf0bc6b03c45fefeeb9096254f807d24e247753e214062c12cae"},
-    {url = "https://files.pythonhosted.org/packages/88/af/8220255414213e3c1c98b5fa37e2116f71b322b748716ee07e886340c214/ale_py-0.7.5-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:c68d3960f0e14738362069798ff5baa85ecb337038168cb61bd4855125deb894"},
-    {url = "https://files.pythonhosted.org/packages/8f/40/2e17459fbd34c19de1398e8eec39d3204dd398b69b35fce4ed98dc2bc7a0/ale_py-0.7.5-cp310-cp310-win_amd64.whl", hash = "sha256:1a72f8a311887fe3800964976c7ce3567dd701e7d9b77209d3a05c5cdf9c6af0"},
-    {url = "https://files.pythonhosted.org/packages/99/e4/08be2a4b38177781a864d3346fc69306391806b7238e4f924f443f9317d2/ale_py-0.7.5-cp38-cp38-win_amd64.whl", hash = "sha256:1f8694a091e13be45c8704a089462b1519f7112a85e1c1b61c842c69a2608a98"},
-    {url = "https://files.pythonhosted.org/packages/b1/f1/865db5bee365c81b25b8b014b49ff710bc325b0f8abd25f8f9feaa6c0305/ale_py-0.7.5-cp37-cp37m-win_amd64.whl", hash = "sha256:38e9f6c2b1cca246253f41028b8ad92d725beec8d4672c0fe247a217a4c7dc4f"},
-    {url = "https://files.pythonhosted.org/packages/b7/26/d4a03d3064c04c65e95dbc47c6fcef4579a5a57d80e607355d826ba2c88c/ale_py-0.7.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1a30270d4aec820527be7a643aad381d0d1c932dc476740f63cc649dd200e065"},
-    {url = "https://files.pythonhosted.org/packages/d4/d8/9ee7bc0e8682328bf91bca45991ff189a15bf24540cb341b53e3af9c0628/ale_py-0.7.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dec87873c6fe65c71129e20c52ce35dd4507ca409fa1233f4ae9c511144a9c99"},
-    {url = "https://files.pythonhosted.org/packages/e9/aa/9932e97aa30783155649dceb021bf02ab4382814e76829eaa32a357811a2/ale_py-0.7.5-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:4c7e7fed3ce2b305d2db9ca2f87106e3df6da2c4fc2363103782ffd5975b4549"},
+"ale-py 0.8.0" = [
+    {url = "https://files.pythonhosted.org/packages/0b/38/51c25f96e814d12deb39d8cb9bf9d70f368638a51f3b74b0f2ce6c7e0dd1/ale_py-0.8.0-cp38-cp38-win_amd64.whl", hash = "sha256:ff89a4fd824ca024c44e0985d8932884e28a8f7148139ff86d9aa8c53cb6bde2"},
+    {url = "https://files.pythonhosted.org/packages/0f/8a/feed20571a697588bc4bfef05d6a487429c84f31406a52f8af295a0346a2/ale_py-0.8.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3e55f5efc9eaafd7f8523da2f9a6749d9ebbbf1514cac66c281f8fb4ad8e8b40"},
+    {url = "https://files.pythonhosted.org/packages/1f/12/677ed7673456c2224e27f0f748f34c42bd297911b0e0debff088f40453dc/ale_py-0.8.0-cp39-cp39-win_amd64.whl", hash = "sha256:cf295fafdf850b2c4e745345bae2b1509be43b0b01e608050d0036ff0554e529"},
+    {url = "https://files.pythonhosted.org/packages/37/7d/4aec455930405207cd984934ac372c8e43b5deb5db163b6296e33153c9f1/ale_py-0.8.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:252fcabd097223f82277a4afb204bc270057c712d48007dc0900a699403254b6"},
+    {url = "https://files.pythonhosted.org/packages/41/c7/4f5daef0708eb940d1e4a50ff3709dbc274f248dba4cf994a3beea5aa077/ale_py-0.8.0-cp37-cp37m-win_amd64.whl", hash = "sha256:0ffe4582de762a1cd57302ffd818ea3b7da6fde57882d575e8f10ad5e6bc82c3"},
+    {url = "https://files.pythonhosted.org/packages/48/69/faf85e9762466a1693e631cb6f1f511d5591160a7f86880648c7040e4c56/ale_py-0.8.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:ee548db213cc99ea8b6f9a0e606e7a7cfe714493a7d821a99f8a3fc52f1f1f06"},
+    {url = "https://files.pythonhosted.org/packages/60/1b/3adde7f44f79fcc50d0a00a0643255e48024c4c3977359747d149dc43500/ale_py-0.8.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:766ffcc59b5ec31d4fb0f95486caff08af35fe6076505c3a3c05872a407a49b5"},
+    {url = "https://files.pythonhosted.org/packages/77/b3/8aa1d9645e16edc1f229c3f9a15270224145053a0e6193bc3d0732fa1585/ale_py-0.8.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:60402333f744a9dec55aac09672b88ec9e34cd8bf82f2f4a79c1c4522a3a9a7e"},
+    {url = "https://files.pythonhosted.org/packages/85/33/f0eee22ef0a6cbb3139ea9a86a25fc95d6481d78a13d933b83fe2ec0634b/ale_py-0.8.0-cp311-cp311-win_amd64.whl", hash = "sha256:e50c696e1386e38b0e07d6ed4515232e0e072ef5bbd6889952d165249691efde"},
+    {url = "https://files.pythonhosted.org/packages/94/f7/744b39a7e363156ac8b46c88f2ff5bc50ae7aa19e66cd23d13966638b2ea/ale_py-0.8.0-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:a74c384f1bcc01b61accc92aa4fd26def5d03076a64500eecfd7d75a0e864955"},
+    {url = "https://files.pythonhosted.org/packages/96/fc/2afa985809abf1bc2c0f715097354991ee6335a72b115bd9e0ac4d94d8b2/ale_py-0.8.0-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:701067e1089fdc28a0a906437a433244a9f728d28d3ec469e9e98e026cecd382"},
+    {url = "https://files.pythonhosted.org/packages/9d/3d/672404ea8ecf88752ab158921c90c400c3227adccc1c5f9718c4208f1bb1/ale_py-0.8.0-cp310-cp310-win_amd64.whl", hash = "sha256:5040fbd174a853de572002c0c0dbecad304dcf6fd8bc3d21795e14dcae93fc48"},
+    {url = "https://files.pythonhosted.org/packages/a0/98/4316c1cedd9934f9a91b6e27a9be126043b4445594b40cfa391c8de2e5e8/ale_py-0.8.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:84dd3f8699e42df773df734d0be99bced949f7ddd06374ead356f666887fc6ad"},
+    {url = "https://files.pythonhosted.org/packages/ab/fd/6615982d9460df7f476cad265af1378057eee9daaa8e0026de4cedbaffbd/ale_py-0.8.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2ed721bea18a57aedc549c4e3708ff72e03cf48bc8324d885bbb22822a7bfd13"},
+    {url = "https://files.pythonhosted.org/packages/b0/5f/f0b72aca34b8be1e759489ea7f55051ca88858cd7bb66d23be3f10e167a5/ale_py-0.8.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:471a0a9e54a8b643f020c426d9530e1570bf4cfc62a753d9a6a06508e3348dbb"},
+    {url = "https://files.pythonhosted.org/packages/b5/d5/74db5b5eb0ad977768eb3069c3706c0399621b6e366a5c44a4835511b526/ale_py-0.8.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:e5ffd260e18757e9bb652d5180d3d53939700102e4d94a940e51720deaedea71"},
+    {url = "https://files.pythonhosted.org/packages/bd/ca/9bf8f7cd094b8c9061caf8a30babc72d37c3c35f11d6afffe88154f5c1ab/ale_py-0.8.0-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:4bdc5dee2a8d7ff1df2b6f3cec491d041d1aac030228399b90f1687d3396e2eb"},
+    {url = "https://files.pythonhosted.org/packages/d1/c9/cfc24ce195207b59513bfd244b4ddb741d239e9958a3991bf9bc62bb2f59/ale_py-0.8.0-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:9952eda389d70ad10d3eee12b37b6df854c52df85331a9c6a307bee7f26dd621"},
+    {url = "https://files.pythonhosted.org/packages/e5/27/d1a6f7ca9d5211870964cf798da99bfb05767f9672364e361d8f9c35087a/ale_py-0.8.0-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:5e1291a565a511d1ec1205c2d4011e0ced206a2fecb3d951a8c4e3d88f60ddb6"},
 ]
 "argcomplete 2.0.0" = [
     {url = "https://files.pythonhosted.org/packages/05/f8/67851ae4fe5396ba6868c5d84219b81ea6a5d53991a6853616095c30adc0/argcomplete-2.0.0.tar.gz", hash = "sha256:6372ad78c89d662035101418ae253668445b391755cfe94ea52f1b9d22425b20"},
@@ -1315,8 +1327,8 @@ content_hash = "sha256:9ab73fbf11d9ffafbb6b16facd9f684fb2b4578a9c9c293f0223cb1e7
 "gsutil 5.15" = [
     {url = "https://files.pythonhosted.org/packages/ee/28/3ab5071cf8f163d8a9d0e95affa0512422811113111ae802ddff7af5074c/gsutil-5.15.tar.gz", hash = "sha256:b5bbd8f9c194c0ec7f3305557e6854e6fa00e7a1feee79e3c2cad272de451050"},
 ]
-"gym 0.23.1" = [
-    {url = "https://files.pythonhosted.org/packages/87/86/3f5467531428b6ce6f3c12d3121b4304d2ea1536a50775a4df036add37b8/gym-0.23.1.tar.gz", hash = "sha256:d0f9b9da34edbdace421c9442fc9205d03b8d15d0fb451053c766cde706d40e0"},
+"gym 0.26.2" = [
+    {url = "https://files.pythonhosted.org/packages/ab/b1/eb05a423eb801ab7d0715d6a3b28d92589e30b437052553df19ca2087240/gym-0.26.2.tar.gz", hash = "sha256:e0d882f4b54f0c65f203104c24ab8a38b039f1289986803c7d02cdbe214fbcc4"},
 ]
 "gym-notices 0.0.8" = [
     {url = "https://files.pythonhosted.org/packages/25/26/d786c6bec30fe6110fd3d22c9a273a2a0e56c0b73b93e25ea1af5a53243b/gym_notices-0.0.8-py3-none-any.whl", hash = "sha256:e5f82e00823a166747b4c2a07de63b6560b1acb880638547e0cabf825a01e463"},
