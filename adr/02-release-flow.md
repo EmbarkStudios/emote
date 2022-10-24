@@ -21,6 +21,10 @@ The flow will be as follows:
 
 * Upon needing a release, create a PR:
   * Update `CHANGELOG.md` to ensure it contains all relevant changes. You can base this off of the nightly changelog.
-  * Based on the above changes, set a new version in `pyproject.toml`. Update the heading in the changelog.
-* Once merged, pull the new main, and tag it with `git tag -a vNEW_VERSION COMMIT_HASH`.
+  * Based on the above changes, set a new version in `pyproject.toml`.
+  * Replace the heading in the changelog
+  * Add diff labels at the bottom.
+
+* Pull the new main, and tag it with `git tag -a vNEW_VERSION COMMIT_HASH`.
 * Push the tag with `git push vNEW_VERSION`
+* Make a new PR that adds back the "Unreleased" heading in the changelog.
