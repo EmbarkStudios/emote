@@ -30,6 +30,7 @@ tools = [
    "bandit~=1.7",
    "isort~=5.10",
 ]
+
 docs = [
     "Sphinx~=4.4",
     "sphinxcontrib-apidoc~=0.3",
@@ -37,8 +38,11 @@ docs = [
     "sphinx-rtd-theme~=1.0.0",
 ]
 plugins = [
-    "plugins/pdm-plugin-pytorch",
+    "pdm_plugin_torch @ file:///${PROJECT_ROOT}/plugins/pdm-plugin-torch",
 ]
+
+[tool.pdm.scripts]
+post_install = "pdm plugin add plugins/pdm-plugin-torch"
 
 [[tool.pdm.source]]
 type = "index"
@@ -58,7 +62,6 @@ rocm-versions = ["4.2"]
 
 enable-cuda = true
 cuda-versions = ["cu111", "cu113"]
-
 
 [project.urls]
 repository = "https://github.com/EmbarkStudios/emote"

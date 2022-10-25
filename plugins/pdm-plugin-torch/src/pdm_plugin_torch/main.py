@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 from typing import Iterable
 
 import tomlkit
@@ -12,11 +14,14 @@ from pdm.core import Core
 from pdm.models.candidates import Candidate
 from pdm.models.repositories import BaseRepository, LockedRepository
 from pdm.models.requirements import Requirement, parse_requirement
+from pdm.models.specifiers import get_specifier
 from pdm.project import Project
 from pdm.project.config import ConfigItem
 from pdm.resolver import resolve
 from pdm.resolver.providers import BaseProvider
+from pdm.termui import Verbosity
 from pdm.utils import atomic_open_for_write
+from pdm_plugin_torch.config import Configuration
 from resolvelib.reporters import BaseReporter
 from resolvelib.resolvers import ResolutionImpossible, ResolutionTooDeep, Resolver
 
@@ -206,6 +211,46 @@ def read_lockfile(project: Project, lock_name: str) -> None:
     return data
 
 
+def is_lockfile_compatible(project: Project, lock_name: str) -> bool:
+    lockfile_file = project.root / lock_name
+    if not lockfile_file.exists():
+        return True
+
+    lockfile = read_lockfile(project, lock_name)
+    lockfile_version = str(lockfile.get("metadata", {}).get("lock_version", ""))
+    if not lockfile_version:
+        return False
+
+    if "." not in lockfile_version:
+        lockfile_version += ".0"
+
+    accepted = get_specifier(f"~={lockfile_version}")
+    return accepted.contains(project.LOCKFILE_VERSION)
+
+
+def check_lockfile(project: Project, lock_name: str) -> str | None:
+    """Check if the lock file exists and is up to date. Return the update strategy."""
+    lockfile_file = project.root / lock_name
+    if not lockfile_file.exists():
+        project.core.ui.echo("Lock file does not exist", style="warning", err=True)
+        return False
+    elif not is_lockfile_compatible(project, lock_name):
+        project.core.ui.echo(
+            "Lock file version is not compatible with PDM, installation may fail",
+            style="warning",
+            err=True,
+        )
+        return False
+    elif not project.is_lockfile_hash_match():
+        project.core.ui.echo(
+            "Lock file hash doesn't match pyproject.toml, packages may be outdated",
+            style="warning",
+            err=True,
+        )
+        return False
+    return True
+
+
 class TorchCommand(BaseCommand):
     """Generate a lockfile for torch specifically."""
 
@@ -217,7 +262,7 @@ class TorchCommand(BaseCommand):
             "install", help="install a torch variant"
         )
         parser_install.add_argument(
-            "--api", help="the api to use, e.g. cuda version or rocm", required=True
+            "api", help="the api to use, e.g. cuda version or rocm"
         )
         parser_install.set_defaults(command="install")
 
@@ -237,29 +282,21 @@ class TorchCommand(BaseCommand):
             self.handle_lock(project, options)
 
     def handle_install(self, project, options):
-        plugin_config = project.pyproject["tool"]["pdm"]["plugins"]["torch"]
-        torch_version_spec = plugin_config["torch-version"]
-        resolves = {
-            cuda: f"https://download.pytorch.org/whl/{cuda}/"
-            for cuda in plugin_config["cuda-versions"]
-        }
+        plugin_config = Configuration.from_toml(
+            project.pyproject["tool"]["pdm"]["plugins"]["torch"]
+        )
 
-        if plugin_config.get("enable-rocm", False):
-            for rocm_version in plugin_config.get("rocm-versions", ["4.2"]):
-                resolves[f"rocm{rocm_version}"] = "https://download.pytorch.org/whl/"
-
-        if plugin_config.get("enable-cpu", False):
-            resolves["cpu"] = "https://download.pytorch.org/whl/cpu"
-
+        resolves = plugin_config.variants
         if options.api not in resolves:
             raise ValueError(
                 f"unknown API {options.api}, expected one of {[v for v in resolves]}"
             )
 
-        lockfile = read_lockfile(project, plugin_config["lockfile"])
+        lockfile = read_lockfile(project, plugin_config.lockfile)
+
         spec_for_version = lockfile[options.api]
-        source = resolves[options.api]
-        local_req = f"{torch_version_spec}+{options.api}"
+        (source, local_version) = resolves[options.api]
+        local_req = f"{plugin_config.torch_version}{local_version}"
         req = parse_requirement(local_req, False)
         do_sync(
             project,
@@ -275,30 +312,34 @@ class TorchCommand(BaseCommand):
         )
 
     def handle_lock(self, project, options):
-        plugin_config = project.pyproject["tool"]["pdm"]["plugins"]["torch"]
-        torch_version_spec = plugin_config["torch-version"]
-        resolves = {
-            cuda: (f"https://download.pytorch.org/whl/{cuda}/", f"+{cuda}")
-            for cuda in plugin_config["cuda-versions"]
-        }
+        plugin_config = Configuration.from_toml(
+            project.pyproject["tool"]["pdm"]["plugins"]["torch"]
+        )
 
-        if plugin_config.get("enable-rocm", False):
-            for rocm_version in plugin_config.get("rocm-versions", ["4.2"]):
-                resolves[f"rocm{rocm_version}"] = (
-                    "https://download.pytorch.org/whl/",
-                    f"+rocm{rocm_version}",
+        if options.check:
+            is_updated = check_lockfile(project, plugin_config.lockfile)
+            if not is_updated:
+                project.core.ui.echo(
+                    "Lockfile is [error]out of date[/].",
+                    err=True,
+                    verbosity=Verbosity.DETAIL,
                 )
-
-        if plugin_config.get("enable-cpu", False):
-            resolves["cpu"] = ("https://download.pytorch.org/whl/cpu", "")
+                sys.exit(1)
+            else:
+                project.core.ui.echo(
+                    "Lockfile is [success]up to date[/].",
+                    err=True,
+                    verbosity=Verbosity.DETAIL,
+                )
+                sys.exit(0)
 
         results = {}
-        for (api, (url, local_version)) in resolves.items():
-            local_req = f"{torch_version_spec}{local_version}"
+        for (api, (url, local_version)) in plugin_config.variants.items():
+            local_req = f"{plugin_config.torch_version}{local_version}"
 
             req = parse_requirement(local_req, False)
 
-            results[local_version] = do_lock(
+            results[api] = do_lock(
                 project,
                 [
                     {
@@ -310,7 +351,7 @@ class TorchCommand(BaseCommand):
                 requirements=[req],
             )
 
-        write_lockfile(project, plugin_config["lockfile"], results)
+        write_lockfile(project, plugin_config.lockfile, results)
 
 
 def torch_plugin(core: Core):
