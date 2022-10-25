@@ -3,19 +3,20 @@ set -eo pipefail
 pdm plugin add plugins/pdm-plugin-torch
 
 EXIT_CODE=0
-pdm install --check || EXIT_CODE=$?
-pdm torch lock --check || EXIT_CODE=$?
+pdm lock --refresh || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
     buildkite-agent annotate --style "error" --context "lockfile" ":lock: Failed validating lockfile. See logs for more info."
 	exit 1
 fi
 
+TORCH_EXIT_CODE=0
+pdm torch lock --check || TORCH_EXIT_CODE=$?
 GIT_STATUS=$(git status --porcelain --untracked-files=no -- pdm.lock)
-if [ -n "$GIT_STATUS" ]; then
+if [ -n "$GIT_STATUS" ] || [ $TORCH_EXIT_CODE -ne 0 ]; then
 	lock_diff=$(git diff pdm.lock)
 	cat << EOF | buildkite-agent annotate --style "error" --context "lockfile"
-:lock: Lockfile is outdated. Please run \`pdm lock --no-update\` and commit the result.
+:lock: Lockfile is outdated. Please run \`pdm lock --no-update && pdm torch lock\` and commit the result.
 
 \`\`\`diff
 $lock_diff
