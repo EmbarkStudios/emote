@@ -36,6 +36,7 @@ docs = [
     "sphinxcontrib-apidoc~=0.3",
     "sphinx-autodoc-typehints~=1.17",
     "sphinx-rtd-theme~=1.0.0",
+    "myst-parser~=0.18.0"
 ]
 plugins = [
     "pdm_plugin_torch @ file:///${PROJECT_ROOT}/plugins/pdm-plugin-torch",
