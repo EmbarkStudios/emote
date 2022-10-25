@@ -30,12 +30,19 @@ tools = [
    "bandit~=1.7",
    "isort~=5.10",
 ]
+
 docs = [
     "Sphinx~=4.4",
     "sphinxcontrib-apidoc~=0.3",
     "sphinx-autodoc-typehints~=1.17",
     "sphinx-rtd-theme~=1.0.0",
 ]
+plugins = [
+    "pdm_plugin_torch @ file:///${PROJECT_ROOT}/plugins/pdm-plugin-torch",
+]
+
+[tool.pdm.scripts]
+post_install = "pdm plugin add plugins/pdm-plugin-torch"
 
 [[tool.pdm.source]]
 type = "index"
@@ -44,6 +51,17 @@ name = "torch"
 
 [tool.pdm.resolution]
 respect-source-order = true
+
+[tool.pdm.plugins.torch]
+torch-version = "torch==1.10.2"
+lockfile = "torch.lock"
+enable-cpu = true
+
+enable-rocm = true
+rocm-versions = ["4.2"]
+
+enable-cuda = true
+cuda-versions = ["cu111", "cu113"]
 
 [project.urls]
 repository = "https://github.com/EmbarkStudios/emote"
@@ -66,6 +84,8 @@ combine_as_imports = true
 lines_between_types = 1
 lines_after_imports = 2
 src_paths = ["emote"]
+known_first_party = ["emote", "pdm_plugin_torch"]
+
 
 [tool.black]
 target-version = ['py38']

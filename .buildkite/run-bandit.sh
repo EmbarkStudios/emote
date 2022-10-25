@@ -5,7 +5,7 @@ source .buildkite/install-repo.sh
 echo --- Running bandit
 
 EXIT_CODE=0
-pdm run bandit --r emote experiments tests -ll > diff.txt || EXIT_CODE=$?
+pdm run bandit --r emote experiments tests plugins -ll > diff.txt || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "bandit"

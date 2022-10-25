@@ -31,6 +31,7 @@ to build other algorithms.
    :hidden:
 
    self
+   installing-torch
    coding-standard
 
 .. toctree::
