@@ -21,9 +21,10 @@ from pdm.resolver import resolve
 from pdm.resolver.providers import BaseProvider
 from pdm.termui import Verbosity
 from pdm.utils import atomic_open_for_write
-from pdm_plugin_torch.config import Configuration
 from resolvelib.reporters import BaseReporter
 from resolvelib.resolvers import ResolutionImpossible, ResolutionTooDeep, Resolver
+
+from pdm_plugin_torch.config import Configuration
 
 
 def sources(project: Project, sources: list) -> list[Source]:
@@ -228,6 +229,21 @@ def is_lockfile_compatible(project: Project, lock_name: str) -> bool:
     return accepted.contains(project.LOCKFILE_VERSION)
 
 
+def is_lockfile_hash_match(project: Project, lock_name: str) -> bool:
+    lockfile_file = project.root / lock_name
+    if not lockfile_file.exists():
+        return False
+
+    lockfile = read_lockfile(project, lock_name)
+    hash_in_lockfile = str(lockfile.get("metadata", {}).get("content_hash", ""))
+    if not hash_in_lockfile:
+        return False
+
+    algo, hash_value = hash_in_lockfile.split(":")
+    content_hash = project.get_content_hash(algo)
+    return content_hash == hash_value
+
+
 def check_lockfile(project: Project, lock_name: str) -> str | None:
     """Check if the lock file exists and is up to date. Return the update strategy."""
     lockfile_file = project.root / lock_name
@@ -241,7 +257,7 @@ def check_lockfile(project: Project, lock_name: str) -> str | None:
             err=True,
         )
         return False
-    elif not project.is_lockfile_hash_match():
+    elif not is_lockfile_hash_match(project, lockfile_file):
         project.core.ui.echo(
             "Lock file hash doesn't match pyproject.toml, packages may be outdated",
             style="warning",
