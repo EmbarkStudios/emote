@@ -536,6 +536,13 @@ requires_python = ">=2.6"
 summary = "Python Build Reasonableness"
 
 [[package]]
+name = "pdm-plugin-torch"
+version = "0.1.2"
+requires_python = "~=3.8"
+path = "./plugins/pdm-plugin-torch"
+summary = "A plugin to help installing torch versions"
+
+[[package]]
 name = "platformdirs"
 version = "2.5.2"
 requires_python = ">=3.7"
@@ -895,7 +902,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:96ebc8347039ff79723302a94a6ec093be59f2302f4fe7c19a41d1ec0d186d90"
+content_hash = "sha256:dfd1b6557cfa7fde139745caf54b331a2e8f3e3e68ed04ba206200b6296593f6"
 
 [metadata.files]
 "absl-py 1.3.0" = [
