@@ -253,14 +253,14 @@ def check_lockfile(project: Project, lock_name: str) -> str | None:
     elif not is_lockfile_compatible(project, lock_name):
         project.core.ui.echo(
             "Lock file version is not compatible with PDM, installation may fail",
-            style="warning",
+            style="yellow",
             err=True,
         )
         return False
     elif not is_lockfile_hash_match(project, lockfile_file):
         project.core.ui.echo(
             "Lock file hash doesn't match pyproject.toml, packages may be outdated",
-            style="warning",
+            style="yellow",
             err=True,
         )
         return False
