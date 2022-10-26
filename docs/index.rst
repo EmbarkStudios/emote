@@ -46,8 +46,14 @@ to build other algorithms.
 .. toctree::
    :caption: Extras
    :hidden:
+   :glob:
 
    Undocumented code <coverage.rst>
+   Architecture Desicision Records <adr/doc.md>
+
+..
+   .. include:: adr/doc.md
+	  :parser: myst_parser.sphinx_
 
 * :ref:`genindex`
 * :ref:`modindex`

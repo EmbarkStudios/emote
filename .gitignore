@@ -18,3 +18,4 @@ runs/**
 /.pdm.toml
 /dist/
 /.buildkite/digest.txt
+/docs/adr/

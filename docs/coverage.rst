@@ -1,5 +1,16 @@
 Undocumented Python objects
 ===========================
+emote.callback
+--------------
+Classes:
+ * Callback -- missing methods:
 
-To generate this file, run `make deploy`! Do not check it in.
+   - backward
+   - begin_batch
+   - end_batch
+   - end_cycle
+   - end_training
+   - load_state_dict
+   - state_dict
+ * CallbackMeta
 
