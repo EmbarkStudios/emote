@@ -52,7 +52,7 @@ jobs:
           dist/*
           LICENSE-*
 
-    - name: Publish Packages to TestPyPi
+    - name: Publish Packages to PyPi
       env:
         PDM_PUBLISH_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
