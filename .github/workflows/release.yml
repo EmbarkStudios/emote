@@ -48,7 +48,7 @@ jobs:
       with:
         body: ${{ steps.github_release.outputs.changelog }}
         prerelease: true
-        tag_name: "Release ${{ github.ref }}"
+        tag_name: "Release test"
         files: |
           dist/*
           LICENSE-*
