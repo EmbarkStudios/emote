@@ -1,8 +1,6 @@
 name: Release
 on:
   push:
-    branches:
-      - 'ts/release-flow-action'
     tags:
       - v*
 
@@ -48,12 +46,14 @@ jobs:
       with:
         body: ${{ steps.github_release.outputs.changelog }}
         prerelease: false
-        tag_name: "latest"
+        tag_name: ${{ github.ref }}
+        name: "Release ${{ github.ref }}"
         files: |
           dist/*
           LICENSE-*
 
     - name: Publish Packages to TestPyPi
       env:
-        PDM_PUBLISH_PASSWORD: ${{ secrets.PYPI_TEST_TOKEN }}
-      run: pdm publish -r testpypi -u __token__
+        PDM_PUBLISH_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+
+      run: pdm publish -r pypi -u __token__
