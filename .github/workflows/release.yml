@@ -43,15 +43,15 @@ jobs:
         configuration: ".github/release-action-config.json"
         toTag: ${{ github.ref }}
 
-    # - name: Release to GitHub
-    #   uses: mikepenz/action-gh-release@v0.2.0-a03
-    #   with:
-    #     body: ${{ steps.github_release.outputs.changelog }}
-    #     prerelease: true
-    #     tag_name: "Release ${{ github.ref }}"
-    #     files: |
-    #       dist/*
-    #       LICENSE-*
+    - name: Release to GitHub
+      uses: mikepenz/action-gh-release@v0.2.0-a03
+      with:
+        body: ${{ steps.github_release.outputs.changelog }}
+        prerelease: true
+        tag_name: "Release ${{ github.ref }}"
+        files: |
+          dist/*
+          LICENSE-*
 
     - name: Publish Packages to TestPyPi
       env:
