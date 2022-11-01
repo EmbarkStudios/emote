@@ -12,6 +12,6 @@ RUN apt-get -y update && \
 
 RUN pip install \
 	--no-cache-dir \
-	pdm==2.1.5
+	pdm==2.2.0
 
 ENTRYPOINT bash
