@@ -4,14 +4,28 @@ small: &small
     queue: monorepo-ci
     size: small
 
-common: &common
+large: &large
+  agents:
+    cluster: builds-fi-2
+    queue: monorepo-ci
+    size: large
+
+
+plugins: &plugins
   plugins:
   - EmbarkStudios/k8s#1.2.10:
       service-account-name: monorepo-ci
       image: gcr.io/embark-shared/ml/ci-runner@sha256:e239cfbf62573c273726e52f7579d489026dfc8610976925a8036a26a851f1d5
       default-secret-name: buildkite-k8s-plugin
       always-pull: false
+
+small_container: &small_container
   << : *small
+  << : *plugins
+
+large_container: &large_container
+  << : *large
+  << : *plugins
 
 steps:
   - group: ":passport_control: Validating PR"
@@ -26,7 +40,7 @@ steps:
 
       - label: ":lock: Checking lockfile"
         command: bash .buildkite/validate-lockfile.sh
-        << : *common
+        << : *small_container
 
   - wait
 
@@ -34,26 +48,26 @@ steps:
     steps:
       - label: 📚 Publish docs
         command: bash .buildkite/publish-docs.sh
-        << : *common
+        << : *small_container
 
       - label: ":python-black: Validate black"
         command: bash .buildkite/run-black.sh
-        << : *common
+        << : *small_container
 
       - label: ":isort: Validate isort"
         command: bash .buildkite/run-isort.sh
-        << : *common
+        << : *small_container
 
       - label: ":bandit: Validate bandit"
         command: bash .buildkite/run-bandit.sh
-        << : *common
+        << : *small_container
 
       - label: ":pytest: Run tests"
         command: bash .buildkite/run-pytest.sh
-        << : *common
+        << : *large_container
 
   - wait
 
   - label: ":package: Validate packaging"
     command: bash .buildkite/run-package.sh
-    << : *common
+    << : *small_container
