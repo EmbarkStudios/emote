@@ -3,7 +3,7 @@ set -eo pipefail
 pdm plugin add plugins/pdm-plugin-torch
 
 EXIT_CODE=0
-pdm lock --refresh || EXIT_CODE=$?
+pdm lock || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
     buildkite-agent annotate --style "error" --context "lockfile" ":lock: Failed validating lockfile. See logs for more info."
@@ -32,6 +32,7 @@ elif  [ -n "$GIT_STATUS" ] ; then
 $lock_diff
 \`\`\`
 EOF
+	exit 1
 elif [ $TORCH_EXIT_CODE -ne 0 ]; then
 
 	cat << EOF | buildkite-agent annotate --style "error" --context "lockfile"

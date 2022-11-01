@@ -182,7 +182,7 @@ summary = "Docutils -- Python Documentation Utilities"
 
 [[package]]
 name = "emote-rl"
-version = "0.1.0"
+version = "22.0.0"
 requires_python = "~=3.8"
 summary = "A modular reinforcement learning library"
 dependencies = [
@@ -192,14 +192,14 @@ dependencies = [
 
 [[package]]
 name = "emote-rl"
-version = "0.1.0"
+version = "22.0.0"
 extras = ["atari", "torch-cpu"]
 requires_python = "~=3.8"
 summary = "A modular reinforcement learning library"
 dependencies = [
     "box2d~=2.3.10",
-    "emote-rl==0.1.0",
-    "gym[atari,classic_control]~=0.22",
+    "emote-rl==22.0.0",
+    "gym[atari,classic_control]~=0.23.0",
     "pygame~=2.1.0",
     "torch==1.10.2",
 ]
@@ -314,7 +314,7 @@ dependencies = [
 
 [[package]]
 name = "gsutil"
-version = "5.15"
+version = "5.16"
 requires_python = "!=2.*, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 summary = "A command line tool for interacting with cloud storage services."
 dependencies = [
@@ -1358,8 +1358,8 @@ content_hash = "sha256:dfd1b6557cfa7fde139745caf54b331a2e8f3e3e68ed04ba206200b62
     {url = "https://files.pythonhosted.org/packages/f4/64/fe8b2fa82d884dc1e0e60a67e6215779a6421637bcbb12ac4bfac2b58630/grpcio-1.50.0-cp310-cp310-manylinux_2_17_aarch64.whl", hash = "sha256:4b123fbb7a777a2fedec684ca0b723d85e1d2379b6032a9a9b7851829ed3ca9a"},
     {url = "https://files.pythonhosted.org/packages/f7/be/dd3b323d9b58b919adec3e3099110fc7e04f60e07eb5a35ea38994984de8/grpcio-1.50.0-cp310-cp310-linux_armv7l.whl", hash = "sha256:906f4d1beb83b3496be91684c47a5d870ee628715227d5d7c54b04a8de802974"},
 ]
-"gsutil 5.15" = [
-    {url = "https://files.pythonhosted.org/packages/ee/28/3ab5071cf8f163d8a9d0e95affa0512422811113111ae802ddff7af5074c/gsutil-5.15.tar.gz", hash = "sha256:b5bbd8f9c194c0ec7f3305557e6854e6fa00e7a1feee79e3c2cad272de451050"},
+"gsutil 5.16" = [
+    {url = "https://files.pythonhosted.org/packages/e9/db/13dbca8b3544092739740406e00b63dbbee7af1f95dcab3e59e4700b9e88/gsutil-5.16.tar.gz", hash = "sha256:b772a0a17383b150c9c9ae2845e7b71c029c11fb9a14f0e7219c334181b221a1"},
 ]
 "gym 0.23.1" = [
     {url = "https://files.pythonhosted.org/packages/87/86/3f5467531428b6ce6f3c12d3121b4304d2ea1536a50775a4df036add37b8/gym-0.23.1.tar.gz", hash = "sha256:d0f9b9da34edbdace421c9442fc9205d03b8d15d0fb451053c766cde706d40e0"},
