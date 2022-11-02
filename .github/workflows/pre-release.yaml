@@ -41,7 +41,7 @@ jobs:
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git tag -a "latest" -m "Setting latest release to ${{ github.sha }}" -f
-          git push origin latest
+          git push origin --force-with-lease latest
 
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM
