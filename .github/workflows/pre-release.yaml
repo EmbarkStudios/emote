@@ -37,10 +37,11 @@ jobs:
       - name: Fetch tags
         run: git fetch --prune --unshallow --tags
 
-      - uses: actions-ecosystem/action-push-tag@v1
-        with:
-          tag: "latest"
-          message: 'Tagging latest ${{ github.ref }}'
+      - run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag -a "latest" -m "Setting latest release to ${{ github.sha }}"
+          git push origin "latest"
 
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM
