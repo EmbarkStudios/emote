@@ -37,6 +37,11 @@ jobs:
       - name: Fetch tags
         run: git fetch --prune --unshallow --tags
 
+      - uses: actions-ecosystem/action-push-tag@v1
+        with:
+          tag: "latest"
+          message: 'Tagging latest ${{ github.ref }}'
+
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM
         with:
