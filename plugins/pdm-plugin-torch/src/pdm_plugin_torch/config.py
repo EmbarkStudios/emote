@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class Configuration:
-    torch_version: str
+    dependencies: list[str]
     enable_cpu: bool = False
 
     enable_cuda: bool = False

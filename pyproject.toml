@@ -54,7 +54,9 @@ name = "torch"
 respect-source-order = true
 
 [tool.pdm.plugins.torch]
-torch-version = "torch==1.10.2"
+dependencies = [
+   "torch==1.10.2"
+]
 lockfile = "torch.lock"
 enable-cpu = true
 
