@@ -312,8 +312,11 @@ class TorchCommand(BaseCommand):
 
         spec_for_version = lockfile[options.api]
         (source, local_version) = resolves[options.api]
-        local_req = f"{plugin_config.torch_version}{local_version}"
-        req = parse_requirement(local_req, False)
+        reqs = [
+            parse_requirement(f"{req}{local_version}", False)
+            for req in plugin_config.dependencies
+        ]
+
         do_sync(
             project,
             raw_sources=[
@@ -323,7 +326,7 @@ class TorchCommand(BaseCommand):
                     "type": "index",
                 }
             ],
-            requirements=[req],
+            requirements=reqs,
             lockfile=spec_for_version,
         )
 
@@ -351,9 +354,10 @@ class TorchCommand(BaseCommand):
 
         results = {}
         for (api, (url, local_version)) in plugin_config.variants.items():
-            local_req = f"{plugin_config.torch_version}{local_version}"
-
-            req = parse_requirement(local_req, False)
+            reqs = [
+                parse_requirement(f"{req}{local_version}", False)
+                for req in plugin_config.dependencies
+            ]
 
             results[api] = do_lock(
                 project,
@@ -364,7 +368,7 @@ class TorchCommand(BaseCommand):
                         "type": "index",
                     }
                 ],
-                requirements=[req],
+                requirements=reqs,
             )
 
         write_lockfile(project, plugin_config.lockfile, results)
