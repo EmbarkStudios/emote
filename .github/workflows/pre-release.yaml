@@ -37,6 +37,13 @@ jobs:
       - name: Fetch tags
         run: git fetch --prune --unshallow --tags
 
+      - name: Update tag
+        uses: richardsimko/update-tag@v1
+        with:
+          tag_name: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM
         with:
@@ -62,12 +69,22 @@ jobs:
           configuration: ".github/release-action-config.json"
           toTag: ${{ github.ref }}
 
+      - name: Delete old release assets
+        uses: mknejp/delete-release-assets@v1
+        with:
+          token: ${{ github.token }}
+          tag: latest
+
+          assets: 'emote*'
+
       - name: Create Release
         uses: mikepenz/action-gh-release@v0.2.0-a03 #softprops/action-gh-release
         with:
           body: ${{ steps.github_release.outputs.changelog }}
           prerelease: true
+          target_commitish: ${{ github.sha }}
           tag_name: "latest"
+          name: "Nightly release"
           files: |
             dist/*
             LICENSE-*
