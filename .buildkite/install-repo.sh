@@ -1,5 +1,6 @@
 set -eo pipefail
 
+
 echo --- Setting up google-cloud-sdk
 
 if [ -f '/gcloud/google-cloud-sdk/path.bash.inc' ]; then . '/gcloud/google-cloud-sdk/path.bash.inc'; fi
