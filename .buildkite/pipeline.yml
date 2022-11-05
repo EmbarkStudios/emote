@@ -40,7 +40,6 @@ large: &large
 env:
   PDM_COMMAND: pdm25
 
-
 steps:
   - group: ":passport_control: Validating PR"
     steps:
