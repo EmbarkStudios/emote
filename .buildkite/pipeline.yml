@@ -3,6 +3,7 @@ plugin_base: &plugin_base
     image: gcr.io/embark-shared/ml/ci-runner@sha256:ca727fde178e60353820416619201cb0302b8896ddeda412916e7aa802fb441d
     default-secret-name: buildkite-k8s-plugin
     always-pull: false
+    use-agent-node-affinity: true
 
 agents: &agent
   cluster: builds-fi-2
