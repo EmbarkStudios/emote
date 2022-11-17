@@ -4,6 +4,11 @@ plugin_base: &plugin_base
     default-secret-name: buildkite-k8s-plugin
     always-pull: false
 
+agents:
+  cluster: builds-fi-2
+  queue: monorepo-ci
+  size: small
+
 tiny: &tiny
   plugins:
   - EmbarkStudios/k8s#1.2.10:
