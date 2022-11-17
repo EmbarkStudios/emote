@@ -4,19 +4,23 @@ plugin_base: &plugin_base
     default-secret-name: buildkite-k8s-plugin
     always-pull: false
 
-agents:
+agents: &agent
   cluster: builds-fi-2
   queue: monorepo-ci
   size: small
 
 tiny: &tiny
+  agents: *agent
   plugins:
   - EmbarkStudios/k8s#1.2.10:
       << : *plugin_base
       resources-limit-cpu: 3
       resources-limit-memory: 10Gi
 
+  agents: *agent
+
 small: &small
+  agents: *agent
   plugins:
   - EmbarkStudios/k8s#1.2.10:
       << : *plugin_base
@@ -24,11 +28,14 @@ small: &small
       resources-limit-memory: 20Gi
 
 large: &large
+  agents: *agent
   plugins:
   - EmbarkStudios/k8s#1.2.10:
       << : *plugin_base
       resources-limit-cpu: 14
       resources-limit-memory: 35Gi
+
+
 
 steps:
   - group: ":passport_control: Validating PR"
