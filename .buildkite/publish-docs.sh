@@ -5,12 +5,6 @@ source .buildkite/install-repo.sh
 
 echo --- Initializing gcloud
 
-curl https://sdk.cloud.google.com > install.sh && \
-    bash install.sh --disable-prompts 2>&1 && \
-    /root/google-cloud-sdk/install.sh --path-update true --usage-reporting false --quiet
-
-if [ -f '/root/google-cloud-sdk/path.bash.inc' ]; then . '/root/google-cloud-sdk/path.bash.inc'; fi
-gcloud config set account monorepo-ci@embark-builds.iam.gserviceaccount.com
 
 echo --- Building docs
 pushd docs
