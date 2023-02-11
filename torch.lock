@@ -14,7 +14,6 @@ version = "4.4.0"
 requires_python = ">=3.7"
 summary = "Backported and Experimental Type Hints for Python 3.7+"
 
-[cu111.metadata]
 [cu111.metadata.files]
 "torch 1.10.2+cu111" = [
     {url = "https://download.pytorch.org/whl/cu111/torch-1.10.2%2Bcu111-cp36-cp36m-linux_x86_64.whl", hash = "sha256:bbe445308a43960efeabc4f4a4b6c5d0db209ef5d5148672c750943d1ea42f54"},
@@ -47,7 +46,6 @@ version = "4.4.0"
 requires_python = ">=3.7"
 summary = "Backported and Experimental Type Hints for Python 3.7+"
 
-[cu113.metadata]
 [cu113.metadata.files]
 "torch 1.10.2+cu113" = [
     {url = "https://download.pytorch.org/whl/cu113/torch-1.10.2%2Bcu113-cp36-cp36m-linux_x86_64.whl", hash = "sha256:bb3a9405184c78f041c83e1483a239986794009f531f94ad53173bdb71e3c35f"},
@@ -80,7 +78,6 @@ version = "4.4.0"
 requires_python = ">=3.7"
 summary = "Backported and Experimental Type Hints for Python 3.7+"
 
-["rocm4.2".metadata]
 ["rocm4.2".metadata.files]
 "torch 1.10.2+rocm4.2" = [
     {url = "https://download.pytorch.org/whl/rocm4.2/torch-1.10.2%2Brocm4.2-cp36-cp36m-linux_x86_64.whl", hash = "sha256:57547f4671c167997b543d6f7fcc43f3c57f415fc5873362eddf4734e4639e4b"},
@@ -109,7 +106,6 @@ version = "4.4.0"
 requires_python = ">=3.7"
 summary = "Backported and Experimental Type Hints for Python 3.7+"
 
-[cpu.metadata]
 [cpu.metadata.files]
 "torch 1.10.2" = [
     {url = "https://download.pytorch.org/whl/cpu/torch-1.10.2%2Bcpu-cp36-cp36m-linux_x86_64.whl", hash = "sha256:71b191eb16569d70a3d524d85ae31dd3a4a375190d8ad10a9ead515cecf7186b"},
@@ -157,6 +153,6 @@ summary = "Backported and Experimental Type Hints for Python 3.7+"
 ]
 
 [metadata]
-lock_version = "4.0"
+lock_version = "4.1"
 content_hash = "sha256:dfd1b6557cfa7fde139745caf54b331a2e8f3e3e68ed04ba206200b6296593f6"
 

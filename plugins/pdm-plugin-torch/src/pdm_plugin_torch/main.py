@@ -6,7 +6,7 @@ from typing import Iterable
 
 import tomlkit
 
-from pdm import termui
+from pdm import __version__, termui
 from pdm._types import Source
 from pdm.cli.commands.base import BaseCommand
 from pdm.cli.utils import fetch_hashes, format_lockfile, format_resolution_impossible
@@ -14,7 +14,7 @@ from pdm.core import Core
 from pdm.models.candidates import Candidate
 from pdm.models.repositories import BaseRepository, LockedRepository
 from pdm.models.requirements import Requirement, parse_requirement
-from pdm.models.specifiers import get_specifier
+from pdm.models.specifiers import PySpecSet, get_specifier
 from pdm.project import Project
 from pdm.project.config import ConfigItem
 from pdm.resolver import resolve
@@ -25,6 +25,9 @@ from resolvelib.reporters import BaseReporter
 from resolvelib.resolvers import ResolutionImpossible, ResolutionTooDeep, Resolver
 
 from pdm_plugin_torch.config import Configuration
+
+
+is_pdm22 = PySpecSet("<2.3").contains(__version__.__version__)
 
 
 def sources(project: Project, sources: list) -> list[Source]:
@@ -226,7 +229,10 @@ def is_lockfile_compatible(project: Project, lock_name: str) -> bool:
         lockfile_version += ".0"
 
     accepted = get_specifier(f"~={lockfile_version}")
-    return accepted.contains(project.LOCKFILE_VERSION)
+    if is_pdm22:
+        return accepted.contains(project.LOCKFILE_VERSION)
+
+    return accepted.contains(project.lockfile.spec_version)
 
 
 def is_lockfile_hash_match(project: Project, lock_name: str) -> bool:
@@ -240,7 +246,11 @@ def is_lockfile_hash_match(project: Project, lock_name: str) -> bool:
         return False
 
     algo, hash_value = hash_in_lockfile.split(":")
-    content_hash = project.get_content_hash(algo)
+    if is_pdm22:
+        content_hash = project.get_content_hash(algo)
+    else:
+        content_hash = project.pyproject.content_hash(algo)
+
     return content_hash == hash_value
 
 
@@ -265,6 +275,14 @@ def check_lockfile(project: Project, lock_name: str) -> str | None:
         )
         return False
     return True
+
+
+def get_settings(project: Project):
+    if is_pdm22:
+        return project.pyproject["tool"]["pdm"]["plugins"]["torch"]
+
+    else:
+        return project.tool_settings["plugins"]["torch"]
 
 
 class TorchCommand(BaseCommand):
@@ -298,9 +316,7 @@ class TorchCommand(BaseCommand):
             self.handle_lock(project, options)
 
     def handle_install(self, project, options):
-        plugin_config = Configuration.from_toml(
-            project.pyproject["tool"]["pdm"]["plugins"]["torch"]
-        )
+        plugin_config = Configuration.from_toml(get_settings(project))
 
         resolves = plugin_config.variants
         if options.api not in resolves:
@@ -331,9 +347,7 @@ class TorchCommand(BaseCommand):
         )
 
     def handle_lock(self, project, options):
-        plugin_config = Configuration.from_toml(
-            project.pyproject["tool"]["pdm"]["plugins"]["torch"]
-        )
+        plugin_config = Configuration.from_toml(get_settings(project))
 
         if options.check:
             is_updated = check_lockfile(project, plugin_config.lockfile)
@@ -353,7 +367,7 @@ class TorchCommand(BaseCommand):
                 sys.exit(0)
 
         results = {}
-        for (api, (url, local_version)) in plugin_config.variants.items():
+        for api, (url, local_version) in plugin_config.variants.items():
             reqs = [
                 parse_requirement(f"{req}{local_version}", False)
                 for req in plugin_config.dependencies
