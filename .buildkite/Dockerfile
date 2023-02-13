@@ -18,6 +18,6 @@ RUN mkdir -p /gcloud/ && \
 
 RUN pip install \
 	--no-cache-dir \
-	pdm==2.2.0
+	pdm==2.3
 
 ENTRYPOINT bash

@@ -38,6 +38,7 @@ elif [ $TORCH_EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "lockfile"
 :lock: Torch lockfile is outdated. Please run \`pdm torch lock\` and commit the result.
 EOF
+	exit 1
 else
     buildkite-agent annotate --style "success" --context "lockfile" ":lock: Lockfile is up to date."
 fi

@@ -7,7 +7,6 @@ GCR_PATH=gcr.io/embark-shared/ml/ci-runner
 buildah build-using-dockerfile \
         --tag $GCR_PATH \
         --file Dockerfile \
-		--pull-always \
         --layers \
         --format=docker \
 		--squash \
