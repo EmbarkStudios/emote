@@ -135,7 +135,7 @@ class CallbackMeta(ABCMeta):
             concrete_func = getattr(instance, name)
 
             if concrete_func.__qualname__ == func.__qualname__:
-                logging.debug("skipping patch of %s: not overriden", func.__qualname__)
+                logging.debug("skipping patch of %s: not overridden", func.__qualname__)
                 continue
 
             group_name = getattr(instance, "data_group", None)

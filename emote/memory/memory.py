@@ -92,7 +92,7 @@ class TableMemoryProxy:
                     # not whether it is terminal. In this case, our legacy code
                     # treated all terminals as fatal, i.e., truncated bootstrap.
                     # Since this is the terminal mask value, an interrupted
-                    # episode should be 1.0 or "infinite boostrap horizon"
+                    # episode should be 1.0 or "infinite bootstrap horizon"
                     data["terminal"] = float(
                         observation.episode_state == EpisodeState.INTERRUPTED
                     )
