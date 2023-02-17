@@ -28,7 +28,7 @@ def _make_env(rank):
         env = gym.make("LunarLander-v2", continuous=True)
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
-        env.seed(rank)
+        #env.seed(rank)
         return env
 
     return _thunk
@@ -82,16 +82,15 @@ class Policy(nn.Module):
 
 
 def train_lunar_lander(args):
-    device = torch.device("cuda")
+    device = torch.device(args.device)
 
     hidden_dims = [256, 256]
-    batch_size = 2000
-    n_env = 10
+    batch_size = args.batch_size
+    n_env = args.num_envs
     max_grad_norm = 1
 
-    rollout_len = 20
+    rollout_len = args.rollout_length
     init_alpha = 1.0
-    learning_rate = 8e-3
 
     env = DictGymWrapper(AsyncVectorEnv([_make_env(i) for i in range(n_env)]))
     table = DictObsNStepTable(
@@ -123,26 +122,26 @@ def train_lunar_lander(args):
         QLoss(
             name="q1",
             q=q1,
-            opt=Adam(q1.parameters(), lr=learning_rate),
+            opt=Adam(q1.parameters(), lr=args.critic_lr),
             max_grad_norm=max_grad_norm,
         ),
         QLoss(
             name="q2",
             q=q2,
-            opt=Adam(q2.parameters(), lr=learning_rate),
+            opt=Adam(q2.parameters(), lr=args.critic_lr),
             max_grad_norm=max_grad_norm,
         ),
         PolicyLoss(
             pi=policy,
             ln_alpha=ln_alpha,
             q=q1,
-            opt=Adam(policy.parameters(), lr=learning_rate),
+            opt=Adam(policy.parameters(), lr=args.actor_lr),
             max_grad_norm=max_grad_norm,
         ),
         AlphaLoss(
             pi=policy,
             ln_alpha=ln_alpha,
-            opt=Adam([ln_alpha], lr=learning_rate),
+            opt=Adam([ln_alpha], lr=args.actor_lr),
             n_actions=num_actions,
             max_grad_norm=max_grad_norm,
             max_alpha=10.0,
@@ -164,6 +163,21 @@ def train_lunar_lander(args):
         ),
     ]
 
+    if args.model_based:
+        assert rollout_len == 1, "--rollout-length must be set to 1 for model-based training"
+        from emote.models.ensemble import EnsembleOfGaussian
+        from emote.models.model import DynamicModel, ModelLoss
+        model = EnsembleOfGaussian(num_obs + num_actions, num_obs + 1, device, ensemble_size=args.num_model_ensembles)
+        dynamic_model = DynamicModel(model=model)
+
+        logged_cbs = logged_cbs + [
+            ModelLoss(
+                model=dynamic_model,
+                name='dynamic_model',
+                opt=Adam(model.parameters(), lr=args.model_lr),
+            ),
+        ]
+
     callbacks = logged_cbs + [
         TensorboardLogger(
             logged_cbs,
@@ -181,7 +195,17 @@ def train_lunar_lander(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default="ll")
-    parser.add_argument("--log_dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
+    parser.add_argument("--num-envs", type=int, default=10)
+    parser.add_argument("--rollout-length", type=int, default=5)
+    parser.add_argument("--log-dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
+    parser.add_argument('--model-based', action='store_true')
+    parser.add_argument("--num-model-ensembles", type=int, default=5,
+                        help='The number of dynamic models in the ensemble')
+    parser.add_argument("--batch-size", type=int, default=200)
+    parser.add_argument("--model-lr", type=float, default=1e-3, help='The model learning rate')
+    parser.add_argument("--actor-lr", type=float, default=8e-3, help='The policy learning rate')
+    parser.add_argument("--critic-lr", type=float, default=8e-3, help='Q-function learning rate')
+    parser.add_argument("--device", type=str, default="cuda:0")
     args = parser.parse_args()
 
     train_lunar_lander(args)

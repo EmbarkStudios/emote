@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Union
+import torch
+import numpy as np
 
 from numpy.typing import ArrayLike
 
+TensorType = Union[torch.Tensor, np.ndarray]
 
 # The AgentId is an application-defined integer
 AgentId = int

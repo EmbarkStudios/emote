@@ -40,7 +40,7 @@ class DictGymWrapper(VectorEnvWrapper):
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
         )
         self.step_async(batched_actions)
-        next_obs, rewards, dones, info = super().step_wait()
+        next_obs, rewards, dones, info, _ = super().step_wait()
         new_agents = []
         results = {}
         completed_episode_rewards = []
@@ -93,7 +93,7 @@ class DictGymWrapper(VectorEnvWrapper):
         return {
             agent_id: DictObservation(
                 episode_state=EpisodeState.INITIAL,
-                array_data={"obs": obs[i]},
+                array_data={"obs": obs[0][i]},
                 rewards={"reward": None},
             )
             for i, agent_id in enumerate(self._agent_ids)
