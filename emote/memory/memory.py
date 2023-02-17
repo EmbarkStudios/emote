@@ -12,6 +12,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Tuple
 
+from emote.callback import Callback
+
 from ..typing import AgentId, DictObservation, DictResponse, EpisodeState
 from ..utils import TimedBlock
 from .core_types import Matrix
@@ -169,3 +171,15 @@ class MemoryLoader:
 
             data[self.size_key] = self.rollout_count * self.rollout_length
             yield {self.data_group: data, self.size_key: data[self.size_key]}
+
+
+class MemoryWaiter(Callback):
+    def __init__(self, loader: MemoryLoader):
+        super().__init__()
+        self._loader = loader
+
+    def begin_training(self):
+        import time
+
+        while not self._loader.is_ready():
+            time.sleep(0.1)
