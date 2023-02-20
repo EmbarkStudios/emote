@@ -8,7 +8,7 @@ from emote import Trainer
 from emote.callbacks import FinalRewardTestCheck, TerminalLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
-from emote.nn import GaussianPolicyHead
+from emote.nn.gaussian_policy import GaussianPolicyHead, MeanStdPolicyHead
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 from .gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
@@ -41,7 +41,7 @@ class Policy(nn.Module):
             nn.ReLU(),
             nn.Linear(N_HIDDEN, N_HIDDEN),
             nn.ReLU(),
-            GaussianPolicyHead(N_HIDDEN, act),
+            GaussianPolicyHead(MeanStdPolicyHead(N_HIDDEN, act)),
         )
 
     def forward(self, obs):

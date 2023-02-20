@@ -14,7 +14,7 @@ from emote import Trainer
 from emote.callbacks import FinalLossTestCheck, TensorboardLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
-from emote.nn import GaussianPolicyHead
+from emote.nn.gaussian_policy import GaussianPolicyHead, MeanStdPolicyHead
 from emote.nn.initialization import ortho_init_
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
@@ -55,7 +55,7 @@ class Policy(nn.Module):
             nn.ReLU(),
             nn.Linear(num_hidden, num_hidden),
             nn.ReLU(),
-            GaussianPolicyHead(num_hidden, num_actions),
+            GaussianPolicyHead(MeanStdPolicyHead(num_hidden, num_actions)),
         )
         self.pi.apply(ortho_init_)
 
