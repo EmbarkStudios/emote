@@ -1,11 +1,10 @@
 import argparse
 import time
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import partial
-from typing import Any, List, Tuple
+from typing import Tuple
 
-import gym
 import numpy as np
 import torch
 
@@ -65,7 +64,7 @@ class ImageLoggerCallback(LoggingCallback):
         self.data_group = "default"
 
     def begin_batch(self, observation):
-        self.log_image(f"images/obs", observation["obs"][0])
+        self.log_image("images/obs", observation["obs"][0])
 
 
 @dataclass
