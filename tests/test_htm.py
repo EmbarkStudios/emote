@@ -74,7 +74,7 @@ def test_htm():
             env, agent_proxy, memory_proxy, warmup_steps=500, render=False
         ),
         TerminalLogger(logged_cbs, 400),
-        FinalRewardTestCheck(logged_cbs[4], -5.0, 2000)
+        FinalRewardTestCheck(logged_cbs[4], -5.0, 2000),
     ]
 
     trainer = Trainer(callbacks, dataloader)
