@@ -361,3 +361,21 @@ class FinalLossTestCheck(Callback):
             if loss > cutoff:
                 raise Exception(f"Loss for {cb.name} too high: {loss}")
         raise TrainingShutdownException()
+
+
+class FinalRewardTestCheck(Callback):
+    def __init__(
+        self,
+        callback: LoggingCallback,
+        cutoff: float,
+        test_length: int,
+    ):
+        super().__init__(cycle=test_length)
+        self._cb = callback
+        self._cutoff = cutoff
+
+    def end_cycle(self):
+        reward = self._cb.scalar_logs["training/scaled_reward"]
+        if reward < self._cutoff:
+            raise Exception(f"Reward too low: {reward}")
+        raise TrainingShutdownException()

@@ -5,7 +5,7 @@ from torch import nn
 from torch.optim import Adam
 
 from emote import Trainer
-from emote.callbacks import FinalLossTestCheck, TerminalLogger
+from emote.callbacks import FinalRewardTestCheck, TerminalLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
 from emote.nn import GaussianPolicyHead
@@ -74,7 +74,7 @@ def test_htm():
             env, agent_proxy, memory_proxy, warmup_steps=500, render=False
         ),
         TerminalLogger(logged_cbs, 400),
-        FinalLossTestCheck([logged_cbs[2]], [10.0], 2000),
+        FinalRewardTestCheck(logged_cbs[4], -5.0, 2000)
     ]
 
     trainer = Trainer(callbacks, dataloader)
