@@ -5,10 +5,15 @@ from typing import Any, Dict, Optional
 import numpy as np
 import torch
 
+from onnx import ModelProto
 from torch import nn, optim
 
+from emote.extra.onnx_exporter import OnnxGeneratorMixin
+from emote.extra.onnx_storage import OnnxStorage
+from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
+from emote.utils.spaces import MDPSpace
 
 from .callbacks import LoggingCallback, LossCallback
 
@@ -205,9 +210,9 @@ class PolicyLoss(LossCallback):
         alpha = torch.exp(self._ln_alpha).detach()
         policy_loss = alpha * logp_pi - q_pi_min
         policy_loss = torch.mean(policy_loss)
-        self.log_scalar(f"policy/q_pi_min", torch.mean(q_pi_min))
-        self.log_scalar(f"policy/logp_pi", torch.mean(logp_pi))
-        self.log_scalar(f"policy/alpha", torch.mean(alpha))
+        self.log_scalar("policy/q_pi_min", torch.mean(q_pi_min))
+        self.log_scalar("policy/logp_pi", torch.mean(logp_pi))
+        self.log_scalar("policy/alpha", torch.mean(alpha))
         assert policy_loss.dim() == 0
         return policy_loss
 
@@ -295,6 +300,71 @@ class AlphaLoss(LossCallback):
         super().load_state_dict(state_dict)
 
 
+class LoggingProxyWrapper:
+    def __init__(self, inner: AgentProxy, cycle: int):
+        self._inner = inner
+        self._cycle = cycle
+
+        self._counter = 0
+
+    def __call__(
+        self,
+        observations: Dict[AgentId, DictObservation],
+    ) -> Dict[AgentId, DictResponse]:
+        self._counter += 1
+
+        if (self._counter % self._cycle) == 0:
+            self._end_cycle()
+            self._counter = 0
+
+        return self._inner(observations)
+
+
+class AgentProxyOnnxExporter(OnnxGeneratorMixin, OnnxStorage, LoggingProxyWrapper):
+    def __init__(
+        self, inner: AgentProxy, spaces: MDPSpace, directory: str, interval: int
+    ):
+        super().__init__(
+            inner=inner,
+            cycle=interval,
+            spaces=spaces,
+            with_epsilon=True,
+            directory=directory,
+        )
+
+    def _end_cycle(self):
+        self.export({})
+
+    def generate_onnx(self) -> ModelProto:
+        args = self._gen_input_tensors(self.input_names)
+
+        self.policy.train(False)
+        with torch.no_grad():
+            trace = torch.jit.trace(
+                self.policy,
+                args,
+                optimize=True,
+                check_trace=True,
+                check_tolerance=1e-05,
+                strict=True,
+            )
+
+        self.policy.train(True)
+
+        return self._generate_onnx(trace, args, self.input_names)
+
+    @property
+    def policy(self):
+        return self._inner.policy
+
+    @property
+    def input_names(self):
+        if self.with_epsilon:
+            return (*self._inner.input_names, "epsilon")
+
+        return (*self._inner.input_names,)
+
+
 class FeatureAgentProxy:
     """An agent proxy for basic MLPs.
 
@@ -315,7 +385,8 @@ class FeatureAgentProxy:
         self._input_key = input_key
 
     def __call__(
-        self, observations: Dict[AgentId, DictObservation]
+        self,
+        observations: Dict[AgentId, DictObservation],
     ) -> Dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
@@ -340,6 +411,10 @@ class FeatureAgentProxy:
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
         }
+
+    @property
+    def input_names(self):
+        return ("obs",)
 
 
 class VisionAgentProxy:

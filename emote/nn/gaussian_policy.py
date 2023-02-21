@@ -38,7 +38,7 @@ class BasePolicy(nn.Module):
         return p_samp, self.post_process(p_samp)
 
 
-class MeanStdPolicyHead(nn.Module):
+class GaussianPolicyHead(nn.Module):
     def __init__(
         self,
         hidden_dim: int,
@@ -50,22 +50,7 @@ class MeanStdPolicyHead(nn.Module):
         self.mean = nn.Linear(hidden_dim, action_dim)
         self.log_std = nn.Linear(hidden_dim, action_dim)
 
-    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor]:
-        mean = self.mean(x).clamp(min=-5, max=5)  # equates to 0.99991 after tanh.
-        std = torch.exp(self.log_std(x).clamp(min=-20, max=2))
-
-        return mean, std
-
-
-class GaussianPolicyHead(nn.Module):
-    def __init__(
-        self,
-        mean_std: MeanStdPolicyHead,
-    ):
-        super().__init__()
-        self.mean_std = mean_std
-
-    def forward(self, x: Tensor) -> Tuple[Tensor, float]:
+    def forward(self, x: Tensor, epsilon: Tensor | None = None) -> Tuple[Tensor]:
         """
         Sample pre-actions and associated log-probabilities.
 
@@ -75,50 +60,26 @@ class GaussianPolicyHead(nn.Module):
         """
         bsz, _ = x.shape
 
-        mean, std = self.mean_std(x)
-        dist = dists.TransformedDistribution(
-            dists.Independent(dists.Normal(mean, std), 1),
-            RobustTanhTransform(),
-        )
-        sample = dist.rsample()
+        mean = self.mean(x).clamp(min=-5, max=5)  # equates to 0.99991 after tanh.
+        std = torch.exp(self.log_std(x).clamp(min=-20, max=2))
+        if self.training:
+            dist = dists.TransformedDistribution(
+                dists.Independent(dists.Normal(mean, std), 1),
+                RobustTanhTransform(),
+            )
+            sample = dist.rsample()
 
-        log_prob = dist.log_prob(sample).view(bsz, 1)
+            log_prob = dist.log_prob(sample).view(bsz, 1)
 
-        assert sample.shape == (bsz, self.mean_std.action_dim)
-        assert log_prob.shape == (bsz, 1)
+            assert sample.shape == (bsz, self.action_dim)
+            assert log_prob.shape == (bsz, 1)
 
-        return sample, log_prob
+            return sample, log_prob
 
-
-class ExportableGaussianPolicy(nn.Module):
-    def __init__(
-        self,
-        mean_std: MeanStdPolicyHead,
-    ):
-        super().__init__()
-        self.mean_std = mean_std
-
-    def forward(self, x: Tensor, epsilon: Tensor) -> Tensor:
-        """
-        Sample pre-actions.
-
-        :return:
-            Direct samples (pre-actions) from the policy
-        """
-        mean, std = self.mean_std(x)
         return torch.tanh(mean + std * epsilon)
 
 
 class GaussianMlpPolicy(nn.Module):
-    class Exportable(nn.Module):
-        def __init__(self, encoder: nn.Module, mean_std: nn.Module):
-            super().__init__()
-            self.encoder = encoder
-            self.policy = ExportableGaussianPolicy(mean_std)
-
-        def forward(self, x: dict[str, Tensor]) -> Tensor:
-            return self.policy(self.encoder(x["features"]), x["epsilon"])
-
     def __init__(self, observation_dim: int, action_dim: int, hidden_dims: list[int]):
         super().__init__()
         self.encoder = nn.Sequential(
@@ -127,13 +88,10 @@ class GaussianMlpPolicy(nn.Module):
                 for n_in, n_out in zip([observation_dim] + hidden_dims, hidden_dims)
             ],
         )
-        self.mean_std = MeanStdPolicyHead(hidden_dims[-1], action_dim)
+        self.policy = GaussianPolicyHead(hidden_dims[-1], action_dim)
 
         self.encoder.apply(ortho_init_)
-        self.mean_std.apply(partial(xavier_uniform_init_, gain=0.01))
+        self.policy.apply(partial(xavier_uniform_init_, gain=0.01))
 
-    def forward(self, obs):
-        return self.policy(self.encoder(obs))
-
-    def exportable(self):
-        return GaussianMlpPolicy.Exportable(self.encoder, self.mean_std)
+    def forward(self, obs: Tensor, epsilon: Tensor | None = None):
+        return self.policy(self.encoder(obs), epsilon)
