@@ -296,12 +296,23 @@ class AlphaLoss(LossCallback):
 
 
 class FeatureAgentProxy:
-    """This AgentProxy assumes that the observations will contain flat array of observations names 'obs'"""
+    """An agent proxy for basic MLPs.
 
-    def __init__(self, policy: nn.Module, device: torch.device):
+    This AgentProxy assumes that the observations will contain a single flat array of features.
+    """
+
+    def __init__(self, policy: nn.Module, device: torch.device, input_key: str = "obs"):
+        """Create a new proxy.
+
+        :param policy: The policy to execute for actions.
+        :param device: The device to run on.
+        :param input_key: The name of the features. (default: "obs")
+        """
         self.policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device
+
+        self._input_key = input_key
 
     def __call__(
         self, observations: Dict[AgentId, DictObservation]
@@ -316,10 +327,15 @@ class FeatureAgentProxy:
         ]
         tensor_obs = torch.tensor(
             np.array(
-                [observations[agent_id].array_data["obs"] for agent_id in active_agents]
+                [
+                    observations[agent_id].array_data[self._input_key]
+                    for agent_id in active_agents
+                ]
             )
         ).to(self.device)
+
         actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
+
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
