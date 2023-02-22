@@ -175,16 +175,17 @@ class MemoryLoader:
 
 class MemoryWarmup(Callback):
     """A blocker to ensure memory has data.
-    
-    This ensures the memory has enough data when training starts, as the memory 
-    will panic otherwise. This is useful if you use an async data generator. 
-    
-    If you do not use an async data generator this will deadlock your training 
-    loop and prevent progress. 
+
+    This ensures the memory has enough data when training starts, as the memory
+    will panic otherwise. This is useful if you use an async data generator.
+
+    If you do not use an async data generator this can deadlock your training
+    loop and prevent progress.
     """
-    
+
     def __init__(self, loader: MemoryLoader):
         super().__init__()
+        self._order = 100
         self._loader = loader
 
     def begin_training(self):
