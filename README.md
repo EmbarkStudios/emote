@@ -110,12 +110,35 @@ class PolicyLoss(LossCallback):
 
 ## Installation
 
-
 For installation and environment handling we use `pdm`. Install it from [pdm](https://pdm.fming.dev/latest/#installation). After `pdm` is set up, set up and activate the emote environment by running
 
 ```bash
 pdm install
 ```
+
+or for a full developer installation with all the extra dependencies:
+
+```bash
+pdm install -d -G :all
+```
+
+### Common problems
+
+**Torch won't install:** Check that your python version is correct. Try deleting your `.venv` and recreating it with
+
+```bash
+pdm venv create 3.8
+pdm install -G :all
+```
+
+**Box2d complains:** Box2d needs swig and python bindings. On apt-based systems try
+
+```bash
+sudo apt install swig
+sudo apt install python3.8-dev
+```
+
+**Python 3.8 is tricky to install:** For Ubuntu based distros try adding the deadsnakes PPA.
 
 ## Contribution
 
