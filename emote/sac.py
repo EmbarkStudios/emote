@@ -5,15 +5,11 @@ from typing import Any, Dict, Optional
 import numpy as np
 import torch
 
-from onnx import ModelProto
 from torch import nn, optim
 
-from emote.extra.onnx_exporter import OnnxGeneratorMixin
-from emote.extra.onnx_storage import OnnxStorage
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
-from emote.utils.spaces import MDPSpace
 
 from .callbacks import LoggingCallback, LossCallback
 
@@ -300,11 +296,16 @@ class AlphaLoss(LossCallback):
         super().load_state_dict(state_dict)
 
 
-class LoggingProxyWrapper:
-    def __init__(self, inner: AgentProxy, cycle: int):
+class AgentProxyWrapper:
+    def __init__(self, inner: AgentProxy):
         self._inner = inner
-        self._cycle = cycle
 
+
+class LoggingProxyWrapper(AgentProxyWrapper):
+    def __init__(self, inner: AgentProxy, cycle: int):
+        super().__init__(inner)
+
+        self._cycle = cycle
         self._counter = 0
 
     def __call__(
@@ -318,51 +319,6 @@ class LoggingProxyWrapper:
             self._counter = 0
 
         return self._inner(observations)
-
-
-class AgentProxyOnnxExporter(OnnxGeneratorMixin, OnnxStorage, LoggingProxyWrapper):
-    def __init__(
-        self, inner: AgentProxy, spaces: MDPSpace, directory: str, interval: int
-    ):
-        super().__init__(
-            inner=inner,
-            cycle=interval,
-            spaces=spaces,
-            with_epsilon=True,
-            directory=directory,
-        )
-
-    def _end_cycle(self):
-        self.export({})
-
-    def generate_onnx(self) -> ModelProto:
-        args = self._gen_input_tensors(self.input_names)
-
-        self.policy.train(False)
-        with torch.no_grad():
-            trace = torch.jit.trace(
-                self.policy,
-                args,
-                optimize=True,
-                check_trace=True,
-                check_tolerance=1e-05,
-                strict=True,
-            )
-
-        self.policy.train(True)
-
-        return self._generate_onnx(trace, args, self.input_names)
-
-    @property
-    def policy(self):
-        return self._inner.policy
-
-    @property
-    def input_names(self):
-        if self.with_epsilon:
-            return (*self._inner.input_names, "epsilon")
-
-        return (*self._inner.input_names,)
 
 
 class FeatureAgentProxy:

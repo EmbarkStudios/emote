@@ -14,7 +14,7 @@ T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class StorageItemHandle:
+class StorageItemHandle(Generic[T]):
     """
     A handle that represents a storage item.
     Can be safely exposed to users.
@@ -42,11 +42,11 @@ class StorageItemHandle:
 
 
 @dataclass(frozen=True)
-class StorageItem:
+class StorageItem(Generic[T]):
     # A handle that represents this item.
     # Can be safely exposed to users.
     # Not cryptographically safe: handles are guessable.
-    handle: StorageItemHandle
+    handle: StorageItemHandle[T]
     # When the file was created (in UTC)
     timestamp: datetime
     # Path to the file in the filesystem
@@ -76,11 +76,11 @@ class CRUDStorage(Generic[T]):
 
         self._directory = directory
         self._filename_counter = AtomicInt(0)
-        self._items: List[StorageItem] = LockedResource([])
+        self._items: List[StorageItem[T]] = LockedResource([])
         self._extension = extension
         self._prefix = prefix
 
-    def create_with_data(self, data: bytearray) -> StorageItem:
+    def create_with_data(self, data: bytearray) -> StorageItem[T]:
         """Creates a new file with the given data"""
 
         def save(filepath):
@@ -89,7 +89,7 @@ class CRUDStorage(Generic[T]):
 
         return self.create_with_saver(save)
 
-    def create_from_filepath(self, filepath: str) -> StorageItem:
+    def create_from_filepath(self, filepath: str) -> StorageItem[T]:
         """
         Creates a new entry for an existing file.
         The file must already be in the directory that this storage manages.
@@ -110,7 +110,7 @@ class CRUDStorage(Generic[T]):
             items.append(item)
         return item
 
-    def create_with_saver(self, saver: Callable[[str], None]) -> StorageItem:
+    def create_with_saver(self, saver: Callable[[str], None]) -> StorageItem[T]:
         """
         Creates a new file by saving it via the provided function.
         The function will be called with the path at which the file should be saved.
@@ -150,7 +150,7 @@ class CRUDStorage(Generic[T]):
             items.append(item)
         return item
 
-    def update(self, handle: StorageItemHandle, data: bytearray):
+    def update(self, handle: StorageItemHandle[T], data: bytearray):
         """
         Updates an existing file with the given contents
         """
@@ -159,7 +159,7 @@ class CRUDStorage(Generic[T]):
         with open(item.filepath, "wb") as f:
             f.write(data)
 
-    def items(self) -> Sequence[StorageItem]:
+    def items(self) -> Sequence[StorageItem[T]]:
         """
         :returns: a sequence of all files owned by this storage.
         """
@@ -168,7 +168,7 @@ class CRUDStorage(Generic[T]):
             # without the list potentially being modified while they are using it.
             return items[:]
 
-    def delete(self, handle: StorageItemHandle) -> bool:
+    def delete(self, handle: StorageItemHandle[T]) -> bool:
         """
         Deletes an existing file owned by this storage.
         :returns: True if a file was deleted, and false if the file was not owned by this storage.
@@ -192,7 +192,7 @@ class CRUDStorage(Generic[T]):
 
         return False
 
-    def get(self, handle: StorageItemHandle) -> Optional[StorageItem]:
+    def get(self, handle: StorageItemHandle[T]) -> Optional[StorageItem[T]]:
         """
         :returns: The storage item corresponding handle or None if it was not found
         """
@@ -201,7 +201,7 @@ class CRUDStorage(Generic[T]):
             # Slow, but this class is not expected to have to handle a large number of files
             return next((item for item in items if item.handle == handle), None)
 
-    def latest(self) -> Optional[StorageItem]:
+    def latest(self) -> Optional[StorageItem[T]]:
         """
         The last storage item that was added to the storage.
         If items have been deleted, this is the last item of the ones that remain.

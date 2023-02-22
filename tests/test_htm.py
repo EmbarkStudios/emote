@@ -11,14 +11,8 @@ from emote.callbacks import FinalRewardTestCheck, TerminalLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
 from emote.nn.gaussian_policy import GaussianPolicyHead
-from emote.sac import (
-    AgentProxyOnnxExporter,
-    AlphaLoss,
-    FeatureAgentProxy,
-    PolicyLoss,
-    QLoss,
-    QTarget,
-)
+from emote.onnx_export import make_onnx_exporter_bundle
+from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 from .gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
 
@@ -104,11 +98,14 @@ def test_htm_onnx(tmpdir):
     q2 = QNet(2, 1)
     policy = Policy(2, 1)
     ln_alpha = torch.tensor(1.0, requires_grad=True)
-    agent_proxy = AgentProxyOnnxExporter(
-        FeatureAgentProxy(policy, device),
+    agent_proxy = FeatureAgentProxy(policy, device)
+
+    storage, callback = make_onnx_exporter_bundle(
+        agent_proxy,
         env.dict_space,
         tmpdir / "inference",
         400,
+        requires_epsilon=True,
     )
 
     logged_cbs = [
@@ -120,11 +117,12 @@ def test_htm_onnx(tmpdir):
     ]
 
     callbacks = logged_cbs + [
+        callback,
         SimpleGymCollector(
             env, agent_proxy, memory_proxy, warmup_steps=500, render=False
         ),
         TerminalLogger(logged_cbs, 400),
-        FinalLossTestCheck([logged_cbs[2]], [10.0], 2000),
+        FinalRewardTestCheck(logged_cbs[4], -5.0, 2000),
     ]
 
     trainer = Trainer(callbacks, dataloader)

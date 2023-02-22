@@ -1,20 +1,21 @@
-"""
+from __future__ import annotations
 
-"""
+import io
 import logging
 import time
 
-from abc import ABC, abstractmethod
 from queue import Empty, Queue
 from threading import Event
-from typing import Mapping, Optional, Protocol, Sequence
+from typing import Mapping, Optional, Sequence
+
+import onnx
+import torch
 
 from google.protobuf import text_format
-from onnx import ModelProto, helper
+from torch import nn
 
+from emote.extra.crud_storage import CRUDStorage, StorageItem, StorageItemHandle
 from emote.utils.timed_call import BlockTimers
-
-from .crud_storage import CRUDStorage, StorageItem, StorageItemHandle
 
 
 class QueuedExport:
@@ -23,7 +24,7 @@ class QueuedExport:
         self.return_value = None
         self._event = Event()
 
-    def process(self, storage: "OnnxStorage"):
+    def process(self, storage: "OnnxExporter"):
         self.return_value = storage._export_onnx(self.metadata)
         self._event.set()
 
@@ -55,7 +56,7 @@ def _save_protobuf(path, message, as_text: bool = False):
             f.write(message.SerializeToString())
 
 
-class OnnxStorage(ABC):
+class OnnxExporter:
     """Handles onnx exports of a ML policy.
 
     Call `export` whenever you want to save an onnx version of the current model.
@@ -69,9 +70,15 @@ class OnnxStorage(ABC):
     :param prefix: all file names will have this prefix.
     """
 
-    def __init__(self, *args, directory: str, prefix: str = "savedmodel_", **kwargs):
-        super().__init__(*args, **kwargs)
-
+    def __init__(
+        self,
+        policy: nn.Module,
+        directory: str,
+        input_shapes: list[tuple[str, tuple[int]]],
+        output_shapes: list[tuple[str, tuple[int]]],
+        prefix: str = "savedmodel_",
+    ):
+        self.policy = policy
         self.storage = CRUDStorage(directory, prefix, extension="onnx")
         self.queued_exports = Queue()
         self.export_counter = 0
@@ -81,10 +88,8 @@ class OnnxStorage(ABC):
         self.version_tag = _get_version()
         self.scopes = BlockTimers()
 
-    @abstractmethod
-    def generate_onnx(self) -> ModelProto:
-        """Generate a ModelProto for the policy."""
-        ...
+        self.inputs = input_shapes
+        self.outputs = output_shapes
 
     def process_pending_exports(self):
         """
@@ -98,11 +103,50 @@ class OnnxStorage(ABC):
                 return
             item.process(self)
 
+    def _trace(self):
+        with self.scopes.scope("trace"):
+            args = []
+
+            for _, shape in self.inputs:
+                args.append(torch.randn(1, *shape))
+
+            self.policy.train(False)
+            with torch.no_grad():
+                with torch.jit.optimized_execution(True):
+                    trace = torch.jit.trace(
+                        self.policy,
+                        args,
+                        check_trace=True,
+                        check_tolerance=1e-05,
+                        strict=True,
+                    )
+
+            self.policy.train(True)
+
+            with io.BytesIO() as f:
+                torch.onnx.export(
+                    model=trace,
+                    args=args,
+                    f=f,
+                    input_names=list(map(lambda pair: pair[0], self.inputs)),
+                    output_names=list(map(lambda pair: pair[0], self.outputs)),
+                    dynamic_axes={
+                        **{pair[0]: {0: "N"} for pair in self.inputs},
+                        **{pair[0]: {0: "N"} for pair in self.outputs},
+                    },
+                    opset_version=13,
+                )
+
+                f.seek(0)
+                model_proto = onnx.load_model(f, onnx.ModelProto)
+
+            return model_proto
+
     def _export_onnx(self, metadata: Optional[Mapping[str, str]]) -> StorageItem:
         def save_inner(export_path: str):
             with self.scopes.scope("save"):
                 t0 = time.time()
-                model_proto = self.generate_onnx()
+                model_proto = self._trace()
                 model_version = self.export_counter
                 self.export_counter += 1
 
@@ -113,7 +157,7 @@ class OnnxStorage(ABC):
                 model_proto.doc_string = "exported via Emote checkpointer"
 
                 if metadata is not None:
-                    helper.set_model_props(model_proto, metadata)
+                    onnx.helper.set_model_props(model_proto, metadata)
 
                 _save_protobuf(export_path, model_proto)
 
