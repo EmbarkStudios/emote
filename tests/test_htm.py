@@ -60,7 +60,9 @@ def test_htm():
     q2 = QNet(2, 1)
     policy = Policy(2, 1)
     ln_alpha = torch.tensor(1.0, requires_grad=True)
-    agent_proxy = FeatureAgentProxy(policy=policy, device=device, steps_per_log=LOG_INTERVAL)
+    agent_proxy = FeatureAgentProxy(
+        policy=policy, device=device, steps_per_log=LOG_INTERVAL
+    )
 
     logged_cbs = [
         agent_proxy,
@@ -75,7 +77,9 @@ def test_htm():
         [dataloader]
         + logged_cbs
         + [
-            SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
+            SimpleGymCollector(
+                env, agent_proxy, memory_proxy, warmup_steps=500, render=False
+            ),
             TerminalLogger(logged_cbs, LOG_INTERVAL),
             FinalLossTestCheck([logged_cbs[2]], [10.0], 2000),
         ]

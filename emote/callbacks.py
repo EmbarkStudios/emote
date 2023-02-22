@@ -100,7 +100,7 @@ class LossCallback(LoggingCallback):
         self.lr_schedule.step()
         self.log_scalar(f"loss/{self.name}_lr", self.lr_schedule.get_last_lr()[0])
 
-        # Log the first element of the batch 
+        # Log the first element of the batch
         self.log_scalar(f"loss/{self.name}", loss[0])
         self.log_scalar(f"gradient_norm/{self.name}", grad_norm[0])
 

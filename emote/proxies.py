@@ -38,6 +38,7 @@ class DictAgentProxy(LoggingCallback):
         self.log_scalar("training/samples_per_sec", cycle_samp / cycle_time)
         self.log_scalar("training/samples_per_inf", cycle_samp / cycle_infs)
 
+
 class MemoryProxy(Protocol):
     """The interface between the agent in the game and the memory buffer the network trains from."""
 
