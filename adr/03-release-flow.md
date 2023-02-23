@@ -22,7 +22,7 @@ The flow will be as follows:
 
 * Upon needing a release, create a PR:
   * Update `CHANGELOG.md` to ensure it contains all relevant changes. You can base this off of the nightly changelog.
-  * Based on the above changes, set a new version in `pyproject.toml`.
+  * Based on the above changes, decide on the next version.
   * Replace the heading in the changelog
   * Add diff labels at the bottom.
 
