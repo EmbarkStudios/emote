@@ -10,7 +10,7 @@ dependencies = [
 
 [[cu111.package]]
 name = "typing-extensions"
-version = "4.4.0"
+version = "4.5.0"
 requires_python = ">=3.7"
 summary = "Backported and Experimental Type Hints for Python 3.7+"
 
@@ -25,9 +25,9 @@ summary = "Backported and Experimental Type Hints for Python 3.7+"
     {url = "https://download.pytorch.org/whl/cu111/torch-1.10.2%2Bcu111-cp39-cp39-linux_x86_64.whl", hash = "sha256:78ae2260ac1902c5a224fe1b7994072bbfa7ef8a1734d8697ca74249fa6391c5"},
     {url = "https://download.pytorch.org/whl/cu111/torch-1.10.2%2Bcu111-cp39-cp39-win_amd64.whl", hash = "sha256:566cbfad47b25ef6b1023518982179439d8e53069f3d2341e8adcd1e4b2ef179"},
 ]
-"typing-extensions 4.4.0" = [
-    {url = "https://files.pythonhosted.org/packages/0b/8e/f1a0a5a76cfef77e1eb6004cb49e5f8d72634da638420b9ea492ce8305e8/typing_extensions-4.4.0-py3-none-any.whl", hash = "sha256:16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e"},
-    {url = "https://files.pythonhosted.org/packages/e3/a7/8f4e456ef0adac43f452efc2d0e4b242ab831297f1bac60ac815d37eb9cf/typing_extensions-4.4.0.tar.gz", hash = "sha256:1511434bb92bf8dd198c12b1cc812e800d4181cfcb867674e0f8279cc93087aa"},
+"typing-extensions 4.5.0" = [
+    {url = "https://files.pythonhosted.org/packages/31/25/5abcd82372d3d4a3932e1fa8c3dbf9efac10cc7c0d16e78467460571b404/typing_extensions-4.5.0-py3-none-any.whl", hash = "sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4"},
+    {url = "https://files.pythonhosted.org/packages/d3/20/06270dac7316220643c32ae61694e451c98f8caf4c8eab3aa80a2bedf0df/typing_extensions-4.5.0.tar.gz", hash = "sha256:5cb5f4a79139d699607b3ef622a1dedafa84e115ab0024e0d9c044a9479ca7cb"},
 ]
 
 [cu113]
@@ -42,7 +42,7 @@ dependencies = [
 
 [[cu113.package]]
 name = "typing-extensions"
-version = "4.4.0"
+version = "4.5.0"
 requires_python = ">=3.7"
 summary = "Backported and Experimental Type Hints for Python 3.7+"
 
@@ -57,9 +57,9 @@ summary = "Backported and Experimental Type Hints for Python 3.7+"
     {url = "https://download.pytorch.org/whl/cu113/torch-1.10.2%2Bcu113-cp39-cp39-linux_x86_64.whl", hash = "sha256:f1f985ce8591b20aa038756a83c348144ca10119952f4ae5703dbb7aae1b3ce2"},
     {url = "https://download.pytorch.org/whl/cu113/torch-1.10.2%2Bcu113-cp39-cp39-win_amd64.whl", hash = "sha256:15c87057a7c221460abee15795710c9b50898167abb134fdb39eced76f6e9dff"},
 ]
-"typing-extensions 4.4.0" = [
-    {url = "https://files.pythonhosted.org/packages/0b/8e/f1a0a5a76cfef77e1eb6004cb49e5f8d72634da638420b9ea492ce8305e8/typing_extensions-4.4.0-py3-none-any.whl", hash = "sha256:16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e"},
-    {url = "https://files.pythonhosted.org/packages/e3/a7/8f4e456ef0adac43f452efc2d0e4b242ab831297f1bac60ac815d37eb9cf/typing_extensions-4.4.0.tar.gz", hash = "sha256:1511434bb92bf8dd198c12b1cc812e800d4181cfcb867674e0f8279cc93087aa"},
+"typing-extensions 4.5.0" = [
+    {url = "https://files.pythonhosted.org/packages/31/25/5abcd82372d3d4a3932e1fa8c3dbf9efac10cc7c0d16e78467460571b404/typing_extensions-4.5.0-py3-none-any.whl", hash = "sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4"},
+    {url = "https://files.pythonhosted.org/packages/d3/20/06270dac7316220643c32ae61694e451c98f8caf4c8eab3aa80a2bedf0df/typing_extensions-4.5.0.tar.gz", hash = "sha256:5cb5f4a79139d699607b3ef622a1dedafa84e115ab0024e0d9c044a9479ca7cb"},
 ]
 
 ["rocm4.2"]
@@ -74,7 +74,7 @@ dependencies = [
 
 [["rocm4.2".package]]
 name = "typing-extensions"
-version = "4.4.0"
+version = "4.5.0"
 requires_python = ">=3.7"
 summary = "Backported and Experimental Type Hints for Python 3.7+"
 
@@ -85,9 +85,9 @@ summary = "Backported and Experimental Type Hints for Python 3.7+"
     {url = "https://download.pytorch.org/whl/rocm4.2/torch-1.10.2%2Brocm4.2-cp38-cp38-linux_x86_64.whl", hash = "sha256:a4373f5467391d95301258903dbac85c8676312b9aaaf0ff923cd5bcde8d29af"},
     {url = "https://download.pytorch.org/whl/rocm4.2/torch-1.10.2%2Brocm4.2-cp39-cp39-linux_x86_64.whl", hash = "sha256:43c67a5e6f940ee2e6e2e4903d56f0ce8207fca0418c7607ca5358719741f100"},
 ]
-"typing-extensions 4.4.0" = [
-    {url = "https://files.pythonhosted.org/packages/0b/8e/f1a0a5a76cfef77e1eb6004cb49e5f8d72634da638420b9ea492ce8305e8/typing_extensions-4.4.0-py3-none-any.whl", hash = "sha256:16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e"},
-    {url = "https://files.pythonhosted.org/packages/e3/a7/8f4e456ef0adac43f452efc2d0e4b242ab831297f1bac60ac815d37eb9cf/typing_extensions-4.4.0.tar.gz", hash = "sha256:1511434bb92bf8dd198c12b1cc812e800d4181cfcb867674e0f8279cc93087aa"},
+"typing-extensions 4.5.0" = [
+    {url = "https://files.pythonhosted.org/packages/31/25/5abcd82372d3d4a3932e1fa8c3dbf9efac10cc7c0d16e78467460571b404/typing_extensions-4.5.0-py3-none-any.whl", hash = "sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4"},
+    {url = "https://files.pythonhosted.org/packages/d3/20/06270dac7316220643c32ae61694e451c98f8caf4c8eab3aa80a2bedf0df/typing_extensions-4.5.0.tar.gz", hash = "sha256:5cb5f4a79139d699607b3ef622a1dedafa84e115ab0024e0d9c044a9479ca7cb"},
 ]
 
 [cpu]
@@ -102,7 +102,7 @@ dependencies = [
 
 [[cpu.package]]
 name = "typing-extensions"
-version = "4.4.0"
+version = "4.5.0"
 requires_python = ">=3.7"
 summary = "Backported and Experimental Type Hints for Python 3.7+"
 
@@ -147,12 +147,12 @@ summary = "Backported and Experimental Type Hints for Python 3.7+"
     {url = "https://files.pythonhosted.org/packages/f2/34/25fc738739fa145dd58aaaeb0f08f222c7a82d93b0900c2b2a9a54b27cef/torch-1.10.2-cp37-none-macosx_10_9_x86_64.whl", hash = "sha256:6da1b877880435440a5aa9678ef0f01986d4886416844db1d97ebfb7fd1778d0"},
     {url = "https://files.pythonhosted.org/packages/f8/2c/ace8d8d942ccd064639fae6c366344d832fbca174b8df059396a5f51e3a5/torch-1.10.2-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:9ef4c004f9e5168bd1c1930c6aff25fed5b097de81db6271ffbb2e4fb8b89319"},
 ]
-"typing-extensions 4.4.0" = [
-    {url = "https://files.pythonhosted.org/packages/0b/8e/f1a0a5a76cfef77e1eb6004cb49e5f8d72634da638420b9ea492ce8305e8/typing_extensions-4.4.0-py3-none-any.whl", hash = "sha256:16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e"},
-    {url = "https://files.pythonhosted.org/packages/e3/a7/8f4e456ef0adac43f452efc2d0e4b242ab831297f1bac60ac815d37eb9cf/typing_extensions-4.4.0.tar.gz", hash = "sha256:1511434bb92bf8dd198c12b1cc812e800d4181cfcb867674e0f8279cc93087aa"},
+"typing-extensions 4.5.0" = [
+    {url = "https://files.pythonhosted.org/packages/31/25/5abcd82372d3d4a3932e1fa8c3dbf9efac10cc7c0d16e78467460571b404/typing_extensions-4.5.0-py3-none-any.whl", hash = "sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4"},
+    {url = "https://files.pythonhosted.org/packages/d3/20/06270dac7316220643c32ae61694e451c98f8caf4c8eab3aa80a2bedf0df/typing_extensions-4.5.0.tar.gz", hash = "sha256:5cb5f4a79139d699607b3ef622a1dedafa84e115ab0024e0d9c044a9479ca7cb"},
 ]
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:dfd1b6557cfa7fde139745caf54b331a2e8f3e3e68ed04ba206200b6296593f6"
+content_hash = "sha256:6fcd192d6095c2d4cfc759d4306e9ed9c60b84098e1c29f38f239d0b032b1e87"
 
