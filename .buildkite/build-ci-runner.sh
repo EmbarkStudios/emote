@@ -9,7 +9,6 @@ buildah build-using-dockerfile \
         --file Dockerfile \
         --layers \
         --format=docker \
-		--squash \
         .
 
 buildah push --digestfile digest.txt --format=v2s2 $GCR_PATH

@@ -4,10 +4,11 @@ ENV PYTHONUNBUFFERED=1 \
 	PYTHONDONTWRITEBYTECODE=1 \
 	PIP_NO_CACHE_DIR=off \
 	PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100
+	PIP_DEFAULT_TIMEOUT=100 \
+	PATH="$PATH:/root/.local/bin/"
 
 RUN apt-get -y update && \
-    apt-get -y install curl build-essential gcc git && \
+    apt-get -y install curl build-essential gcc git swig && \
     apt-get -y clean
 
 RUN mkdir -p /gcloud/ && \
@@ -18,6 +19,11 @@ RUN mkdir -p /gcloud/ && \
 
 RUN pip install \
 	--no-cache-dir \
-	pdm==2.3
+	pipx && \
+	pipx install pdm~=2.3.0 && \
+	pipx install pdm~=2.4.0 --suffix 24 && \
+	pdm --version && \
+	pdm24 --version
+
 
 ENTRYPOINT bash
