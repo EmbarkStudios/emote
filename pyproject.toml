@@ -12,6 +12,7 @@ license = {text = "MIT"}
 dependencies = [
     "tensorboard>=2.8.0",
     "setuptools==59.5",
+    "psutil>=5.8.0"
 ]
 
 [project.optional-dependencies]
