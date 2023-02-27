@@ -44,10 +44,8 @@ class DictGymWrapper(VectorEnvWrapper):
         new_agents = []
         results = {}
         completed_episode_rewards = []
-
         for env_id, reward in enumerate(rewards):
             self._episode_rewards[env_id] += reward
-
         for env_id, done in enumerate(dones):
             if done:
                 results[self._agent_ids[env_id]] = DictObservation(

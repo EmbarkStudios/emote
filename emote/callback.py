@@ -76,13 +76,12 @@ def _wrap_callback_function(obj, func, *, group: str = None, use_group: bool = T
     # backward needs to pass things to loss so treated specially.
     # TODO(singhblom) Figure out if this is the nicest way to do it.
     if args.varargs or args.varkw:
-        if func.__name__ != "backward":
+        if func.__name__ != "backward" and func.__name__ != "begin_batch":
             warnings.warn(
                 f"Deprecated: {func.__qualname__} uses *args or **kwargs, this is deprecated",
                 UserWarning,
             )
         return func
-
     arg_names = args.args + args.kwonlyargs
     if arg_names == ["self"]:
         return _make_proxy(func)
@@ -91,7 +90,6 @@ def _wrap_callback_function(obj, func, *, group: str = None, use_group: bool = T
 
     if not use_group:
         return _make_no_group(func, arg_names, complex_kwargs)
-
     return _make_group_unpack(func, group, arg_names, complex_kwargs)
 
 

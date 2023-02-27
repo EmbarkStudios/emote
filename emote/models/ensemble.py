@@ -92,12 +92,6 @@ class EnsembleLinearLayer(nn.Module):
             else:
                 return xw
 
-    def extra_repr(self) -> str:
-        return (
-            f"num_members={self.num_members}, in_size={self.in_size}, "
-            f"out_size={self.out_size}, bias={self.use_bias}"
-        )
-
     def set_elite(self, elite_models: Sequence[int]):
         self.elite_models = list(elite_models)
 
@@ -112,7 +106,7 @@ class EnsembleBase(nn.Module):
         out_size: int,
         num_members: int,
         device: Union[str, torch.device],
-        propagation_method: str,
+        propagation_method: str = None,
         deterministic: bool = False,
         *args,
         **kwargs,
@@ -122,13 +116,22 @@ class EnsembleBase(nn.Module):
         self.out_size = out_size
         self.num_members = num_members
         self.propagation_method = propagation_method
-        self.device = torch.device(device)
-        self.deterministic = deterministic
+        self.propagation_indices: torch.Tensor = None
         self.elite_models: List[int] = None
+        self.deterministic = deterministic
+        self.device = torch.device(device)
         self.to(device)
 
     def __len__(self):
         return self.num_members
+
+    def forward(
+            self,
+            x: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        raise NotImplementedError(
+            "forward method must be implemented."
+        )
 
     def loss(
             self,
@@ -136,57 +139,18 @@ class EnsembleBase(nn.Module):
             target: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Dict[str, Any]]:
         raise NotImplementedError(
-            "Update requires that model has a loss() method defined."
+            "loss method must be implemented."
         )
 
-    def update(
-        self,
-        model_in: torch.Tensor(),
-        optimizer: torch.optim.Optimizer,
-        target: torch.Tensor,
-    ) -> Tuple[float, Dict[str, torch.Tensor]]:
-        """Updates the model using backpropagation with given input and target tensors.
-
-        Args:
-            model_in (tensor or batch of transitions): the inputs to the model.
-            optimizer (torch.optimizer): the optimizer to use for the model.
-            target (tensor or sequence of tensors): the expected output for the given inputs, if it
-                cannot be computed from ``model_in``.
-
-        Returns:
-             (float): the numeric value of the computed loss.
-             (dict): any additional metadata dictionary computed by :meth:`loss`.
-        """
-        self.train()
-        optimizer.zero_grad()
-        loss, meta = self.loss(model_in, target)
-        loss.backward()
-        optimizer.step()
-        return loss.item(), meta
-
-    def sample_1d(
+    def sample(
         self,
         model_input: torch.Tensor,
-        model_state: Dict[str, torch.Tensor],
-        deterministic: bool = False,
         rng: Optional[torch.Generator] = None,
-    ) -> Tuple[torch.Tensor, Optional[Dict[str, torch.Tensor]]]:
+    ) -> torch.Tensor:
         """Samples an output from the model using .
-
-        This method will be used by :class:`ModelEnv` to simulate a transition of the form.
-            outputs_t+1, s_t+1 = sample(model_input_t, s_t), where
-
-            - model_input_t: observation and action at time t, concatenated across axis=1.
-            - s_t: model state at time t (as returned by :meth:`reset()` or :meth:`sample()`.
-            - outputs_t+1: observation and reward at time t+1, concatenated across axis=1.
-
-        The default implementation returns `s_t+1=s_t`.
 
         Args:
             model_input (tensor): the observation and action at.
-            model_state (tensor): the model state st. Must contain a key
-                "propagation_indices" to use for uncertainty propagation.
-            deterministic (bool): if ``True``, the model returns a deterministic
                 "sample" (e.g., the mean prediction). Defaults to ``False``.
             rng (`torch.Generator`, optional): an optional random number generator
                 to use.
@@ -196,47 +160,15 @@ class EnsembleBase(nn.Module):
                 state dictionary. Everything but the observation is optional, and can
                 be returned with value ``None``.
         """
-        if deterministic or self.deterministic:
-            return (
-                self.forward(
-                    model_input,
-                    rng=rng,
-                    propagation_indices=model_state["propagation_indices"],
-                )[0],
-                model_state,
-            )
-        assert rng is not None
-        means, logvars = self.forward(
-            model_input, rng=rng, propagation_indices=model_state["propagation_indices"]
-        )
+        if self.deterministic:
+            return self.forward(
+                    model_input
+                )[0]
+        means, logvars = self.forward(model_input)
         variances = logvars.exp()
         stds = torch.sqrt(variances)
-        return torch.normal(means, stds, generator=rng), model_state
-
-    def reset_1d(
-        self, obs: torch.Tensor, rng: Optional[torch.Generator] = None
-    ) -> Dict[str, torch.Tensor]:
-        """Initializes the model to start a new simulated trajectory.
-
-        Returns a dictionary with one keys: "propagation_indices". If
-        `self.propagation_method == "fixed_model"`, its value will be the
-        computed propagation indices. Otherwise, its value is set to ``None``.
-
-        Args:
-            obs (tensor): the observation from which the trajectory will be
-                started. The actual value is ignore, only the shape is used.
-            rng (`torch.Generator`, optional): an optional random number generator
-                to use.
-
-        Returns:
-            (dict(str, tensor)): the model state necessary to continue the simulation.
-        """
         assert rng is not None
-        if self.propagation_method == "fixed_model":
-            propagation_indices = self.sample_propagation_indices(obs.shape[0], rng)
-        else:
-            propagation_indices = None
-        return {"obs": obs, "propagation_indices": propagation_indices}
+        return torch.normal(means, stds, generator=rng)
 
     def set_elite(self, elite_indices: Sequence[int]):
         if len(elite_indices) != self.num_members:
@@ -348,8 +280,7 @@ class EnsembleOfGaussian(EnsembleBase):
 
     def _forward_ensemble(
         self,
-        x: torch.Tensor,
-        propagation_indices: Optional[torch.Tensor] = None,
+        x: torch.Tensor
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         if self.propagation_method is None:
             mean, logvar = self._default_forward(x, only_elite=False)
@@ -372,11 +303,11 @@ class EnsembleOfGaussian(EnsembleBase):
             model_indices = torch.randperm(x.shape[1], device=self.device)
             return self._forward_from_indices(x, model_indices)
         if self.propagation_method == "fixed_model":
-            if propagation_indices is None:
+            if self.propagation_indices is None:
                 raise ValueError(
                     "When using propagation='fixed_model', `propagation_indices` must be provided."
                 )
-            return self._forward_from_indices(x, propagation_indices)
+            return self._forward_from_indices(x, self.propagation_indices)
         if self.propagation_method == "expectation":
             mean, logvar = self._default_forward(x, only_elite=True)
             return mean.mean(dim=0), logvar.mean(dim=0)
@@ -385,8 +316,6 @@ class EnsembleOfGaussian(EnsembleBase):
     def forward(
         self,
         x: torch.Tensor,
-        rng: Optional[torch.Generator] = None,
-        propagation_indices: Optional[torch.Tensor] = None,
         use_propagation: bool = True,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Computes mean and logvar predictions for the given input.
@@ -417,11 +346,6 @@ class EnsembleOfGaussian(EnsembleBase):
 
                 For other values of ``self.propagation`` (and ``use_propagation=True``),
                 the shape must be ``B x Id``.
-            rng (torch.Generator, optional): random number generator to use for "random_model"
-                propagation.
-            propagation_indices (tensor, optional): propagation indices to use,
-                as generated by :meth:`sample_propagation_indices`. Ignore if
-                `use_propagation == False` or `self.propagation_method != "fixed_model".
             use_propagation (bool): if ``False``, the propagation method will be ignored
                 and the method will return outputs for all models. Defaults to ``True``.
 
@@ -441,10 +365,8 @@ class EnsembleOfGaussian(EnsembleBase):
             the output to :func:`mbrl.util.math.propagate`.
 
         """
-        if use_propagation:
-            return self._forward_ensemble(
-                x, propagation_indices=propagation_indices
-            )
+        if use_propagation and self.propagation_method is not None:
+            return self._forward_ensemble(x)
         return self._default_forward(x)
 
     def _nll_loss(self, model_in: torch.Tensor, target: torch.Tensor) -> torch.Tensor:

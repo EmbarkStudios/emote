@@ -5,24 +5,42 @@ Collectors for running OpenAI gym environments
 import threading
 
 from collections import deque
+from typing import Dict
+from emote.typing import AgentId, DictObservation
 
 from tests.gym.dict_gym_wrapper import DictGymWrapper
-
-from emote.callback import Callback
 from emote.callbacks import LoggingCallback
 from emote.proxies import AgentProxy, MemoryProxy
+
+from emote.callback import Callback
+
+
+class CollectorCallback(LoggingCallback):
+    def __init__(
+            self,
+            data_group: str = "default",
+    ):
+        super().__init__()
+        self.data_group = data_group
+
+    def begin_batch(self, *args, **kwargs):
+        pass
+
+    @Callback.extend
+    def collect_multiple(self, *args, **kwargs):
+        pass
 
 
 class GymCollector(LoggingCallback):
     MAX_NUMBER_REWARDS = 1000
 
     def __init__(
-        self,
-        env: DictGymWrapper,
-        agent: AgentProxy,
-        memory: MemoryProxy,
-        render: bool = True,
-        warmup_steps: int = 0,
+            self,
+            env: DictGymWrapper,
+            agent: AgentProxy,
+            memory: MemoryProxy,
+            render: bool = True,
+            warmup_steps: int = 0,
     ):
         super().__init__()
         self._agent = agent
@@ -39,7 +57,6 @@ class GymCollector(LoggingCallback):
             self._env.render()
         actions = self._agent(self._obs)
         next_obs, ep_info = self._env.dict_step(actions)
-
         self._memory.add(self._obs, actions)
         self._obs = next_obs
 
@@ -69,12 +86,12 @@ class GymCollector(LoggingCallback):
 
 class ThreadedGymCollector(GymCollector):
     def __init__(
-        self,
-        env: DictGymWrapper,
-        agent: AgentProxy,
-        memory: MemoryProxy,
-        render: bool = True,
-        warmup_steps: int = 0,
+            self,
+            env: DictGymWrapper,
+            agent: AgentProxy,
+            memory: MemoryProxy,
+            render: bool = True,
+            warmup_steps: int = 0,
     ):
         super().__init__(env, agent, memory, render, warmup_steps)
         self._warmup_steps = warmup_steps
@@ -117,13 +134,13 @@ class ThreadedGymCollector(GymCollector):
 
 class SimpleGymCollector(GymCollector):
     def __init__(
-        self,
-        env: DictGymWrapper,
-        agent: AgentProxy,
-        memory: MemoryProxy,
-        render: bool = True,
-        warmup_steps: int = 0,
-        bp_steps_per_inf: int = 10,
+            self,
+            env: DictGymWrapper,
+            agent: AgentProxy,
+            memory: MemoryProxy,
+            render: bool = True,
+            warmup_steps: int = 0,
+            bp_steps_per_inf: int = 10,
     ):
         super().__init__(env, agent, memory, render, warmup_steps)
         self._bp_steps_per_inf = bp_steps_per_inf

@@ -10,6 +10,7 @@ import torch
 from gym.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
+from emote.models.model_env import ModelBasedCollector
 from torch import nn
 from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
@@ -21,6 +22,12 @@ from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
+
+from typing import List, Union
+
+from emote.models.ensemble import EnsembleOfGaussian
+from emote.models.model import DynamicModel, ModelLoss
+from emote.models.model_env import ModelEnv
 
 
 def _make_env(rank):
@@ -82,6 +89,15 @@ class Policy(nn.Module):
 
 
 def train_lunar_lander(args):
+    logged_cbs: List[Union[QLoss,
+                     PolicyLoss,
+                     AlphaLoss,
+                     QTarget,
+                     ThreadedGymCollector,
+                     ModelLoss,
+                     ModelBasedCollector,
+                     TensorboardLogger]]
+
     device = torch.device(args.device)
 
     hidden_dims = [256, 256]
@@ -165,10 +181,28 @@ def train_lunar_lander(args):
 
     if args.model_based:
         assert rollout_len == 1, "--rollout-length must be set to 1 for model-based training"
-        from emote.models.ensemble import EnsembleOfGaussian
-        from emote.models.model import DynamicModel, ModelLoss
         model = EnsembleOfGaussian(num_obs + num_actions, num_obs + 1, device, ensemble_size=args.num_model_ensembles)
         dynamic_model = DynamicModel(model=model)
+
+        init_rollout_length = 1
+        init_maxlen = (
+                init_rollout_length *
+                args.num_model_envs *
+                args.num_bp_to_retain_sac_buffer
+        )
+
+        sac_buffer = DictObsNStepTable(
+            spaces=env.dict_space,
+            use_terminal_column=False,
+            maxlen=init_maxlen,
+            device=device,
+        )
+        sac_buffer_proxy = TableMemoryProxy(sac_buffer, use_terminal=False)
+        model_env = ModelEnv(env=gym.make("LunarLander-v2", continuous=True),
+                             num_envs=args.num_model_envs,
+                             model=dynamic_model,
+                             termination_fn=lambda _, __: torch.tensor([False]),
+                             )
 
         logged_cbs = logged_cbs + [
             ModelLoss(
@@ -176,6 +210,12 @@ def train_lunar_lander(args):
                 name='dynamic_model',
                 opt=Adam(model.parameters(), lr=args.model_lr),
             ),
+            ModelBasedCollector(
+                model_env=model_env,
+                agent=agent_proxy,
+                memory=sac_buffer_proxy,
+                rollout_length=1
+            )
         ]
 
     callbacks = logged_cbs + [
@@ -202,6 +242,8 @@ if __name__ == "__main__":
     parser.add_argument("--num-model-ensembles", type=int, default=5,
                         help='The number of dynamic models in the ensemble')
     parser.add_argument("--batch-size", type=int, default=200)
+    parser.add_argument("--num-bp-to-retain-sac-buffer", type=int, default=5000)
+    parser.add_argument("--num-model-envs", type=int, default=50)
     parser.add_argument("--model-lr", type=float, default=1e-3, help='The model learning rate')
     parser.add_argument("--actor-lr", type=float, default=8e-3, help='The policy learning rate')
     parser.add_argument("--critic-lr", type=float, default=8e-3, help='Q-function learning rate')

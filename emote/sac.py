@@ -12,6 +12,8 @@ from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 
 from .callbacks import LoggingCallback, LossCallback
 
+import time
+
 
 def soft_update_from_to(source, target, tau):  # From rlkit
     for target_param, param in zip(target.parameters(), source.parameters()):

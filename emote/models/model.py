@@ -113,102 +113,33 @@ class DynamicModel(nn.Module):
         model_in, target = self.process_batch(obs=obs, next_obs=next_obs, action=action, reward=reward)
         return self.model.loss(model_in, target=target)
 
-    def update(
-        self,
-        *,
-        obs: torch.Tensor,
-        next_obs: torch.Tensor,
-        action: torch.Tensor,
-        reward: torch.Tensor,
-        optimizer: torch.optim.Optimizer
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
-        """Updates the model given a batch of transitions and an optimizer.
-
-        Args:
-            obs (tensor): current observations
-            next_obs (tensor): next observations
-            action (tensor): actions
-            reward (tensor): rewards
-            optimizer (torch optimizer): the optimizer to use to update the model.
-
-        Returns:
-            (tensor and optional dict): as returned by `model.loss().`
-        """
-        model_in, target = self.process_batch(obs=obs, action=action, next_obs=next_obs, reward=reward)
-        return self.model.update(model_in, optimizer, target=target)
-
-    def reset(
-        self, obs: torch.Tensor, rng: Optional[torch.Generator] = None
-    ) -> Dict[str, torch.Tensor]:
-        """ Initializes the model to start a new simulated trajectory.
-            This method can be used to initialize data that should be kept constant during
-            a simulated trajectory starting at the given observation (for example model
-            indices when using a bootstrapped ensemble with TSinf propagation). It should
-            also return any state produced by the model that the :meth:`sample()` method
-            will require to continue the simulation (e.g., predicted observation,
-            latent state, last action, beliefs, propagation indices, etc.).
-
-            Args:
-                obs (tensor): the observation from which the trajectory will be
-                    started.
-                rng (torch.generator, optional): an optional random number generator
-
-            Returns:
-                (dict(str, tensor)): the model state necessary to continue the simulation.
-        """
-        if not hasattr(self.model, "reset_1d"):
-            raise RuntimeError(
-                "DynamicModel requires wrapped model to define method reset_1d"
-            )
-        obs = to_tensor(obs).to(self.device)
-        model_state = {"obs": obs}
-        model_state.update(self.model.reset_1d(obs, rng=rng))
-        return model_state
-
     def sample(
         self,
-        act: torch.Tensor,
-        model_state: Dict[str, torch.Tensor],
-        deterministic: bool = False,
+        action: torch.Tensor,
+        observation: torch.Tensor,
         rng: Optional[torch.Generator] = None,
     ) -> Tuple[
         torch.Tensor,
-        Optional[torch.Tensor],
-        Optional[torch.Tensor],
-        Optional[Dict[str, torch.Tensor]],
+        Optional[torch.Tensor]
     ]:
         """ Samples a simulated transition from the dynamics model.
-            This method will be used by :class:`ModelEnv` to simulate a transition of the form.
-                o_t+1, r_t+1, d_t+1, s_t = sample(a_t, s_t), where
-
-                - a_t: action taken at time t.
-                - s_t: model state at time t (as returned by :meth:`reset()` or :meth:`sample()`.
-                - r_t: reward at time t.
-                - d_t: terminal indicator at time t.
-
-            If the model doesn't simulate rewards and/or terminal indicators, it can return
-            ``None`` for those.
 
             Args:
-                act (tensor): the action at.
-                model_state (tensor): the model state st.
-                deterministic (bool): if ``True``, the model returns a deterministic
-                    "sample" (e.g., the mean prediction). Defaults to ``False``.
+                action (tensor): the action at.
+                observation (tensor): the observation/state st.
                 rng (generator): optional random generator
 
             Returns:
-                (tuple): predicted observation, rewards, terminal indicator and model
-                    state dictionary. Everything but the observation is optional, and can
-                    be returned with value ``None``.
+                (tuple): predicted observation and rewards.
         """
-        obs = to_tensor(model_state["obs"]).to(self.device)
-        model_in = self.get_model_input(model_state["obs"], act)
-        if not hasattr(self.model, "sample_1d"):
+        obs = to_tensor(observation).to(self.device)
+        model_in = self.get_model_input(obs, action)
+        if not hasattr(self.model, "sample"):
             raise RuntimeError(
-                "DynamicModel requires wrapped model to define method sample_1d"
+                "DynamicModel requires wrapped model to implement sample method"
             )
-        preds, next_model_state = self.model.sample_1d(
-            model_in, model_state, rng=rng, deterministic=deterministic
+        preds = self.model.sample(
+            model_in, rng=rng
         )
         next_observs = preds[:, :-1] if self.learned_rewards else preds
         if self.target_is_delta:
@@ -217,8 +148,8 @@ class DynamicModel(nn.Module):
                 tmp_[:, dim] = next_observs[:, dim]
             next_observs = tmp_
         rewards = preds[:, -1:] if self.learned_rewards else None
-        next_model_state["obs"] = next_observs
-        return next_observs, rewards, None, next_model_state
+
+        return next_observs, rewards
 
     def get_model_input(
         self,
@@ -280,62 +211,6 @@ class DynamicModel(nn.Module):
             obs = self.obs_process_fn(obs)
         model_in_np = np.concatenate([obs, action], axis=obs.ndim - 1)
         self.input_normalizer.update_stats(model_in_np)
-
-    def get_output_and_targets(
-        self,
-        *,
-        obs: torch.Tensor,
-        next_obs: torch.Tensor,
-        action: torch.Tensor,
-        reward: torch.Tensor
-    ) -> Tuple[Tuple[torch.Tensor, ...], torch.Tensor]:
-        """Returns the model output and the target tensors given a batch of transitions.
-
-        This method constructs input and targets from the information in the batch,
-        then calls `self.model.forward()` on them and returns the value.
-        No gradient information will be kept.
-
-        Args:
-            obs (tensor): current observations
-            next_obs (tensor): next observations
-            action (tensor): actions
-            reward (tensor): rewards
-
-        Returns:
-            (tuple(tensor), tensor): the model outputs and the target for this batch.
-        """
-        with torch.no_grad():
-            model_in, target = self.process_batch(obs=obs, action=action, next_obs=next_obs, reward=reward)
-            output = self.model.forward(model_in)
-        return output, target
-
-    def eval_score(
-        self,
-        *,
-        obs: torch.Tensor,
-        next_obs: torch.Tensor,
-        action: torch.Tensor,
-        reward: torch.Tensor
-    ) -> Union[torch.Tensor, None]:
-        """Evaluates the model score over a batch of transitions.
-
-        This method constructs input and targets from the information in the batch,
-        then calls `self.model.eval_score()` on them and returns the value.
-
-        Args:
-            obs (tensor): current observations
-            next_obs (tensor): next observations
-            action (tensor): actions
-            reward (tensor): rewards
-
-        Returns:
-            (tensor): as returned by model.eval_score() or None if the method is not defined
-        """
-        if hasattr(self.model, "eval_score"):
-            with torch.no_grad():
-                model_in, target = self.process_batch(obs=obs, action=action, next_obs=next_obs, reward=reward)
-                return self.model.eval_score(model_in, target=target)
-        return None
 
     def save(self, save_dir: str) -> None:
         self.model.save(save_dir)

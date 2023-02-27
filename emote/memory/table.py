@@ -71,6 +71,11 @@ class ArrayTable:
 
         self.clear()
 
+    def increase_maxlen(self, larger_maxlen):
+        with self._lock:
+            if larger_maxlen > self._maxlen:
+                self._maxlen = larger_maxlen
+
     def clear(self):
         """Clear and reset all data"""
         with self._lock:

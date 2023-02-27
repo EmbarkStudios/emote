@@ -24,7 +24,7 @@ def _make_env(rank):
         env = gym.make("LunarLander-v2", continuous=True)
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
-        env.seed(rank)
+        #env.seed(rank)
         return env
 
     return _thunk
