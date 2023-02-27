@@ -114,8 +114,6 @@ class OnnxExporter:
 
             with torch.jit.optimized_execution(True):
                 with torch.no_grad():
-                    for param in self.policy.parameters():
-                        param.required_grad = False
                     trace = torch.jit.trace(
                         self.policy,
                         args,
@@ -124,8 +122,7 @@ class OnnxExporter:
                     )
 
             self.policy.train(True)
-            for param in self.policy.parameters():
-                param.required_grad = True
+
             with io.BytesIO() as f:
                 torch.onnx.export(
                     model=trace,
