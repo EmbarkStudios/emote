@@ -59,15 +59,15 @@ def _save_protobuf(path, message, as_text: bool = False):
 class OnnxExporter:
     """Handles onnx exports of a ML policy.
 
-    Call `export` whenever you want to save an onnx version of the current model.
-
-    This is a mixin class that can be used with diamond inheritance to
-    create a specialized ONNX exporter.
+    Call `export` whenever you want to save an onnx version of the
+    current model, or `export_threadsafe` if you're outside the
+    training loop.
 
     Parameters:
     :param directory: path to the directory where the files should be created. If it does not exist
                       it will be created.
     :param prefix: all file names will have this prefix.
+
     """
 
     def __init__(

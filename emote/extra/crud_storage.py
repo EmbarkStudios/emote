@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Generic, List, Optional, Sequence, TypeVar
 
-from emote.extra.threading import AtomicInt, LockedResource
+from emote.utils.threading import AtomicInt, LockedResource
 
 
 T = TypeVar("T")

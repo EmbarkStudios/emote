@@ -12,7 +12,6 @@ from torch.optim import lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 
 from .callback import Callback
-from .extra.threading import LockedResource
 from .trainer import TrainingShutdownException
 
 

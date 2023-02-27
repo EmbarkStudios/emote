@@ -53,7 +53,7 @@ def make_onnx_exporter_bundle(
 
     output_shapes = [("actions", (*spaces.actions.shape,))]
 
-    storage = OnnxExporter(
+    exporter = OnnxExporter(
         agent_proxy.policy,
         directory,
         input_shapes,
@@ -61,6 +61,6 @@ def make_onnx_exporter_bundle(
     )
 
     return (
-        storage,
-        OnnxExporterCallback(storage, export_interval),
+        exporter,
+        OnnxExporterCallback(exporter, export_interval),
     )
