@@ -10,7 +10,7 @@ from emote import Trainer
 from emote.callbacks import FinalRewardTestCheck, TerminalLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
-from emote.nn.gaussian_policy import GaussianPolicyHead
+from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
 from emote.onnx_export import make_onnx_exporter_bundle
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
@@ -36,22 +36,6 @@ class QNet(nn.Module):
         return self.q(x)
 
 
-class Policy(nn.Module):
-    def __init__(self, obs, act):
-        super().__init__()
-        self.encoder = nn.Sequential(
-            nn.Linear(obs, N_HIDDEN),
-            nn.ReLU(),
-            nn.Linear(N_HIDDEN, N_HIDDEN),
-            nn.ReLU(),
-        )
-
-        self.pi = GaussianPolicyHead(N_HIDDEN, act)
-
-    def forward(self, obs, epsilon: Tensor | None = None):
-        return self.pi(self.encoder(obs), epsilon)
-
-
 def test_htm():
     device = torch.device("cpu")
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
@@ -61,7 +45,7 @@ def test_htm():
 
     q1 = QNet(2, 1)
     q2 = QNet(2, 1)
-    policy = Policy(2, 1)
+    policy = Policy(2, 1, [N_HIDDEN, N_HIDDEN])
     ln_alpha = torch.tensor(1.0, requires_grad=True)
     agent_proxy = FeatureAgentProxy(policy, device)
 
@@ -96,7 +80,7 @@ def test_htm_onnx(tmpdir):
 
     q1 = QNet(2, 1)
     q2 = QNet(2, 1)
-    policy = Policy(2, 1)
+    policy = Policy(2, 1, [N_HIDDEN, N_HIDDEN])
     ln_alpha = torch.tensor(1.0, requires_grad=True)
     agent_proxy = FeatureAgentProxy(policy, device)
 

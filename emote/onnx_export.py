@@ -5,7 +5,7 @@
 import warnings
 
 from emote.callback import Callback
-from emote.extra.onnx_storage import OnnxExporter
+from emote.extra.onnx_exporter import OnnxExporter
 from emote.proxies import AgentProxy
 from emote.utils.spaces import MDPSpace
 
