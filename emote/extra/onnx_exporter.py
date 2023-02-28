@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import logging
 import time
+import warnings
 
 from queue import Empty, Queue
 from threading import Event
@@ -12,9 +13,11 @@ import onnx
 import torch
 
 from google.protobuf import text_format
-from torch import nn
 
+from emote.callback import Callback
 from emote.extra.crud_storage import CRUDStorage, StorageItem, StorageItemHandle
+from emote.proxies import AgentProxy
+from emote.utils.spaces import MDPSpace
 from emote.utils.timed_call import BlockTimers
 
 
@@ -56,7 +59,7 @@ def _save_protobuf(path, message, as_text: bool = False):
             f.write(message.SerializeToString())
 
 
-class OnnxExporter:
+class OnnxExporter(Callback):
     """Handles onnx exports of a ML policy.
 
     Call `export` whenever you want to save an onnx version of the
@@ -64,21 +67,52 @@ class OnnxExporter:
     training loop.
 
     Parameters:
+    :param agent_proxy: the agent API to export
+    :param spaces: The spaces describing the model inputs and outputs
+    :param requires_epsilon: If true, the API should accept an input epsilon per action
     :param directory: path to the directory where the files should be created. If it does not exist
                       it will be created.
+    :param interval: if provided, will automatically export ONNX files at this cadence.
     :param prefix: all file names will have this prefix.
 
     """
 
+    __HAS_INSERTED_FILTER = False
+
     def __init__(
         self,
-        policy: nn.Module,
+        agent_proxy: AgentProxy,
+        spaces: MDPSpace,
+        requires_epsilon: bool,
         directory: str,
-        input_shapes: list[tuple[str, tuple[int]]],
-        output_shapes: list[tuple[str, tuple[int]]],
+        interval: int | None = None,
         prefix: str = "savedmodel_",
     ):
-        self.policy = policy
+        super().__init__(cycle=interval)
+
+        if not OnnxExporter.__HAS_INSERTED_FILTER:
+            OnnxExporter.__HAS_INSERTED_FILTER = True
+            # This is caused by our old version of torch
+            warnings.filterwarnings("ignore", "Skipping _decide_input_format.*")
+
+            # https://github.com/pytorch/pytorch/issues/74799
+            warnings.filterwarnings("ignore", "Model has no forward function")
+
+        input_names = agent_proxy.input_names
+        input_shapes = [(k, spaces.state.spaces[k].shape) for k in input_names]
+
+        if requires_epsilon:
+            input_names = (*input_names, "epsilon")
+            input_shapes.append(
+                (
+                    "epsilon",
+                    (*spaces.actions.shape,),
+                )
+            )
+
+        output_shapes = [("actions", (*spaces.actions.shape,))]
+
+        self.policy = agent_proxy.policy
         self.storage = CRUDStorage(directory, prefix, extension="onnx")
         self.queued_exports = Queue()
         self.export_counter = 0
@@ -90,6 +124,10 @@ class OnnxExporter:
 
         self.inputs = input_shapes
         self.outputs = output_shapes
+
+    def end_cycle(self):
+        self.process_pending_exports()
+        self.export()
 
     def process_pending_exports(self):
         """

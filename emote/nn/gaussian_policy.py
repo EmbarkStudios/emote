@@ -50,7 +50,9 @@ class GaussianPolicyHead(nn.Module):
         self.mean = nn.Linear(hidden_dim, action_dim)
         self.log_std = nn.Linear(hidden_dim, action_dim)
 
-    def forward(self, x: Tensor, epsilon: Tensor | None = None) -> Tuple[Tensor]:
+    def forward(
+        self, x: Tensor, epsilon: Tensor | None = None
+    ) -> Tensor | Tuple[Tensor]:
         """
         Sample pre-actions and associated log-probabilities.
 
@@ -93,5 +95,7 @@ class GaussianMlpPolicy(nn.Module):
         self.encoder.apply(ortho_init_)
         self.policy.apply(partial(xavier_uniform_init_, gain=0.01))
 
-    def forward(self, obs: Tensor, epsilon: Tensor | None = None):
+    def forward(
+        self, obs: Tensor, epsilon: Tensor | None = None
+    ) -> Tensor | Tuple[Tensor]:
         return self.policy(self.encoder(obs), epsilon)

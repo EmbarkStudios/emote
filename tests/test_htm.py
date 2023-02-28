@@ -3,15 +3,15 @@ from __future__ import annotations
 import torch
 
 from gym.vector import AsyncVectorEnv
-from torch import Tensor, nn
+from torch import nn
 from torch.optim import Adam
 
 from emote import Trainer
 from emote.callbacks import FinalRewardTestCheck, TerminalLogger
+from emote.extra.onnx_exporter import OnnxExporter
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
-from emote.onnx_export import make_onnx_exporter_bundle
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 from .gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
@@ -84,12 +84,12 @@ def test_htm_onnx(tmpdir):
     ln_alpha = torch.tensor(1.0, requires_grad=True)
     agent_proxy = FeatureAgentProxy(policy, device)
 
-    storage, callback = make_onnx_exporter_bundle(
+    exporter = OnnxExporter(
         agent_proxy,
         env.dict_space,
+        True,
         tmpdir / "inference",
         400,
-        requires_epsilon=True,
     )
 
     logged_cbs = [
@@ -101,7 +101,7 @@ def test_htm_onnx(tmpdir):
     ]
 
     callbacks = logged_cbs + [
-        callback,
+        exporter,
         SimpleGymCollector(
             env, agent_proxy, memory_proxy, warmup_steps=500, render=False
         ),
