@@ -82,7 +82,7 @@ log_format = "%(asctime)s:\t%(message)s"
 log_date_format = "%H:%M:%S"
 
 [tool.isort]
-py_version = 38
+py_version = 39
 profile = "black"
 combine_as_imports = true
 lines_between_types = 1
@@ -92,7 +92,7 @@ known_first_party = ["emote"]
 
 
 [tool.black]
-target-version = ['py38']
+target-version = ['py39']
 
 [tool.mypy]
 check_untyped_defs = true
