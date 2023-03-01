@@ -12,14 +12,16 @@ license = {text = "MIT"}
 dependencies = [
     "tensorboard>=2.8.0",
     "setuptools==59.5",
-    "psutil>=5.8.0"
+    "psutil>=5.8.0",
+    "onnx>=1.10",
 ]
 
 [project.optional-dependencies]
 torch = ["torch==1.10.2"]
 atari = [
     "gym[atari,classic_control]~=0.23.0",
-    "box2d~=2.3.10",
+    # This is the last release with a src-release that can be used with any python version
+    "box2d-py==2.3.5",
     "pygame~=2.1.0"
 ]
 ci = ["gsutil>=4.66", "emote-rl[atari,torch]"]

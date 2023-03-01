@@ -7,6 +7,7 @@ import torch
 
 from torch import nn, optim
 
+from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 
@@ -205,9 +206,9 @@ class PolicyLoss(LossCallback):
         alpha = torch.exp(self._ln_alpha).detach()
         policy_loss = alpha * logp_pi - q_pi_min
         policy_loss = torch.mean(policy_loss)
-        self.log_scalar(f"policy/q_pi_min", torch.mean(q_pi_min))
-        self.log_scalar(f"policy/logp_pi", torch.mean(logp_pi))
-        self.log_scalar(f"policy/alpha", torch.mean(alpha))
+        self.log_scalar("policy/q_pi_min", torch.mean(q_pi_min))
+        self.log_scalar("policy/logp_pi", torch.mean(logp_pi))
+        self.log_scalar("policy/alpha", torch.mean(alpha))
         assert policy_loss.dim() == 0
         return policy_loss
 
@@ -295,6 +296,31 @@ class AlphaLoss(LossCallback):
         super().load_state_dict(state_dict)
 
 
+class AgentProxyWrapper:
+    def __init__(self, inner: AgentProxy):
+        self._inner = inner
+
+
+class LoggingProxyWrapper(AgentProxyWrapper):
+    def __init__(self, inner: AgentProxy, cycle: int):
+        super().__init__(inner)
+
+        self._cycle = cycle
+        self._counter = 0
+
+    def __call__(
+        self,
+        observations: Dict[AgentId, DictObservation],
+    ) -> Dict[AgentId, DictResponse]:
+        self._counter += 1
+
+        if (self._counter % self._cycle) == 0:
+            self._end_cycle()
+            self._counter = 0
+
+        return self._inner(observations)
+
+
 class FeatureAgentProxy:
     """An agent proxy for basic MLPs.
 
@@ -315,7 +341,8 @@ class FeatureAgentProxy:
         self._input_key = input_key
 
     def __call__(
-        self, observations: Dict[AgentId, DictObservation]
+        self,
+        observations: Dict[AgentId, DictObservation],
     ) -> Dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
@@ -340,6 +367,10 @@ class FeatureAgentProxy:
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
         }
+
+    @property
+    def input_names(self):
+        return ("obs",)
 
 
 class VisionAgentProxy:

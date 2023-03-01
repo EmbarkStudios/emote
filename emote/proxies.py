@@ -2,7 +2,11 @@
 Proxies are bridges between the world the agent acts in and the algorithm training loop.
 """
 
+from __future__ import annotations
+
 from typing import Dict, Protocol
+
+from torch import nn
 
 from emote.typing import AgentId, DictObservation, DictResponse
 
@@ -15,6 +19,14 @@ class AgentProxy(Protocol):
         obserations: Dict[AgentId, DictObservation],
     ) -> Dict[AgentId, DictResponse]:
         """Take observations for the active agents and returns the relevant network output."""
+        ...
+
+    @property
+    def policy(self) -> nn.Module:
+        pass
+
+    @property
+    def input_names(self) -> tuple[str]:
         ...
 
 
