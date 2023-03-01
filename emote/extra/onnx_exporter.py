@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import io
-import logging
-import time
 import warnings
 
 from queue import Empty, Queue
@@ -14,7 +12,7 @@ import torch
 
 from google.protobuf import text_format
 
-from emote.callback import Callback
+from emote.callbacks import LoggingCallback
 from emote.extra.crud_storage import CRUDStorage, StorageItem, StorageItemHandle
 from emote.proxies import AgentProxy
 from emote.utils.spaces import MDPSpace
@@ -59,7 +57,7 @@ def _save_protobuf(path, message, as_text: bool = False):
             f.write(message.SerializeToString())
 
 
-class OnnxExporter(Callback):
+class OnnxExporter(LoggingCallback):
     """Handles onnx exports of a ML policy.
 
     Call `export` whenever you want to save an onnx version of the
@@ -129,6 +127,10 @@ class OnnxExporter(Callback):
         self.process_pending_exports()
         self.export()
 
+        for name, (mean, var) in self.scopes.stats().items():
+            self.log_scalar(f"onnx_export/{name}_ms", mean * 1000.0)
+            self.log_scalar(f"onnx_export/{name}_var_ms", var * 1000.0)
+
     def process_pending_exports(self):
         """
         If you are using `export_threadsafe` the main thread must call
@@ -183,7 +185,6 @@ class OnnxExporter(Callback):
     def _export_onnx(self, metadata: Optional[Mapping[str, str]]) -> StorageItem:
         def save_inner(export_path: str):
             with self.scopes.scope("save"):
-                t0 = time.time()
                 model_proto = self._trace()
                 model_version = self.export_counter
                 self.export_counter += 1
@@ -198,9 +199,6 @@ class OnnxExporter(Callback):
                     onnx.helper.set_model_props(model_proto, metadata)
 
                 _save_protobuf(export_path, model_proto)
-
-                t1 = time.time()
-                logging.info(f"Exported onnx in {round((t1-t0)*1000)} ms")
 
         with self.scopes.scope("create"):
             return self.storage.create_with_saver(save_inner)
