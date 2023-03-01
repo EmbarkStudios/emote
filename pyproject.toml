@@ -24,7 +24,7 @@ atari = [
     "box2d-py==2.3.5",
     "pygame~=2.1.0"
 ]
-ci = ["gsutil>=4.66", "emote-rl[atari,torch]"]
+ci = ["gsutil>=4.66", "emote-rl[atari]"]
 
 [tool.pdm.dev-dependencies]
 tools = [
