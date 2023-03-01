@@ -74,12 +74,10 @@ name = "babel"
 version = "2.12.1"
 requires_python = ">=3.7"
 summary = "Internationalization utilities"
-<<<<<<< HEAD
 dependencies = [
     "pytz>=2015.7; python_version < \"3.9\"",
 ]
-=======
->>>>>>> 4cba06c (move to python 3.9)
+
 
 [[package]]
 name = "bandit"
@@ -520,6 +518,13 @@ requires_python = ">=2.6"
 summary = "Python Build Reasonableness"
 
 [[package]]
+name = "pdm-plugin-torch"
+version = "0.1.2"
+requires_python = "~=3.8"
+path = "./plugins/pdm-plugin-torch"
+summary = "A plugin to help installing torch versions"
+
+[[package]]
 name = "platformdirs"
 version = "3.0.0"
 requires_python = ">=3.7"
@@ -880,7 +885,8 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:ac604928e22e643917282fb6f92401339facf60cdd3c2c5cafcedb9183b8eb45"
+content_hash = "sha256:c2a10d1f3b93d5a9672bf851ab1cea9284100f175303c2d8f65d93019775bd7e"
+
 
 [metadata.files]
 "absl-py 1.4.0" = [
