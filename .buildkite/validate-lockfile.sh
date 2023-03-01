@@ -1,6 +1,6 @@
 set -eo pipefail
 
-pdm plugin add plugins/pdm-plugin-torch
+pdm plugin add pdm-plugin-torch==23.0
 
 EXIT_CODE=0
 pdm lock --check || EXIT_CODE=$?
