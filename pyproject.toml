@@ -24,7 +24,7 @@ atari = [
     "box2d-py==2.3.5",
     "pygame~=2.1.0"
 ]
-ci = ["gsutil>=4.66", "emote-rl[atari,torch]"]
+ci = ["gsutil>=4.66", "emote-rl[atari]"]
 
 [tool.pdm.dev-dependencies]
 tools = [
@@ -41,12 +41,9 @@ docs = [
     "sphinx-rtd-theme~=1.0.0",
     "myst-parser~=0.18.0"
 ]
-plugins = [
-    "pdm_plugin_torch @ file:///${PROJECT_ROOT}/plugins/pdm-plugin-torch",
-]
 
 [tool.pdm.scripts]
-post_install = "pdm plugin add plugins/pdm-plugin-torch"
+post_install = "pdm plugin add pdm-plugin-torch==23.0.0"
 post_lock = "pdm torch lock"
 
 [[tool.pdm.source]]
@@ -91,7 +88,7 @@ combine_as_imports = true
 lines_between_types = 1
 lines_after_imports = 2
 src_paths = ["emote"]
-known_first_party = ["emote", "pdm_plugin_torch"]
+known_first_party = ["emote"]
 
 
 [tool.black]
