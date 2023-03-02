@@ -8,13 +8,16 @@ import gym
 import numpy as np
 import torch
 from itertools import count
-from typing import Dict, List, Optional, Tuple, Callable
+from typing import Dict, List, Optional, Tuple, Callable, Union
+
+from torch import Tensor
 
 from emote.models.model import DynamicModel
 from emote.typing import TensorType, AgentId, DictObservation, DictResponse, EpisodeState
-from emote.utils.model import to_tensor
+from emote.utils.model import to_tensor, to_numpy
 from tests.gym.collector import CollectorCallback
 from emote.proxies import AgentProxy, MemoryProxy
+from emote.memory import MemoryLoader
 from collections import deque
 
 RewardFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
@@ -45,13 +48,13 @@ class ModelEnv:
     """
 
     def __init__(
-        self,
-        env: gym.Env,
-        num_envs: int,
-        model: DynamicModel,
-        termination_fn: TermFnType,
-        reward_fn: Optional[RewardFnType] = None,
-        generator: Optional[torch.Generator] = None,
+            self,
+            env: gym.Env,
+            num_envs: int,
+            model: DynamicModel,
+            termination_fn: TermFnType,
+            reward_fn: Optional[RewardFnType] = None,
+            generator: Optional[torch.Generator] = None,
     ):
         self.dynamics_model = model
         self.termination_fn = termination_fn
@@ -65,6 +68,8 @@ class ModelEnv:
         self._init_obs: torch.Tensor = None
         self._propagation_method: Optional[str] = None
         self._model_indices = None
+        self._timestep = 0
+        self._len_rollout = 0
         if generator:
             self._rng = generator
         else:
@@ -76,14 +81,19 @@ class ModelEnv:
         self._episode_rewards: List[float] = [0.0 for i in range(self.num_envs)]
 
     def reset(
-        self,
-        initial_obs_batch: TensorType,
+            self,
+            initial_obs_batch: TensorType,
+            len_rollout: int,
     ):
         """Resets the model environment.
 
         Args:
             initial_obs_batch (TensorType): a batch of initial observations.
+            len_rollout (int): the max length of the model rollout
         """
+        self._timestep = 0
+        self._len_rollout = len_rollout
+
         assert len(initial_obs_batch.shape) == 2  # batch, obs_dim
         self._current_obs = to_tensor(
             initial_obs_batch
@@ -91,9 +101,9 @@ class ModelEnv:
         self._init_obs = torch.clone(self._current_obs)
 
     def step(
-        self,
-        actions: TensorType,
-    ) -> Tuple[TensorType, TensorType, TensorType]:
+            self,
+            actions: TensorType,
+    ) -> tuple[Tensor, Tensor | None, Tensor, dict[str, Tensor]]:
         """Steps the model environment with the given batch of actions.
         Args:
             actions (torch.Tensor or np.ndarray): the actions for each "episode" to rollout.
@@ -101,7 +111,7 @@ class ModelEnv:
                 converted to a torch.Tensor and sent to the model device.
 
         Returns:
-            (tuple): contains the predicted next observation, reward, done flag.
+            (Union[tuple, Dict]): contains the predicted next observation, reward, done flag.
             The done flag and rewards are computed using the termination_fn and
             reward_fn passed in the constructor. The rewards can also be predicted
             by the model.
@@ -115,7 +125,8 @@ class ModelEnv:
                 next_observs,
                 pred_rewards,
             ) = self.dynamics_model.sample(
-                actions,
+                action=actions,
+                observation=self._current_obs,
                 rng=self._rng,
             )
             rewards = (
@@ -125,13 +136,13 @@ class ModelEnv:
             )
             dones = self.termination_fn(actions, next_observs)
 
-            self._current_obs = torch.clone(next_observs)
-            if self._return_as_np:
-                next_observs = next_observs.cpu().numpy()
-                rewards = rewards.cpu().numpy()
-                dones = dones.cpu().numpy()
+            info = {'terminated': torch.zeros(dones.shape)}
+            self._timestep += 1
+            if self._timestep >= (self._len_rollout - 1):
+                info['terminated'] += 1.0
 
-            return next_observs, rewards, dones
+            self._current_obs = torch.clone(next_observs)
+            return next_observs, rewards, dones, info
 
     def dict_step(
             self, actions: Dict[AgentId, DictResponse]
@@ -139,35 +150,38 @@ class ModelEnv:
         batched_actions = np.stack(
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
         )
-        next_obs, rewards, dones = self.step(batched_actions)
+        next_obs, rewards, dones, info = self.step(batched_actions)
         new_agents = []
         results = {}
         completed_episode_rewards = []
         for env_id, reward in enumerate(rewards):
             self._episode_rewards[env_id] += reward
-        for env_id, done in enumerate(dones):
-            if done:
+        terminated = info['terminated']
+        for env_id, (done, term) in enumerate(zip(dones, terminated)):
+            if done or term:
+                episode_state = EpisodeState.TERMINAL if done else EpisodeState.INTERRUPTED
                 results[self._agent_ids[env_id]] = DictObservation(
-                    episode_state=EpisodeState.TERMINAL,
-                    array_data={"obs": next_obs[env_id]},
-                    rewards={"reward": rewards[env_id]},
+                    episode_state=episode_state,
+                    array_data={"obs": to_numpy(next_obs[env_id])},
+                    rewards={"reward": to_numpy(rewards[env_id])},
                 )
                 new_agent = next(self._next_agent)
                 results[new_agent] = DictObservation(
                     episode_state=EpisodeState.INITIAL,
-                    array_data={"obs": self._init_obs[env_id]},
+                    array_data={"obs": to_numpy(self._init_obs[env_id])},
                     rewards={"reward": None},
                 )
                 new_agents.append(new_agent)
                 completed_episode_rewards.append(self._episode_rewards[env_id])
                 self._agent_ids[env_id] = new_agent
                 self._episode_rewards[env_id] = 0.0
+
         results.update(
             {
                 agent_id: DictObservation(
                     episode_state=EpisodeState.RUNNING,
-                    array_data={"obs": next_obs[env_id]},
-                    rewards={"reward": rewards[env_id]},
+                    array_data={"obs": to_numpy(next_obs[env_id])},
+                    rewards={"reward": to_numpy(rewards[env_id])},
                 )
                 for env_id, agent_id in enumerate(self._agent_ids)
                 if agent_id not in new_agents
@@ -181,20 +195,23 @@ class ModelEnv:
         return results, ep_info
 
     def dict_reset(self,
-                   obs: TensorType) -> Dict[AgentId, DictObservation]:
+                   obs: TensorType,
+                   len_rollout: int,
+                   ) -> Dict[AgentId, DictObservation]:
         """resets the model env.
         Args:
             obs (torch.Tensor or np.ndarray): the initial observations.
+            len_rollout (int): the max rollout length
 
         Returns:
             (dict): the formatted initial observation.
         """
-        self.reset(obs)
+        self.reset(obs, len_rollout)
         self._agent_ids = [next(self._next_agent) for _ in range(self.num_envs)]
         return {
             agent_id: DictObservation(
                 episode_state=EpisodeState.INITIAL,
-                array_data={"obs": obs[i]},
+                array_data={"obs": to_numpy(obs[i])},
                 rewards={"reward": None},
             )
             for i, agent_id in enumerate(self._agent_ids)
@@ -207,31 +224,48 @@ class ModelBasedCollector(CollectorCallback):
             model_env: ModelEnv,
             agent: AgentProxy,
             memory: MemoryProxy,
+            dataloader: MemoryLoader,
             rollout_length: int = 1,
             data_group: str = "default",
+            generator: Optional[torch.Generator] = None,
     ):
         super().__init__()
         self.data_group = data_group
+        self.data_group_locked = True
         self._agent = agent
         self._memory = memory
+        self._dataloader = dataloader
+        self._iter = iter(self._dataloader)
         self._model_env = model_env
         self._last_environment_rewards = deque(maxlen=1000)
         self._len_rollout = rollout_length
         self._obs: Dict[AgentId, DictObservation] = None
+        self._prob_of_sampling_model_data = 1.0
+        self._rng = generator if generator else torch.Generator()
 
     def begin_batch(self, *args, **kwargs):
         self.collect_multiple(*args, **kwargs)
+        print(self._memory.size())
+        if self.update_data_group() == "model_samples" and self._memory.size() > 1000:
+            try:
+                batch = next(self._iter)
+            except StopIteration:
+                self._iter = iter(self._dataloader)
+                batch = next(self._iter)
+            return {"model_samples": batch,
+                    "data_group": "model_samples"}
+        return {"data_group": "default"}
 
     def collect_multiple(self, observation):
         """Collect multiple rollouts
 
         :param observation: initial observations
         """
-        self._obs = self._model_env.dict_reset(observation['obs'])
+        self._obs = self._model_env.dict_reset(observation['obs'], self._len_rollout)
         for _ in range(self._len_rollout):
-            self.collect_data()
+            self.collect_sample()
 
-    def collect_data(self):
+    def collect_sample(self):
         """Collect a single rollout"""
         actions = self._agent(self._obs)
         next_obs, ep_info = self._model_env.dict_step(actions)
@@ -240,3 +274,11 @@ class ModelBasedCollector(CollectorCallback):
 
         if "reward" in ep_info:
             self.log_scalar("episode/reward", ep_info["reward"])
+
+    def update_data_group(self):
+        if self._prob_of_sampling_model_data < 0.9:
+            self._prob_of_sampling_model_data += 0.001
+
+        if torch.rand(size=(1,), generator=self._rng)[0] < self._prob_of_sampling_model_data:
+            return "model_samples"
+        return "default"

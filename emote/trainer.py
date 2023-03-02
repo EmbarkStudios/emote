@@ -56,13 +56,14 @@ class Trainer:
 
         self._begin_training()
         self.state["bp_samples"] = 0
+        self.state["data_group"] = 'default'
 
         try:
-
             for bp_step, batch in zip(count(1), self.dataloader):
                 self.state.update(batch)
                 self.state["bp_step"] = bp_step
                 self.state["bp_samples"] += self.state[self._batch_size_key]
+                print(self.state["data_group"])
 
                 if shutdown_signal():
                     raise TrainingShutdownException

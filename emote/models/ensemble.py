@@ -198,7 +198,7 @@ class EnsembleOfGaussian(EnsembleBase):
         num_layers: int = 4,
         ensemble_size: int = 1,
         hid_size: int = 200,
-        propagation_method: str = None,
+        propagation_method: str = 'expectation',
         learn_logvar_bounds: bool = False,
     ):
         super().__init__(in_size, out_size, ensemble_size, device, propagation_method)

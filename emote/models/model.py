@@ -133,6 +133,7 @@ class DynamicModel(nn.Module):
                 (tuple): predicted observation and rewards.
         """
         obs = to_tensor(observation).to(self.device)
+
         model_in = self.get_model_input(obs, action)
         if not hasattr(self.model, "sample"):
             raise RuntimeError(
@@ -141,6 +142,12 @@ class DynamicModel(nn.Module):
         preds = self.model.sample(
             model_in, rng=rng
         )
+        if len(preds.shape) != 2:
+            raise RuntimeError(
+                "Prediction shape is: {} "
+                "Predictions must be \'batch_size x length_of_prediction\'."
+                "Have you forgotten to run propagation on the ensemble?".format(preds.shape)
+            )
         next_observs = preds[:, :-1] if self.learned_rewards else preds
         if self.target_is_delta:
             tmp_ = next_observs + obs
@@ -260,6 +267,7 @@ class ModelLoss(LossCallback):
             network=model,
             max_grad_norm=max_grad_norm,
             data_group=data_group,
+            data_group_locked=True
         )
         self.model = model
 

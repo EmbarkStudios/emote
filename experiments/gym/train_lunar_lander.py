@@ -35,7 +35,7 @@ def _make_env(rank):
         env = gym.make("LunarLander-v2", continuous=True)
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
-        #env.seed(rank)
+        # env.seed(rank)
         return env
 
     return _thunk
@@ -90,13 +90,13 @@ class Policy(nn.Module):
 
 def train_lunar_lander(args):
     logged_cbs: List[Union[QLoss,
-                     PolicyLoss,
-                     AlphaLoss,
-                     QTarget,
-                     ThreadedGymCollector,
-                     ModelLoss,
-                     ModelBasedCollector,
-                     TensorboardLogger]]
+    PolicyLoss,
+    AlphaLoss,
+    QTarget,
+    ThreadedGymCollector,
+    ModelLoss,
+    ModelBasedCollector,
+    TensorboardLogger]]
 
     device = torch.device(args.device)
 
@@ -122,6 +122,11 @@ def train_lunar_lander(args):
 
     num_actions = env.dict_space.actions.shape[0]
     num_obs = list(env.dict_space.state.spaces.values())[0].shape[0]
+    print("***************\n",
+          "Lunar lander environment:\n"
+          "\tobservation space: {:d}D,\n".format(num_obs),
+          "\taction space: {:d}D\n".format(num_actions),
+          "***************\n")
 
     q1 = QNet(num_obs, num_actions, hidden_dims)
     q2 = QNet(num_obs, num_actions, hidden_dims)
@@ -181,25 +186,33 @@ def train_lunar_lander(args):
 
     if args.model_based:
         assert rollout_len == 1, "--rollout-length must be set to 1 for model-based training"
-        model = EnsembleOfGaussian(num_obs + num_actions, num_obs + 1, device, ensemble_size=args.num_model_ensembles)
+        model = EnsembleOfGaussian(in_size=num_obs + num_actions,
+                                   out_size=num_obs + 1,
+                                   device=device,
+                                   ensemble_size=args.num_model_ensembles)
         dynamic_model = DynamicModel(model=model)
 
-        init_rollout_length = 1
+        init_rollout_length = 4
         init_maxlen = (
                 init_rollout_length *
-                args.num_model_envs *
+                args.batch_size *
                 args.num_bp_to_retain_sac_buffer
         )
-
         sac_buffer = DictObsNStepTable(
             spaces=env.dict_space,
             use_terminal_column=False,
             maxlen=init_maxlen,
             device=device,
         )
-        sac_buffer_proxy = TableMemoryProxy(sac_buffer, use_terminal=False)
+        sac_buffer_proxy = TableMemoryProxy(sac_buffer, use_terminal=False, minimum_length_threshold=0)
+        sac_dataloader = MemoryLoader(table=sac_buffer,
+                                      rollout_count=batch_size // rollout_len,
+                                      rollout_length=rollout_len,
+                                      size_key="batch_size",
+                                      data_group="model_samples"
+                                      )
         model_env = ModelEnv(env=gym.make("LunarLander-v2", continuous=True),
-                             num_envs=args.num_model_envs,
+                             num_envs=args.batch_size,
                              model=dynamic_model,
                              termination_fn=lambda _, __: torch.tensor([False]),
                              )
@@ -209,12 +222,14 @@ def train_lunar_lander(args):
                 model=dynamic_model,
                 name='dynamic_model',
                 opt=Adam(model.parameters(), lr=args.model_lr),
+                data_group='default',
             ),
             ModelBasedCollector(
                 model_env=model_env,
                 agent=agent_proxy,
                 memory=sac_buffer_proxy,
-                rollout_length=1
+                dataloader=sac_dataloader,
+                rollout_length=4
             )
         ]
 
@@ -243,7 +258,6 @@ if __name__ == "__main__":
                         help='The number of dynamic models in the ensemble')
     parser.add_argument("--batch-size", type=int, default=200)
     parser.add_argument("--num-bp-to-retain-sac-buffer", type=int, default=5000)
-    parser.add_argument("--num-model-envs", type=int, default=50)
     parser.add_argument("--model-lr", type=float, default=1e-3, help='The model learning rate')
     parser.add_argument("--actor-lr", type=float, default=8e-3, help='The policy learning rate')
     parser.add_argument("--critic-lr", type=float, default=8e-3, help='Q-function learning rate')

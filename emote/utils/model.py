@@ -16,3 +16,11 @@ def to_tensor(x: TensorType):
     if isinstance(x, np.ndarray):
         return torch.from_numpy(x)
     raise ValueError("Input must be torch.Tensor or np.ndarray.")
+
+
+def to_numpy(x: TensorType):
+    if isinstance(x, torch.Tensor):
+        return x.detach().to('cpu').numpy()
+    if isinstance(x, np.ndarray):
+        return x
+    raise ValueError("Input must be torch.Tensor or np.ndarray.")
