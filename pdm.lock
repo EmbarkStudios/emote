@@ -74,10 +74,6 @@ name = "babel"
 version = "2.12.1"
 requires_python = ">=3.7"
 summary = "Internationalization utilities"
-dependencies = [
-    "pytz>=2015.7; python_version < \"3.9\"",
-]
-
 
 [[package]]
 name = "bandit"
@@ -288,7 +284,7 @@ summary = "HTTP/2-based RPC framework"
 
 [[package]]
 name = "gsutil"
-version = "5.20"
+version = "5.21"
 requires_python = "!=2.*, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 summary = "A command line tool for interacting with cloud storage services."
 dependencies = [
@@ -516,13 +512,6 @@ name = "pbr"
 version = "5.11.1"
 requires_python = ">=2.6"
 summary = "Python Build Reasonableness"
-
-[[package]]
-name = "pdm-plugin-torch"
-version = "0.1.2"
-requires_python = "~=3.8"
-path = "./plugins/pdm-plugin-torch"
-summary = "A plugin to help installing torch versions"
 
 [[package]]
 name = "platformdirs"
@@ -885,8 +874,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:c2a10d1f3b93d5a9672bf851ab1cea9284100f175303c2d8f65d93019775bd7e"
-
+content_hash = "sha256:462a947a5341b9aa0658edf75467107a3034175053e04d2db92802252da5888d"
 
 [metadata.files]
 "absl-py 1.4.0" = [
@@ -1417,8 +1405,8 @@ content_hash = "sha256:c2a10d1f3b93d5a9672bf851ab1cea9284100f175303c2d8f65d93019
     {url = "https://files.pythonhosted.org/packages/fa/2d/0b73ab7f96a82e7cd7287c5cc75bdc762d41e0dca28c03cc372292b765a0/grpcio-1.51.3-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:49ede0528e9dac7e8a9fe30b16c73b630ddd9a576bf4b675eb6b0c53ee5ca00f"},
     {url = "https://files.pythonhosted.org/packages/fd/6b/2bb1192d0c5ddc527ef4ba7ee18f2581149681d373e6294f8fbb1a1b2156/grpcio-1.51.3-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:200d69857f9910f7458b39b9bcf83ee4a180591b40146ba9e49314e3a7419313"},
 ]
-"gsutil 5.20" = [
-    {url = "https://files.pythonhosted.org/packages/ca/4c/c5a55275e8c15b58436f5041bf91bbc420372bceabad3969819c88cbfe7c/gsutil-5.20.tar.gz", hash = "sha256:0cb935f1fb14502f56e6100f93e43d9d7fa31822bc5ebffc932b7694b3fa08a9"},
+"gsutil 5.21" = [
+    {url = "https://files.pythonhosted.org/packages/c5/a5/ac18c7ace5b46f6e5c0cc35b8984afe97e9b31adea51ca5f1fe56cab5f80/gsutil-5.21.tar.gz", hash = "sha256:6c65132cd605492532e071ae3f76d1c8f15731bfa04c3fac86135e6494097c54"},
 ]
 "gym 0.23.1" = [
     {url = "https://files.pythonhosted.org/packages/87/86/3f5467531428b6ce6f3c12d3121b4304d2ea1536a50775a4df036add37b8/gym-0.23.1.tar.gz", hash = "sha256:d0f9b9da34edbdace421c9442fc9205d03b8d15d0fb451053c766cde706d40e0"},
