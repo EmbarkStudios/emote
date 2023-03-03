@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bugfixes
 
 - Fix `FeatureAgentProxy.input_names` to use `input_key` when configured.
+- `Callback.cycle` can now be `None`
 
 ## [23.0.0] - 2023-03-03
 

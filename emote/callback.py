@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import logging
 import warnings
@@ -177,7 +179,7 @@ class Callback(metaclass=CallbackMeta):
     The concept has been borrowed from Keras and FastAI.
     """
 
-    def __init__(self, cycle=0):
+    def __init__(self, cycle: int | None = None):
         super().__init__()
         self._order = 0
         self.cycle = cycle
