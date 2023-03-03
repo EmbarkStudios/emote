@@ -2,7 +2,6 @@
 Proxies are bridges between the world the agent acts in and the algorithm training loop.
 """
 
-from __future__ import annotations
 
 from typing import Dict, Protocol
 

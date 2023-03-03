@@ -74,9 +74,6 @@ name = "babel"
 version = "2.12.1"
 requires_python = ">=3.7"
 summary = "Internationalization utilities"
-dependencies = [
-    "pytz>=2015.7; python_version < \"3.9\"",
-]
 
 [[package]]
 name = "bandit"
@@ -287,7 +284,7 @@ summary = "HTTP/2-based RPC framework"
 
 [[package]]
 name = "gsutil"
-version = "5.20"
+version = "5.21"
 requires_python = "!=2.*, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 summary = "A command line tool for interacting with cloud storage services."
 dependencies = [
@@ -609,11 +606,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pytz"
-version = "2022.7.1"
-summary = "World timezone definitions, modern and historical"
-
-[[package]]
 name = "pyu2f"
 version = "0.1.5"
 summary = "U2F host library for interacting with a U2F device over USB."
@@ -882,7 +874,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:484812b04136bdf22762b350f2e4ddb93336a151bab7494398e572e7321eb569"
+content_hash = "sha256:462a947a5341b9aa0658edf75467107a3034175053e04d2db92802252da5888d"
 
 [metadata.files]
 "absl-py 1.4.0" = [
@@ -1413,8 +1405,8 @@ content_hash = "sha256:484812b04136bdf22762b350f2e4ddb93336a151bab7494398e572e73
     {url = "https://files.pythonhosted.org/packages/fa/2d/0b73ab7f96a82e7cd7287c5cc75bdc762d41e0dca28c03cc372292b765a0/grpcio-1.51.3-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:49ede0528e9dac7e8a9fe30b16c73b630ddd9a576bf4b675eb6b0c53ee5ca00f"},
     {url = "https://files.pythonhosted.org/packages/fd/6b/2bb1192d0c5ddc527ef4ba7ee18f2581149681d373e6294f8fbb1a1b2156/grpcio-1.51.3-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:200d69857f9910f7458b39b9bcf83ee4a180591b40146ba9e49314e3a7419313"},
 ]
-"gsutil 5.20" = [
-    {url = "https://files.pythonhosted.org/packages/ca/4c/c5a55275e8c15b58436f5041bf91bbc420372bceabad3969819c88cbfe7c/gsutil-5.20.tar.gz", hash = "sha256:0cb935f1fb14502f56e6100f93e43d9d7fa31822bc5ebffc932b7694b3fa08a9"},
+"gsutil 5.21" = [
+    {url = "https://files.pythonhosted.org/packages/c5/a5/ac18c7ace5b46f6e5c0cc35b8984afe97e9b31adea51ca5f1fe56cab5f80/gsutil-5.21.tar.gz", hash = "sha256:6c65132cd605492532e071ae3f76d1c8f15731bfa04c3fac86135e6494097c54"},
 ]
 "gym 0.23.1" = [
     {url = "https://files.pythonhosted.org/packages/87/86/3f5467531428b6ce6f3c12d3121b4304d2ea1536a50775a4df036add37b8/gym-0.23.1.tar.gz", hash = "sha256:d0f9b9da34edbdace421c9442fc9205d03b8d15d0fb451053c766cde706d40e0"},
@@ -1846,10 +1838,6 @@ content_hash = "sha256:484812b04136bdf22762b350f2e4ddb93336a151bab7494398e572e73
 "pytest 6.2.5" = [
     {url = "https://files.pythonhosted.org/packages/40/76/86f886e750b81a4357b6ed606b2bcf0ce6d6c27ad3c09ebf63ed674fc86e/pytest-6.2.5-py3-none-any.whl", hash = "sha256:7310f8d27bc79ced999e760ca304d69f6ba6c6649c0b60fb0e04a4a77cacc134"},
     {url = "https://files.pythonhosted.org/packages/4b/24/7d1f2d2537de114bdf1e6875115113ca80091520948d370c964b88070af2/pytest-6.2.5.tar.gz", hash = "sha256:131b36680866a76e6781d13f101efb86cf674ebb9762eb70d3082b6f29889e89"},
-]
-"pytz 2022.7.1" = [
-    {url = "https://files.pythonhosted.org/packages/03/3e/dc5c793b62c60d0ca0b7e58f1fdd84d5aaa9f8df23e7589b39cc9ce20a03/pytz-2022.7.1.tar.gz", hash = "sha256:01a0681c4b9684a28304615eba55d1ab31ae00bf68ec157ec3708a8182dbbcd0"},
-    {url = "https://files.pythonhosted.org/packages/2e/09/fbd3c46dce130958ee8e0090f910f1fe39e502cc5ba0aadca1e8a2b932e5/pytz-2022.7.1-py2.py3-none-any.whl", hash = "sha256:78f4f37d8198e0627c5f1143240bb0206b8691d8d7ac6d78fee88b78733f8c4a"},
 ]
 "pyu2f 0.1.5" = [
     {url = "https://files.pythonhosted.org/packages/29/b5/c1209e6cb77647bc2c9a6a1a953355720f34f3b006b725e303c70f3c0786/pyu2f-0.1.5.tar.gz", hash = "sha256:a3caa3a11842fc7d5746376f37195e6af5f17c0a15737538bb1cebf656fb306b"},
