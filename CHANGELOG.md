@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # Breaking
 
 * The minimum required Python version is now 3.9 (#87)
+* The `torch-cpu` feature has been renamed to `torch` as it wasn't limited to CPU-only variants. (#76)
 
 # Added
 
@@ -19,10 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Changed
 
-* The `torch-cpu` feature has been renamed to `torch` as it wasn't limited to CPU-only variants. (#76)
 * Our PDM plugin for torch management has been split off into a [separate repository](https://github.com/EmbarkStudios/pdm-plugin-torch/) and [published to PYPI](https://pypi.org/project/pdm-plugin-torch/). (#88)
 * Switch to PDM 2.3 as default version for testing (#62)
-* The input key used for Feature Agent Proxies can now  (#79)
+* The input key used for Feature Agent Proxies can now be customized (#79)
 
 ## [22.0.0] - 2022-10-28
 
