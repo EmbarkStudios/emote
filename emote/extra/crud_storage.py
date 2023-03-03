@@ -1,11 +1,12 @@
 """
 Generic CRUD-based storage on disk.
 """
+from __future__ import annotations
 import os
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Generic, List, Optional, Sequence, TypeVar
+from typing import Callable, Generic, Sequence, TypeVar
 
 from emote.utils.threading import AtomicInt, LockedResource
 
@@ -27,7 +28,7 @@ class StorageItemHandle(Generic[T]):
     handle: int
 
     @staticmethod
-    def from_string(value: str) -> Optional["StorageItemHandle"]:
+    def from_string(value: str) -> "StorageItemHandle" | None:
         """
         Parses a handle from its string representation.
         Returns None if the handle is invalid.
@@ -76,7 +77,7 @@ class CRUDStorage(Generic[T]):
 
         self._directory = directory
         self._filename_counter = AtomicInt(0)
-        self._items: List[StorageItem[T]] = LockedResource([])
+        self._items: list[StorageItem[T]] = LockedResource([])
         self._extension = extension
         self._prefix = prefix
 
@@ -192,7 +193,7 @@ class CRUDStorage(Generic[T]):
 
         return False
 
-    def get(self, handle: StorageItemHandle[T]) -> Optional[StorageItem[T]]:
+    def get(self, handle: StorageItemHandle[T]) -> StorageItem[T] | None:
         """
         :returns: The storage item corresponding handle or None if it was not found
         """
@@ -201,7 +202,7 @@ class CRUDStorage(Generic[T]):
             # Slow, but this class is not expected to have to handle a large number of files
             return next((item for item in items if item.handle == handle), None)
 
-    def latest(self) -> Optional[StorageItem[T]]:
+    def latest(self) -> StorageItem[T] | None:
         """
         The last storage item that was added to the storage.
         If items have been deleted, this is the last item of the ones that remain.

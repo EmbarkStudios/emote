@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List
 
 from numpy.typing import ArrayLike
 
@@ -15,19 +16,19 @@ BatchedData = ArrayLike
 
 # Input is a set of named inputs from one agent. We mainly use this for observations.
 InputSpace = str
-Input = Dict[InputSpace, SingleAgentData]
+Input = dict[InputSpace, SingleAgentData]
 # Input gathers inputs from multiple agents
-InputGroup = Dict[AgentId, Input]
+InputGroup = dict[AgentId, Input]
 # InputBatch is the result of merging an InputGroup based on input name.
-InputBatch = Dict[InputSpace, BatchedData]
+InputBatch = dict[InputSpace, BatchedData]
 
 # Output is a set of named outputs for one agent
 OutputSpace = str
-Output = Dict[OutputSpace, SingleAgentData]
+Output = dict[OutputSpace, SingleAgentData]
 # Input gathers inputs from multiple agents
-OutputGroup = Dict[AgentId, Output]
+OutputGroup = dict[AgentId, Output]
 # OutputBatch is the result of evaluating the neural network on an input batch, before unmerging.
-OutputBatch = Dict[OutputSpace, BatchedData]
+OutputBatch = dict[OutputSpace, BatchedData]
 
 
 class EpisodeState(Enum):
@@ -48,23 +49,23 @@ class EpisodeState(Enum):
 
 
 # In the future we might switch to supporting flat np.arrays here.
-FloatList = List[float]
+FloatList = list[float]
 
 
 class MetaData:
-    info: Dict[str, float]
-    info_lists: Dict[str, FloatList]
+    info: dict[str, float]
+    info_lists: dict[str, FloatList]
 
 
 @dataclass
 class DictObservation:
-    rewards: Dict[str, float]
+    rewards: dict[str, float]
     episode_state: EpisodeState
-    array_data: Dict[str, SingleAgentData]
+    array_data: dict[str, SingleAgentData]
     metadata: MetaData = None
 
 
 @dataclass
 class DictResponse:
-    list_data: Dict[str, FloatList]
-    scalar_data: Dict[str, float]
+    list_data: dict[str, FloatList]
+    scalar_data: dict[str, float]

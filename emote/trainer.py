@@ -1,5 +1,5 @@
 from itertools import count
-from typing import Any, Callable, Iterable, List, MutableMapping
+from typing import Any, Callable, Iterable, MutableMapping
 from weakref import ref
 
 from .callback import Callback
@@ -28,13 +28,13 @@ class Trainer:
     It does so by invoking a bunch of callbacks in a number of different places."""
 
     state: StateDict
-    callbacks: List[Callback]
+    callbacks: list[Callback]
     dataloader: Iterable
     cycle_length: int
 
     def __init__(
         self,
-        callbacks: List[Callback],
+        callbacks: list[Callback],
         dataloader: Iterable,
         batch_size_key: str = "batch_size",
     ):

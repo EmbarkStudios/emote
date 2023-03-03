@@ -2,7 +2,7 @@
 
 """
 
-from typing import Callable, List, Optional
+from typing import Callable
 
 import torch
 
@@ -25,8 +25,8 @@ class DictObsAdaptor:
 
     def __init__(
         self,
-        keys: List[str],
-        output_keys: Optional[List[str]] = None,
+        keys: list[str],
+        output_keys: list[str] | None = None,
         with_next: bool = True,
     ):
         if output_keys is None:

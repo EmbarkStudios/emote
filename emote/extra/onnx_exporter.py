@@ -5,7 +5,7 @@ import warnings
 
 from queue import Empty, Queue
 from threading import Event
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Sequence
 
 import onnx
 import torch
@@ -20,7 +20,7 @@ from emote.utils.timed_call import BlockTimers
 
 
 class QueuedExport:
-    def __init__(self, metadata: Optional[Mapping[str, str]]):
+    def __init__(self, metadata: Mapping[str, str] | None):
         self.metadata = metadata
         self.return_value = None
         self._event = Event()
@@ -182,7 +182,7 @@ class OnnxExporter(LoggingCallback):
 
             return model_proto
 
-    def _export_onnx(self, metadata: Optional[Mapping[str, str]]) -> StorageItem:
+    def _export_onnx(self, metadata: Mapping[str, str] | None) -> StorageItem:
         def save_inner(export_path: str):
             with self.scopes.scope("save"):
                 model_proto = self._trace()
@@ -203,7 +203,7 @@ class OnnxExporter(LoggingCallback):
         with self.scopes.scope("create"):
             return self.storage.create_with_saver(save_inner)
 
-    def _export(self, metadata: Optional[Mapping[str, str]], sync: bool) -> StorageItem:
+    def _export(self, metadata: Mapping[str, str] | None, sync: bool) -> StorageItem:
         # The actual onnx export needs to be done on the main thread.
         item = QueuedExport(metadata)
         self.queued_exports.put(item)
@@ -240,5 +240,5 @@ class OnnxExporter(LoggingCallback):
     def items(self) -> Sequence[StorageItem]:
         return self.storage.items()
 
-    def latest(self) -> Optional[StorageItem]:
+    def latest(self) -> StorageItem | None:
         return self.storage.latest()

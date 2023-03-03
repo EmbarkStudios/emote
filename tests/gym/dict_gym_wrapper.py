@@ -1,5 +1,4 @@
 from itertools import count
-from typing import Dict, List
 
 import gym.spaces
 import numpy as np
@@ -14,10 +13,10 @@ class DictGymWrapper(VectorEnvWrapper):
     def __init__(self, env: VectorEnv):
         super().__init__(env)
         self._next_agent = count()
-        self._agent_ids: List[AgentId] = [
+        self._agent_ids: list[AgentId] = [
             next(self._next_agent) for i in range(self.num_envs)
         ]
-        self._episode_rewards: List[float] = [0.0 for i in range(self.num_envs)]
+        self._episode_rewards: list[float] = [0.0 for i in range(self.num_envs)]
         assert isinstance(env.single_observation_space, gym.spaces.Box)
         os: gym.spaces.Box = env.single_observation_space
         if len(env.single_action_space.shape) > 0:
@@ -34,8 +33,8 @@ class DictGymWrapper(VectorEnvWrapper):
         self.env.envs[0].render()
 
     def dict_step(
-        self, actions: Dict[AgentId, DictResponse]
-    ) -> Dict[AgentId, DictObservation]:
+        self, actions: dict[AgentId, DictResponse]
+    ) -> dict[AgentId, DictObservation]:
         batched_actions = np.stack(
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
         )
@@ -86,7 +85,7 @@ class DictGymWrapper(VectorEnvWrapper):
 
         return results, ep_info
 
-    def dict_reset(self) -> Dict[AgentId, DictObservation]:
+    def dict_reset(self) -> dict[AgentId, DictObservation]:
         self._agent_ids = [next(self._next_agent) for i in range(self.num_envs)]
         self.reset_async()
         obs = self.reset_wait()

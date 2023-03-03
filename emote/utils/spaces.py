@@ -1,5 +1,5 @@
+from __future__ import annotations
 from dataclasses import dataclass
-from typing import Dict, Tuple, Union
 
 import numpy as np
 import torch
@@ -7,13 +7,13 @@ import torch
 
 @dataclass
 class BoxSpace:
-    dtype: Union[torch.dtype, np.dtype]
-    shape: Tuple[int]
+    dtype: torch.dtype | np.dtype
+    shape: tuple[int]
 
 
 @dataclass
 class DictSpace:
-    spaces: Dict[str, BoxSpace]
+    spaces: dict[str, BoxSpace]
 
 
 @dataclass

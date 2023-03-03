@@ -2,8 +2,8 @@
 Proxies are bridges between the world the agent acts in and the algorithm training loop.
 """
 
-
-from typing import Dict, Protocol
+from __future__ import annotations
+from typing import Protocol
 
 from torch import nn
 
@@ -15,8 +15,8 @@ class AgentProxy(Protocol):
 
     def __call__(
         self,
-        obserations: Dict[AgentId, DictObservation],
-    ) -> Dict[AgentId, DictResponse]:
+        obserations: dict[AgentId, DictObservation],
+    ) -> dict[AgentId, DictResponse]:
         """Take observations for the active agents and returns the relevant network output."""
         ...
 
@@ -34,8 +34,8 @@ class MemoryProxy(Protocol):
 
     def add(
         self,
-        observations: Dict[AgentId, DictObservation],
-        responses: Dict[AgentId, DictResponse],
+        observations: dict[AgentId, DictObservation],
+        responses: dict[AgentId, DictResponse],
     ):
         """Store episodes in the memory buffer used for training.
 

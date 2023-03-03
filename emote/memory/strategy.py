@@ -1,9 +1,9 @@
 """
 
 """
-
+from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence
+from typing import Sequence
 
 from .core_types import Matrix, SamplePoint
 
@@ -31,7 +31,7 @@ class Strategy(ABC):
         self,
         ids_and_offsets: Sequence[SamplePoint],
         transition_count: int,
-        advantages: Optional[Matrix] = None,
+        advantages: Matrix | None = None,
     ):
         """Called after a sampling strategy has been invoked, to give the strategy a
         chance to update sampling weights in case it uses prioritized sampling

@@ -1,5 +1,3 @@
-from typing import List, Tuple
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -11,22 +9,22 @@ class Conv2dEncoder(nn.Module):
     """
     Multi-layer 2D convolutional encoder.
 
-    :param input_shape: (Tuple[int, int, int]) The input image shape, this should be consistent with channels_last.
-    :param channels: List[int] The number of channels for each conv layer.
-    :param kernels: List[int] The kernel size for each conv layer.
-    :param strides: List[int] The strides for each conv layer.
-    :param padding: List[int] The padding.
+    :param input_shape: tuple[int, int, int] The input image shape, this should be consistent with channels_last.
+    :param channels: list[int] The number of channels for each conv layer.
+    :param kernels: list[int] The kernel size for each conv layer.
+    :param strides: list[int] The strides for each conv layer.
+    :param padding: list[int] The padding.
     :param channels_last: bool Whether the input image has channels as the last dim, else first.
     :param activation: torch.nn.Module The activation function.
     """
 
     def __init__(
         self,
-        input_shape: Tuple[int, int, int],
-        channels: List[int],
-        kernels: List[int],
-        strides: List[int],
-        padding: List[int],
+        input_shape: tuple[int, int, int],
+        channels: list[int],
+        kernels: list[int],
+        strides: list[int],
+        padding: list[int],
         channels_last: bool = True,
         activation: torch.nn.Module = torch.nn.ReLU,
         **kwargs,

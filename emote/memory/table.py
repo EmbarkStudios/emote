@@ -1,8 +1,8 @@
 """Example implementation for how a more modular memory pattern might look"""
-
+from __future__ import annotations
 
 from threading import Lock
-from typing import List, Optional, Protocol, Sequence, Tuple
+from typing import Protocol, Sequence
 
 import numpy as np
 import torch
@@ -17,7 +17,7 @@ from .strategy import EjectionStrategy, SampleStrategy
 
 class Table(Protocol):
 
-    adaptors: List[Adaptor]
+    adaptors: list[Adaptor]
 
     def sample(self, count: int, sequence_length: int) -> SampleResult:
         """sample COUNT traces from the memory, each consisting of SEQUENCE_LENGTH
@@ -56,7 +56,7 @@ class ArrayTable:
         sampler: SampleStrategy,
         ejector: EjectionStrategy,
         length_key="actions",
-        adaptors: Optional[Adaptor] = None,
+        adaptors: Adaptor | None = None,
         device: torch.device,
     ):
         """Create the table with the specified configuration"""
@@ -119,7 +119,7 @@ class ArrayTable:
     ################################################################################
 
     def _execute_gather(
-        self, count: int, sequence_length: int, sample_points: List[Tuple[int]]
+        self, count: int, sequence_length: int, sample_points: list[tuple[int]]
     ):
         with self._timers.scope("gather"):
             out = {}

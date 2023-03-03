@@ -15,7 +15,7 @@ class Column:
     name: str
     """The name of the column"""
 
-    shape: Tuple[int]
+    shape: tuple[int]
     dtype: type
 
 

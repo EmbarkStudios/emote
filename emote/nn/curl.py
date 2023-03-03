@@ -1,5 +1,3 @@
-from typing import List
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,7 +13,7 @@ def soft_update_from_to(source_params, target_params, tau):
         target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
 
 
-def rand_uniform(minval: float, maxval: float, shape: List[int]):
+def rand_uniform(minval: float, maxval: float, shape: list[int]):
     range = maxval - minval
     rand = torch.rand(shape)
     return range * rand + minval
@@ -56,12 +54,12 @@ class ImageAugmentor:
         self,
         image_size_x: int,
         image_size_y: int,
-        num_slices: List[int],  # the number of unique index slices to return
+        num_slices: list[int],  # the number of unique index slices to return
     ):
         size = rand_uniform(
             minval=self._min_mask_size, maxval=self._max_mask_size, shape=[1]
         )[0]
-        mask_size: List[int] = [int(image_size_x * size), int(image_size_y * size)]
+        mask_size: list[int] = [int(image_size_x * size), int(image_size_y * size)]
         start_i = torch.randint(
             low=0, high=image_size_x - mask_size[0], size=num_slices
         )

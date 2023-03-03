@@ -5,12 +5,12 @@ proxy and the episode-based functionality of the memory implementation. The goal
 of the sequence builder is to consume individual timesteps per agent and collate
 them into episodes before submission into the memory.
 """
-
+from __future__ import annotations
 import logging
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Mapping, Optional, Tuple
+from typing import Mapping
 
 from emote.callback import Callback
 
@@ -24,7 +24,7 @@ from .table import Table
 class Episode:
     """An episode of data being constructed"""
 
-    data: Dict[str, List[Matrix]] = field(default_factory=lambda: defaultdict(list))
+    data: dict[str, list[Matrix]] = field(default_factory=lambda: defaultdict(list))
 
     def append(self, observation: Mapping[str, Matrix]) -> Tuple:
         for k, v in observation.items():
@@ -52,10 +52,10 @@ class TableMemoryProxy:
     def __init__(
         self,
         table: Table,
-        minimum_length_threshold: Optional[int] = None,
+        minimum_length_threshold: int | None = None,
         use_terminal: bool = False,
     ):
-        self._store: Dict[AgentId, Episode] = {}
+        self._store: dict[AgentId, Episode] = {}
         self._table = table
         if minimum_length_threshold is None:
             self._min_length_filter = lambda _: True
@@ -79,8 +79,8 @@ class TableMemoryProxy:
 
     def add(
         self,
-        observations: Dict[AgentId, DictObservation],
-        responses: Dict[AgentId, DictResponse],
+        observations: dict[AgentId, DictObservation],
+        responses: dict[AgentId, DictResponse],
     ):
         completed_episodes = {}
         for agent_id, observation in observations.items():

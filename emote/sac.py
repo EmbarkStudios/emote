@@ -1,6 +1,7 @@
-import copy
+from __future__ import annotations
 
-from typing import Any, Dict, Optional
+import copy
+from typing import Any
 
 import numpy as np
 import torch
@@ -41,7 +42,7 @@ class QLoss(LossCallback):
         name: str,
         q: nn.Module,
         opt: optim.Optimizer,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
+        lr_schedule: optim.lr_scheduler._LRScheduler | None = None,
         max_grad_norm: float = 10.0,
         data_group: str = "default",
     ):
@@ -90,8 +91,8 @@ class QTarget(LoggingCallback):
         ln_alpha: torch.tensor,
         q1: nn.Module,
         q2: nn.Module,
-        q1t: Optional[nn.Module] = None,
-        q2t: Optional[nn.Module] = None,
+        q1t: nn.Module | None = None,
+        q2t: nn.Module | None = None,
         gamma: float = 0.99,
         reward_scale: float = 1.0,
         target_q_tau: float = 0.005,
@@ -174,8 +175,8 @@ class PolicyLoss(LossCallback):
         ln_alpha: torch.tensor,
         q: nn.Module,
         opt: optim.Optimizer,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
-        q2: Optional[nn.Module] = None,
+        lr_schedule: optim.lr_scheduler._LRScheduler | None = None,
+        q2: nn.Module | None = None,
         max_grad_norm: float = 10.0,
         name: str = "policy",
         data_group: str = "default",
@@ -242,7 +243,7 @@ class AlphaLoss(LossCallback):
         pi: nn.Module,
         ln_alpha: torch.tensor,
         opt: optim.Optimizer,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
+        lr_schedule: optim.lr_scheduler._LRScheduler | None = None,
         n_actions: int,
         max_grad_norm: float = 10.0,
         entropy_eps: float = 0.089,
@@ -290,7 +291,7 @@ class AlphaLoss(LossCallback):
         state = super().state_dict()
         state["network_state_dict"] = self.ln_alpha
 
-    def load_state_dict(self, state_dict: Dict[str, Any]):
+    def load_state_dict(self, state_dict: dict[str, Any]):
         self.ln_alpha = state_dict.pop("network_state_dict")
         # TODO(singhblom) Set the right device
         super().load_state_dict(state_dict)
@@ -310,8 +311,8 @@ class LoggingProxyWrapper(AgentProxyWrapper):
 
     def __call__(
         self,
-        observations: Dict[AgentId, DictObservation],
-    ) -> Dict[AgentId, DictResponse]:
+        observations: dict[AgentId, DictObservation],
+    ) -> dict[AgentId, DictResponse]:
         self._counter += 1
 
         if (self._counter % self._cycle) == 0:
@@ -342,8 +343,8 @@ class FeatureAgentProxy:
 
     def __call__(
         self,
-        observations: Dict[AgentId, DictObservation],
-    ) -> Dict[AgentId, DictResponse]:
+        observations: dict[AgentId, DictObservation],
+    ) -> dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
         assert len(observations) > 0, "Observations must not be empty."
@@ -382,8 +383,8 @@ class VisionAgentProxy:
         self.device = device
 
     def __call__(
-        self, observations: Dict[AgentId, DictObservation]
-    ) -> Dict[AgentId, DictResponse]:
+        self, observations: dict[AgentId, DictObservation]
+    ) -> dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
         assert len(observations) > 0, "Observations must not be empty."

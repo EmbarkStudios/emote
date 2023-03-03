@@ -2,8 +2,6 @@
 
 """
 
-from typing import List
-
 import numpy as np
 import torch
 
@@ -21,8 +19,8 @@ class DictTable(ArrayTable):
         self,
         *,
         use_terminal_column: bool,
-        obs_keys: List[str],
-        columns: List[Column],
+        obs_keys: list[str],
+        columns: list[Column],
         maxlen: int,
         length_key="actions",
         device: torch.device,

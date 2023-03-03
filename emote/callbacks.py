@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import logging
 import time
 
-from optparse import Option
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -25,12 +26,12 @@ class LoggingCallback(Callback):
 
     def __init__(self, cycle: int = 0):
         super().__init__(cycle)
-        self.scalar_logs: Dict[str, Union[float, torch.Tensor]] = {}
-        self.image_logs: Dict[str, torch.Tensor] = {}
-        self.hist_logs: Dict[str, Union[float, torch.Tensor]] = {}
-        self.video_logs: Dict[str, Tuple[np.ndarray, int]] = {}
+        self.scalar_logs: dict[str, float | torch.Tensor] = {}
+        self.image_logs: dict[str, torch.Tensor] = {}
+        self.hist_logs: dict[str, float | torch.Tensor] = {}
+        self.video_logs: dict[str, tuple[np.ndarray, int]] = {}
 
-    def log_scalar(self, key: str, value: Union[float, torch.Tensor]):
+    def log_scalar(self, key: str, value: float | torch.Tensor):
         """Use log_scalar to periodically log scalar data."""
         if isinstance(value, torch.Tensor):
             self.scalar_logs[key] = value.item()
@@ -42,7 +43,7 @@ class LoggingCallback(Callback):
         if len(value.shape) == 3:
             self.image_logs[key] = value
 
-    def log_video(self, key: str, value: Tuple[np.ndarray, int]):
+    def log_video(self, key: str, value: tuple[np.ndarray, int]):
         """Use log_scalar to periodically log scalar data."""
         self.video_logs[key] = value
 
@@ -57,7 +58,7 @@ class LoggingCallback(Callback):
         state_dict["video_logs"] = self.video_logs
         return state_dict
 
-    def load_state_dict(self, state_dict: Dict[str, Any]):
+    def load_state_dict(self, state_dict: dict[str, Any]):
         self.scalar_logs = state_dict.pop("scalar_logs")
         self.hist_logs = state_dict.pop("hist_logs")
         self.video_logs = state_dict.pop("video_logs")
@@ -70,11 +71,11 @@ class LossCallback(LoggingCallback):
 
     def __init__(
         self,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
+        lr_schedule: optim.lr_scheduler._LRScheduler | None = None,
         *,
         name: str,
-        network: Optional[nn.Module],
-        optimizer: Optional[optim.Optimizer],
+        network: nn.Module | None,
+        optimizer: optim.Optimizer | None,
         max_grad_norm: float,
         data_group: str,
     ):
@@ -110,7 +111,7 @@ class LossCallback(LoggingCallback):
             state["network_state_dict"] = self.network.state_dict()
         return state
 
-    def load_state_dict(self, state_dict: Dict[str, Any]):
+    def load_state_dict(self, state_dict: dict[str, Any]):
         if self.optimizer:
             self.optimizer.load_state_dict(state_dict.pop("optimizer_state_dict"))
         if self.network:
@@ -130,7 +131,7 @@ class TensorboardLogger(Callback):
 
     def __init__(
         self,
-        callbacks: List[LoggingCallback],
+        callbacks: list[LoggingCallback],
         writer: SummaryWriter,
         log_interval: int,
         log_by_samples: bool = False,
@@ -204,7 +205,7 @@ class TerminalLogger(Callback):
 
     def __init__(
         self,
-        callbacks: List[LoggingCallback],
+        callbacks: list[LoggingCallback],
         log_interval: int,
     ):
         super().__init__(cycle=log_interval)
@@ -234,13 +235,13 @@ class Checkpointer(Callback):
     Exactly what is written to the checkpoint is determined by the networks and
     callbacks supplied in the constructor.
 
-    :param callbacks (List[Callback]): A list of callbacks the should be saved.
+    :param callbacks (list[Callback]): A list of callbacks the should be saved.
     :param path (str): The path to where the checkpoint should be stored.
     :param checkpoint_interval (int): Number of backprops between checkpoints.
-    :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
+    :param optimizers (list[optim.Optimizer] | None): Optional list of optimizers
         to save. Usually optimizers are handled by their respective callbacks but
         if you give them to this list they will be handled explicitly.
-    :param networks (Optional[List[nn.Module]]): An optional list of networks that
+    :param networks (list[nn.Module] | None): An optional list of networks that
         should be saved. Usually networks and optimizers are both restored by the
         callbacks which handles their parameters.
     """
@@ -248,18 +249,18 @@ class Checkpointer(Callback):
     def __init__(
         self,
         *,
-        callbacks: List[Callback],
+        callbacks: list[Callback],
         path: str,
         checkpoint_interval: int,
-        optimizers: Optional[List[optim.Optimizer]] = None,
-        networks: Optional[List[nn.Module]] = None,
+        optimizers: list[optim.Optimizer] | None = None,
+        networks: list[nn.Module] | None = None,
     ):
         super().__init__(cycle=checkpoint_interval)
         self._cbs = callbacks
         self._path = path
         self._checkpoint_index = 0
-        self._opts: List[optim.Optimizer] = optimizers if optimizers else []
-        self._nets: List[nn.Module] = networks if networks else []
+        self._opts: list[optim.Optimizer] = optimizers if optimizers else []
+        self._nets: list[nn.Module] = networks if networks else []
 
     def end_cycle(self, inf_step, bp_step):
         state_dict = {}
@@ -282,16 +283,16 @@ class CheckpointLoader(Callback):
     want to do something more specific, like only restore a specific network, it is
     probably easier to just do it explicitly when the network is constructed.
 
-    :param callbacks (List[Callback]): A list of callbacks the should be restored.
+    :param callbacks (list[Callback]): A list of callbacks the should be restored.
     :param path (str): The path to where the checkpoint should be stored.
     :param checkpoint_index (int): Which checkpoint to load.
     :param reset_training_steps (bool): If False, start training at bp_steps=0 etc.
         Otherwise start the training at whatever step and state the checkpoint has
         saved.
-    :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
+    :param optimizers (list[optim.Optimizer] | None): Optional list of optimizers
         to restore. Usually optimizers are handled by their respective callbacks but
         if you give them to this list they will be handled explicitly.
-    :param networks (Optional[List[nn.Module]]): An optional list of networks that
+    :param networks (list[nn.Module): An optional list of networks that
         should be restored. Usually networks and optimizers are both restored by the
         callbacks which handles their parameters.
     """
@@ -299,20 +300,20 @@ class CheckpointLoader(Callback):
     def __init__(
         self,
         *,
-        callbacks: List[Callback],
+        callbacks: list[Callback],
         path: str,
         checkpoint_index: int,
         reset_training_steps: bool = False,
-        optimizers: Optional[List[optim.Optimizer]] = None,
-        networks: Optional[List[nn.Module]] = None,
+        optimizers: list[optim.Optimizer] | None = None,
+        networks: list[nn.Module] | None = None,
     ):
         super().__init__()
         self._cbs = callbacks
         self._path = path
         self._checkpoint_index = checkpoint_index
         self._reset_training_steps = reset_training_steps
-        self._opts: List[optim.Optimizer] = optimizers if optimizers else []
-        self._nets: List[nn.Module] = networks if networks else []
+        self._opts: list[optim.Optimizer] = optimizers if optimizers else []
+        self._nets: list[nn.Module] = networks if networks else []
 
     def begin_training(self):
         state_dict: dict = torch.load(f"{self._path}.{self._checkpoint_index}.tar")
@@ -347,8 +348,8 @@ class FinalLossTestCheck(Callback):
 
     def __init__(
         self,
-        callbacks: List[LossCallback],
-        cutoffs: List[float],
+        callbacks: list[LossCallback],
+        cutoffs: list[float],
         test_length: int,
     ):
         super().__init__(cycle=test_length)

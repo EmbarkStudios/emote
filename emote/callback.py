@@ -4,7 +4,7 @@ import warnings
 
 from abc import ABCMeta
 from functools import wraps
-from typing import Any, Dict
+from typing import Any
 
 
 def _get_complex(obj, func, arg_names):
@@ -206,8 +206,8 @@ class Callback(metaclass=CallbackMeta):
     def end_training(self, *args, **kwargs):
         pass
 
-    def state_dict(self) -> Dict[str, Any]:
+    def state_dict(self) -> dict[str, Any]:
         return {}
 
-    def load_state_dict(self, state_dict: Dict[str, Any]):
+    def load_state_dict(self, state_dict: dict[str, Any]):
         pass

@@ -15,6 +15,7 @@ print(time.sleep())
 # (1.000013, 1.3e-5)
 """
 
+from __future__ import annotations
 import time
 
 from abc import ABC, abstractmethod
@@ -37,7 +38,7 @@ class StatisticsAccumulator(ABC):
         ...
 
     @abstractmethod
-    def current(self) -> Tuple[float, float]:
+    def current(self) -> tuple[float, float]:
         """Returns the statistics of the observed samples so far
 
         :returns: a tuple (mean, variance)"""
@@ -63,7 +64,7 @@ class WelfordAccumulator(StatisticsAccumulator):
         delta2 = value - self.mean
         self.differences += delta * delta2
 
-    def current(self) -> Tuple[float, float]:
+    def current(self) -> tuple[float, float]:
         """Returns the current values of the Welford algorithm
 
         :returns: a tuple (mean, variance)"""
@@ -84,7 +85,7 @@ class MovingWindowAccumulator(StatisticsAccumulator):
         """
         self.values.append(value)
 
-    def current(self) -> Tuple[float, float]:
+    def current(self) -> tuple[float, float]:
         """Returns the current statistics
 
         :returns: a tuple (mean, variance)"""
@@ -131,7 +132,7 @@ class BlockTimers:
     def __init__(
         self, tracker_type: Type[StatisticsAccumulator] = MovingWindowAccumulator
     ):
-        self._timers: Dict[str, TimedBlock] = defaultdict(
+        self._timers: dict[str, TimedBlock] = defaultdict(
             lambda: TimedBlock(tracker_type)
         )
 

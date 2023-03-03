@@ -1,5 +1,4 @@
 from functools import partial
-from typing import List
 
 import torch
 
@@ -44,7 +43,7 @@ class SharedEncoderActionValueNet(nn.Module):
         shared_enc: nn.Module,
         encoder_out_dim: int,
         action_dim: int,
-        hidden_dims: List[int],
+        hidden_dims: list[int],
     ):
         super().__init__()
         self.shared_enc = shared_enc

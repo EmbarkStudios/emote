@@ -81,7 +81,7 @@ class Config:
     max_memory_size: int = 100_000
     max_alpha: float = 10.0
     # Conv encoder
-    input_shape: Tuple[int, int, int] = (84, 84, 3)
+    input_shape: tuple[int, int, int] = (84, 84, 3)
     channels = [16, 16, 32, 32]
     kernels = [3, 3, 3, 3]
     strides = [2, 2, 2, 2]

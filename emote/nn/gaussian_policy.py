@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from functools import partial
 from typing import Tuple
 
@@ -52,7 +50,7 @@ class GaussianPolicyHead(nn.Module):
 
     def forward(
         self, x: Tensor, epsilon: Tensor | None = None
-    ) -> Tensor | Tuple[Tensor]:
+    ) -> Tensor | tuple[Tensor]:
         """
         Sample pre-actions and associated log-probabilities.
 
@@ -97,5 +95,5 @@ class GaussianMlpPolicy(nn.Module):
 
     def forward(
         self, obs: Tensor, epsilon: Tensor | None = None
-    ) -> Tensor | Tuple[Tensor]:
+    ) -> Tensor | tuple[Tensor]:
         return self.policy(self.encoder(obs), epsilon)
