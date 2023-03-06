@@ -63,7 +63,6 @@ class Trainer:
                 self.state.update(batch)
                 self.state["bp_step"] = bp_step
                 self.state["bp_samples"] += self.state[self._batch_size_key]
-                print(self.state["data_group"])
 
                 if shutdown_signal():
                     raise TrainingShutdownException

@@ -138,9 +138,8 @@ class ModelEnv:
 
             info = {'terminated': torch.zeros(dones.shape)}
             self._timestep += 1
-            if self._timestep >= (self._len_rollout - 1):
+            if self._timestep >= (self._len_rollout):
                 info['terminated'] += 1.0
-
             self._current_obs = torch.clone(next_observs)
             return next_observs, rewards, dones, info
 
@@ -157,6 +156,7 @@ class ModelEnv:
         for env_id, reward in enumerate(rewards):
             self._episode_rewards[env_id] += reward
         terminated = info['terminated']
+
         for env_id, (done, term) in enumerate(zip(dones, terminated)):
             if done or term:
                 episode_state = EpisodeState.TERMINAL if done else EpisodeState.INTERRUPTED
@@ -175,7 +175,6 @@ class ModelEnv:
                 completed_episode_rewards.append(self._episode_rewards[env_id])
                 self._agent_ids[env_id] = new_agent
                 self._episode_rewards[env_id] = 0.0
-
         results.update(
             {
                 agent_id: DictObservation(
@@ -192,6 +191,7 @@ class ModelEnv:
             ep_info["reward"] = sum(completed_episode_rewards) / len(
                 completed_episode_rewards
             )
+
         return results, ep_info
 
     def dict_reset(self,
@@ -240,12 +240,11 @@ class ModelBasedCollector(CollectorCallback):
         self._last_environment_rewards = deque(maxlen=1000)
         self._len_rollout = rollout_length
         self._obs: Dict[AgentId, DictObservation] = None
-        self._prob_of_sampling_model_data = 1.0
+        self._prob_of_sampling_model_data = 0.0
         self._rng = generator if generator else torch.Generator()
 
     def begin_batch(self, *args, **kwargs):
         self.collect_multiple(*args, **kwargs)
-        print(self._memory.size())
         if self.update_data_group() == "model_samples" and self._memory.size() > 1000:
             try:
                 batch = next(self._iter)
@@ -262,13 +261,14 @@ class ModelBasedCollector(CollectorCallback):
         :param observation: initial observations
         """
         self._obs = self._model_env.dict_reset(observation['obs'], self._len_rollout)
-        for _ in range(self._len_rollout):
+        for _ in range(self._len_rollout + 1):
             self.collect_sample()
 
     def collect_sample(self):
         """Collect a single rollout"""
         actions = self._agent(self._obs)
         next_obs, ep_info = self._model_env.dict_step(actions)
+
         self._memory.add(self._obs, actions)
         self._obs = next_obs
 
@@ -279,6 +279,7 @@ class ModelBasedCollector(CollectorCallback):
         if self._prob_of_sampling_model_data < 0.9:
             self._prob_of_sampling_model_data += 0.001
 
-        if torch.rand(size=(1,), generator=self._rng)[0] < self._prob_of_sampling_model_data:
+        rnd = torch.rand(size=(1,), generator=self._rng)[0]
+        if rnd < self._prob_of_sampling_model_data:
             return "model_samples"
         return "default"

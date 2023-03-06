@@ -211,10 +211,14 @@ def train_lunar_lander(args):
                                       size_key="batch_size",
                                       data_group="model_samples"
                                       )
+
+        def termination_func(states, actions):
+            return torch.zeros(states.shape[0])
+
         model_env = ModelEnv(env=gym.make("LunarLander-v2", continuous=True),
                              num_envs=args.batch_size,
                              model=dynamic_model,
-                             termination_fn=lambda _, __: torch.tensor([False]),
+                             termination_fn=termination_func,
                              )
 
         logged_cbs = logged_cbs + [

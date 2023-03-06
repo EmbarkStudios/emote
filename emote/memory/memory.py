@@ -81,8 +81,10 @@ class TableMemoryProxy:
         responses: Dict[AgentId, DictResponse],
     ):
         completed_episodes = {}
+
         for agent_id, observation in observations.items():
             data = {space: feature for space, feature in observation.array_data.items()}
+
             if observation.episode_state != EpisodeState.INITIAL:
                 data["rewards"] = observation.rewards["reward"]
 
