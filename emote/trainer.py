@@ -39,7 +39,9 @@ class Trainer:
         batch_size_key: str = "batch_size",
     ):
         self.callbacks = sorted(callbacks, key=lambda cb: cb._order)
-        self._cyclic_callbacks = [cb for cb in self.callbacks if cb.cycle > 0]
+        self._cyclic_callbacks = [
+            cb for cb in self.callbacks if cb.cycle is not None and cb.cycle > 0
+        ]
         self.dataloader = dataloader
         self.state = StateDict()
         self._batch_size_key = batch_size_key
@@ -58,7 +60,6 @@ class Trainer:
         self.state["bp_samples"] = 0
 
         try:
-
             for bp_step, batch in zip(count(1), self.dataloader):
                 self.state.update(batch)
                 self.state["bp_step"] = bp_step
