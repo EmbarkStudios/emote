@@ -370,7 +370,7 @@ class FeatureAgentProxy:
 
     @property
     def input_names(self):
-        return ("obs",)
+        return (self._input_key,)
 
 
 class VisionAgentProxy:
