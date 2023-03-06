@@ -18,6 +18,7 @@ from emote.utils.model import to_tensor, to_numpy
 from tests.gym.collector import CollectorCallback
 from emote.proxies import AgentProxy, MemoryProxy
 from emote.memory import MemoryLoader
+from emote.utils.math import truncated_linear
 from collections import deque
 
 RewardFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
@@ -225,7 +226,8 @@ class ModelBasedCollector(CollectorCallback):
             agent: AgentProxy,
             memory: MemoryProxy,
             dataloader: MemoryLoader,
-            rollout_length: int = 1,
+            rollout_schedule: List[int] = [0, 1000, 4, 4],  # [bp_min, bp_max, length_min, length_max]
+            num_bp_to_retain_buffer = 1000000,
             data_group: str = "default",
             generator: Optional[torch.Generator] = None,
     ):
@@ -238,12 +240,19 @@ class ModelBasedCollector(CollectorCallback):
         self._iter = iter(self._dataloader)
         self._model_env = model_env
         self._last_environment_rewards = deque(maxlen=1000)
-        self._len_rollout = rollout_length
+
+        self._len_rollout = rollout_schedule[2]
+        self._rollout_schedule = rollout_schedule
+        self.num_bp_to_retain_buffer = num_bp_to_retain_buffer
         self._obs: Dict[AgentId, DictObservation] = None
         self._prob_of_sampling_model_data = 0.0
         self._rng = generator if generator else torch.Generator()
+        self.bp_counter = 0
 
     def begin_batch(self, *args, **kwargs):
+        self.bp_counter += 1
+        self.update_rollout_size()
+        print("rollout length: ", self._len_rollout)
         self.collect_multiple(*args, **kwargs)
         if self.update_data_group() == "model_samples" and self._memory.size() > 1000:
             try:
@@ -283,3 +292,19 @@ class ModelBasedCollector(CollectorCallback):
         if rnd < self._prob_of_sampling_model_data:
             return "model_samples"
         return "default"
+
+    def update_rollout_size(self):
+        len_rollout = int(
+            truncated_linear(
+                *(self._rollout_schedule + [self.bp_counter + 1])
+            )
+        )
+        if self._len_rollout != len_rollout:
+            self._len_rollout = len_rollout
+            new_memory_size = (
+                    self._len_rollout *
+                    self._model_env.num_envs *
+                    self.num_bp_to_retain_buffer
+            )
+            self._memory.resize(new_memory_size)
+

@@ -1,12 +1,9 @@
 import argparse
 import time
-
 from functools import partial
-
 import gym
 import numpy as np
 import torch
-
 from gym.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
@@ -16,7 +13,7 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
-from emote.callbacks import FinalLossTestCheck, TensorboardLogger
+from emote.callbacks import TensorboardLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
@@ -35,7 +32,7 @@ def _make_env(rank):
         env = gym.make("LunarLander-v2", continuous=True)
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
-        # env.seed(rank)
+        # env.seed(rank) #TODO: Gym version problem. Upgrade Gym
         return env
 
     return _thunk
@@ -89,14 +86,15 @@ class Policy(nn.Module):
 
 
 def train_lunar_lander(args):
+    
     logged_cbs: List[Union[QLoss,
-    PolicyLoss,
-    AlphaLoss,
-    QTarget,
-    ThreadedGymCollector,
-    ModelLoss,
-    ModelBasedCollector,
-    TensorboardLogger]]
+                     PolicyLoss,
+                     AlphaLoss,
+                     QTarget,
+                     ThreadedGymCollector,
+                     ModelLoss,
+                     ModelBasedCollector,
+                     TensorboardLogger]]
 
     device = torch.device(args.device)
 
@@ -105,7 +103,7 @@ def train_lunar_lander(args):
     n_env = args.num_envs
     max_grad_norm = 1
 
-    rollout_len = args.rollout_length
+    len_rollout = args.rollout_length
     init_alpha = 1.0
 
     env = DictGymWrapper(AsyncVectorEnv([_make_env(i) for i in range(n_env)]))
@@ -117,7 +115,7 @@ def train_lunar_lander(args):
     )
     memory_proxy = TableMemoryProxy(table, use_terminal=False)
     dataloader = MemoryLoader(
-        table, batch_size // rollout_len, rollout_len, "batch_size"
+        table, batch_size // len_rollout, len_rollout, "batch_size"
     )
 
     num_actions = env.dict_space.actions.shape[0]
@@ -172,7 +170,7 @@ def train_lunar_lander(args):
             ln_alpha=ln_alpha,
             q1=q1,
             q2=q2,
-            roll_length=rollout_len,
+            roll_length=len_rollout,
             reward_scale=0.1,
         ),
         ThreadedGymCollector(
@@ -185,14 +183,16 @@ def train_lunar_lander(args):
     ]
 
     if args.model_based:
-        assert rollout_len == 1, "--rollout-length must be set to 1 for model-based training"
+        assert len_rollout == 1, "--rollout-length must be set to 1 for model-based training"
+        # TODO: Fix model-based trianing to also work for larger rollout-length
+
         model = EnsembleOfGaussian(in_size=num_obs + num_actions,
                                    out_size=num_obs + 1,
                                    device=device,
                                    ensemble_size=args.num_model_ensembles)
         dynamic_model = DynamicModel(model=model)
 
-        init_rollout_length = 4
+        init_rollout_length = args.model_rollout_schedule[2]
         init_maxlen = (
                 init_rollout_length *
                 args.batch_size *
@@ -206,8 +206,8 @@ def train_lunar_lander(args):
         )
         sac_buffer_proxy = TableMemoryProxy(sac_buffer, use_terminal=False, minimum_length_threshold=0)
         sac_dataloader = MemoryLoader(table=sac_buffer,
-                                      rollout_count=batch_size // rollout_len,
-                                      rollout_length=rollout_len,
+                                      rollout_count=batch_size // len_rollout,
+                                      rollout_length=len_rollout,
                                       size_key="batch_size",
                                       data_group="model_samples"
                                       )
@@ -233,7 +233,8 @@ def train_lunar_lander(args):
                 agent=agent_proxy,
                 memory=sac_buffer_proxy,
                 dataloader=sac_dataloader,
-                rollout_length=4
+                rollout_schedule=args.model_rollout_schedule,
+                num_bp_to_retain_buffer=args.num_bp_to_retain_sac_buffer
             )
         ]
 
@@ -255,7 +256,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default="ll")
     parser.add_argument("--num-envs", type=int, default=10)
-    parser.add_argument("--rollout-length", type=int, default=5)
+    parser.add_argument("--rollout-length", type=int, default=1)
+    parser.add_argument("--model-rollout-schedule", type=list, default=[100, 10000, 1, 10])
     parser.add_argument("--log-dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
     parser.add_argument('--model-based', action='store_true')
     parser.add_argument("--num-model-ensembles", type=int, default=5,

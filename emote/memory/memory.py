@@ -70,6 +70,9 @@ class TableMemoryProxy:
     def size(self):
         return self._table.size()
 
+    def resize(self, new_size):
+        self._table.resize(new_size)
+
     def is_initial(self, identity: int):
         """Returns true if identity is not already used in a partial sequence. Does not
         validate if the identity is associated with a complete episode."""
