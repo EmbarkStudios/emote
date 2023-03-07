@@ -13,7 +13,8 @@ from typing import Dict, List, Optional, Tuple, Callable, Union
 from torch import Tensor
 
 from emote.models.model import DynamicModel
-from emote.typing import TensorType, AgentId, DictObservation, DictResponse, EpisodeState
+from emote.typing import TensorType, AgentId, DictObservation, \
+                         DictResponse, EpisodeState, RewardFnType, TermFnType
 from emote.utils.model import to_tensor, to_numpy
 from tests.gym.collector import CollectorCallback
 from emote.proxies import AgentProxy, MemoryProxy
@@ -21,17 +22,13 @@ from emote.memory import MemoryLoader
 from emote.utils.math import truncated_linear
 from collections import deque
 
-RewardFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-TermFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-
 
 class ModelEnv:
     """Wraps a dynamics model into a gym-like environment.
 
     Args:
         env (gym.Env): the original gym environment for which the model was trained.
-        num_envs (int): the number of envs to simulate in parallel. It is the same
-        as the batch_size for forward process.
+        num_envs (int): the number of envs to simulate in parallel (batch_size).
         model (DynamicModel): the dynamic model to wrap.
         termination_fn (callable): a function that receives actions and observations, and
             returns a boolean flag indicating whether the episode should end or not.
@@ -214,6 +211,7 @@ class ModelBasedCollector(CollectorCallback):
         super().__init__()
         self.data_group = data_group
         self.data_group_locked = True
+        self._data_group_to_dictate = 'default'
         self._agent = agent
         self._memory = memory
         self._dataloader = dataloader
@@ -234,8 +232,20 @@ class ModelBasedCollector(CollectorCallback):
     def begin_batch(self, *args, **kwargs):
         self.bp_counter += 1
         self.update_rollout_size()
+        self.update_data_group()
+
+        self.log_scalar("training/prob_sampling_from_model", self._prob_of_sampling_model_data)
+        self.log_scalar("training/model_rollout_length", self._len_rollout)
+
+        mb_data_group = True \
+            if self._data_group_to_dictate == 'model_samples' \
+            else False
+
+        self.log_scalar("training/mb_data_group", mb_data_group)
+
         self.collect_multiple(*args, **kwargs)
-        if self.update_data_group() == "model_samples" and self._memory.size() > 1000:
+        if self._data_group_to_dictate == "model_samples" and \
+                self._memory.size() > 1000:
             try:
                 batch = next(self._iter)
             except StopIteration:
@@ -263,16 +273,16 @@ class ModelBasedCollector(CollectorCallback):
         self._obs = next_obs
 
         if "reward" in ep_info:
-            self.log_scalar("episode/reward", ep_info["reward"])
+            self.log_scalar("episode/model_reward", ep_info["reward"])
 
     def update_data_group(self):
         self._prob_of_sampling_model_data = truncated_linear(
             *(self._data_group_prob_schedule + [self.bp_counter + 1])
         )
         rnd = torch.rand(size=(1,), generator=self._rng)[0]
-        if rnd < self._prob_of_sampling_model_data:
-            return "model_samples"
-        return "default"
+        self._data_group_to_dictate = "model_samples" \
+            if rnd < self._prob_of_sampling_model_data \
+            else "default"
 
     def update_rollout_size(self):
         len_rollout = int(

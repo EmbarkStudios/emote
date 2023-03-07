@@ -1,12 +1,15 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Callable
 import torch
 import numpy as np
 
 from numpy.typing import ArrayLike
 
 TensorType = Union[torch.Tensor, np.ndarray]
+
+RewardFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+TermFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 
 # The AgentId is an application-defined integer
 AgentId = int
