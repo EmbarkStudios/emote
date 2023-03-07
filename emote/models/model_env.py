@@ -56,7 +56,6 @@ class ModelEnv:
         self.num_envs = num_envs
         self.observation_space = env.observation_space
         self.action_space = env.action_space
-
         self._current_obs: torch.Tensor = None
         self._init_obs: torch.Tensor = None
         self._propagation_method: Optional[str] = None
@@ -71,7 +70,6 @@ class ModelEnv:
         self._agent_ids: List[AgentId] = [
             next(self._next_agent) for i in range(self.num_envs)
         ]
-        self._episode_rewards: List[float] = [0.0 for i in range(self.num_envs)]
 
     def reset(
             self,
@@ -111,7 +109,6 @@ class ModelEnv:
         """
         assert len(actions.shape) == 2  # batch, action_dim
         with torch.no_grad():
-            # if actions is tensor, code assumes it's already on self.device
             if isinstance(actions, np.ndarray):
                 actions = torch.from_numpy(actions).to(self.device)
             (
@@ -131,7 +128,7 @@ class ModelEnv:
 
             info = {'terminated': torch.zeros(dones.shape)}
             self._timestep += 1
-            if self._timestep >= (self._len_rollout):
+            if self._timestep >= self._len_rollout:
                 info['terminated'] += 1.0
             self._current_obs = torch.clone(next_observs)
             return next_observs, rewards, dones, info
@@ -145,9 +142,6 @@ class ModelEnv:
         next_obs, rewards, dones, info = self.step(batched_actions)
         new_agents = []
         results = {}
-        completed_episode_rewards = []
-        for env_id, reward in enumerate(rewards):
-            self._episode_rewards[env_id] += reward
         terminated = info['terminated']
 
         for env_id, (done, term) in enumerate(zip(dones, terminated)):
@@ -165,9 +159,7 @@ class ModelEnv:
                     rewards={"reward": None},
                 )
                 new_agents.append(new_agent)
-                completed_episode_rewards.append(self._episode_rewards[env_id])
                 self._agent_ids[env_id] = new_agent
-                self._episode_rewards[env_id] = 0.0
         results.update(
             {
                 agent_id: DictObservation(
@@ -180,11 +172,6 @@ class ModelEnv:
             }
         )
         ep_info = {}
-        if len(completed_episode_rewards) > 0:
-            ep_info["reward"] = sum(completed_episode_rewards) / len(
-                completed_episode_rewards
-            )
-
         return results, ep_info
 
     def dict_reset(self,
