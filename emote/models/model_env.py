@@ -28,24 +28,16 @@ TermFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 class ModelEnv:
     """Wraps a dynamics model into a gym-like environment.
 
-    This class can wrap a dynamics model to be used as an environment. The only requirement
-    to use this class is for the model to use this wrapper is to have a method called
-    ``predict()``
-    with signature `next_observs, rewards = model.predict(obs,actions, sample=, rng=)`
-
     Args:
         env (gym.Env): the original gym environment for which the model was trained.
         num_envs (int): the number of envs to simulate in parallel. It is the same
         as the batch_size for forward process.
-        model (:class:`mbrl.models.Model`): the model to wrap.
+        model (DynamicModel): the dynamic model to wrap.
         termination_fn (callable): a function that receives actions and observations, and
             returns a boolean flag indicating whether the episode should end or not.
         reward_fn (callable, optional): a function that receives actions and observations
             and returns the value of the resulting reward in the environment.
-            Defaults to ``None``, in which case predicted rewards will be used.
-        generator (torch.Generator, optional): a torch random number generator (must be in the
-            same device as the given model). If None (default value), a new generator will be
-            created using the default torch seed.
+        generator (torch.Generator, optional): a torch random number generator
     """
 
     def __init__(
@@ -227,6 +219,7 @@ class ModelBasedCollector(CollectorCallback):
             memory: MemoryProxy,
             dataloader: MemoryLoader,
             rollout_schedule: List[int] = [0, 1000, 4, 4],  # [bp_min, bp_max, length_min, length_max]
+            data_group_prob_schedule: List[float] = [0, 1000, 0.1, 0.95],  # [bp_min, bp_max, prob_min, prob_max]
             num_bp_to_retain_buffer = 1000000,
             data_group: str = "default",
             generator: Optional[torch.Generator] = None,
@@ -243,6 +236,8 @@ class ModelBasedCollector(CollectorCallback):
 
         self._len_rollout = rollout_schedule[2]
         self._rollout_schedule = rollout_schedule
+        self._prob_of_sampling_model_data = data_group_prob_schedule[2]
+        self._data_group_prob_schedule = data_group_prob_schedule
         self.num_bp_to_retain_buffer = num_bp_to_retain_buffer
         self._obs: Dict[AgentId, DictObservation] = None
         self._prob_of_sampling_model_data = 0.0
@@ -252,7 +247,6 @@ class ModelBasedCollector(CollectorCallback):
     def begin_batch(self, *args, **kwargs):
         self.bp_counter += 1
         self.update_rollout_size()
-        print("rollout length: ", self._len_rollout)
         self.collect_multiple(*args, **kwargs)
         if self.update_data_group() == "model_samples" and self._memory.size() > 1000:
             try:
@@ -285,9 +279,9 @@ class ModelBasedCollector(CollectorCallback):
             self.log_scalar("episode/reward", ep_info["reward"])
 
     def update_data_group(self):
-        if self._prob_of_sampling_model_data < 0.9:
-            self._prob_of_sampling_model_data += 0.001
-
+        self._prob_of_sampling_model_data = truncated_linear(
+            *(self._data_group_prob_schedule + [self.bp_counter + 1])
+        )
         rnd = torch.rand(size=(1,), generator=self._rng)[0]
         if rnd < self._prob_of_sampling_model_data:
             return "model_samples"

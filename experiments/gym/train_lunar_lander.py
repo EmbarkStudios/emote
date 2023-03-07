@@ -184,7 +184,7 @@ def train_lunar_lander(args):
 
     if args.model_based:
         assert len_rollout == 1, "--rollout-length must be set to 1 for model-based training"
-        # TODO: Fix model-based trianing to also work for larger rollout-length
+        # TODO: Fix model-based training to also work for larger rollout-length
 
         model = EnsembleOfGaussian(in_size=num_obs + num_actions,
                                    out_size=num_obs + 1,
@@ -234,6 +234,7 @@ def train_lunar_lander(args):
                 memory=sac_buffer_proxy,
                 dataloader=sac_dataloader,
                 rollout_schedule=args.model_rollout_schedule,
+                data_group_prob_schedule=args.data_group_prob_schedule,
                 num_bp_to_retain_buffer=args.num_bp_to_retain_sac_buffer
             )
         ]
@@ -255,19 +256,21 @@ def train_lunar_lander(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default="ll")
+    parser.add_argument("--log-dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
     parser.add_argument("--num-envs", type=int, default=10)
     parser.add_argument("--rollout-length", type=int, default=1)
-    parser.add_argument("--model-rollout-schedule", type=list, default=[100, 10000, 1, 10])
-    parser.add_argument("--log-dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
-    parser.add_argument('--model-based', action='store_true')
-    parser.add_argument("--num-model-ensembles", type=int, default=5,
-                        help='The number of dynamic models in the ensemble')
     parser.add_argument("--batch-size", type=int, default=200)
-    parser.add_argument("--num-bp-to-retain-sac-buffer", type=int, default=5000)
-    parser.add_argument("--model-lr", type=float, default=1e-3, help='The model learning rate')
     parser.add_argument("--actor-lr", type=float, default=8e-3, help='The policy learning rate')
     parser.add_argument("--critic-lr", type=float, default=8e-3, help='Q-function learning rate')
     parser.add_argument("--device", type=str, default="cuda:0")
+
+    parser.add_argument('--model-based', action='store_true')
+    parser.add_argument("--num-model-ensembles", type=int, default=5,
+                        help='The number of dynamic models in the ensemble')
+    parser.add_argument("--model-rollout-schedule", type=list, default=[1000, 100000, 1, 20])
+    parser.add_argument("--data-group-prob-schedule", type=list, default=[1000, 10000, 0.0, 0.9])
+    parser.add_argument("--num-bp-to-retain-sac-buffer", type=int, default=5000)
+    parser.add_argument("--model-lr", type=float, default=1e-3, help='The model learning rate')
     args = parser.parse_args()
 
     train_lunar_lander(args)
