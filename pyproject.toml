@@ -17,11 +17,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-torch = ["torch==1.10.2"]
+torch = ["torch==1.11.0"]
 atari = [
     "gymnasium>=0.27.1",
-    "box2d-py==2.3.5",
-    "pygame~=2.1.0"
+    "box2d-py>=2.3.5",
+    "pygame>=2.1.0"
 ]
 ci = ["gsutil>=4.66", "emote-rl[atari]"]
 
@@ -53,20 +53,20 @@ url = "https://download.pytorch.org/whl/cpu/"
 name = "torch"
 
 [tool.pdm.resolution]
-respect-source-order = true
+respect-source-order = false
 
 [tool.pdm.plugins.torch]
 dependencies = [
-   "torch==1.10.2"
+   "torch==1.11.0"
 ]
 lockfile = "torch.lock"
 enable-cpu = true
 
 enable-rocm = true
-rocm-versions = ["4.2"]
+rocm-versions = ["4.5.2"]
 
 enable-cuda = true
-cuda-versions = ["cu111", "cu113"]
+cuda-versions = ["cu115"]
 
 [project.urls]
 repository = "https://github.com/EmbarkStudios/emote"
