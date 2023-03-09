@@ -35,7 +35,7 @@ A table is a datastructure containing a specific type of data that shares the sa
 	Table
 
 Columns and Virtual Columns
-######
+###########################
 
 A column is a storage for a specific type of data where each item is
 the same shape and type. A virtual column is like a column, but it
@@ -106,9 +106,22 @@ samplers/ejectors, etc.
 
    .. autosummary::
       :toctree: generated
-   
+
       fifo_strategy.FifoEjectionStrategy
       uniform_strategy.UniformEjectionStrategy
+
+
+Proxy Wrappers
+##############
+
+Wrappers live around the memory proxy and extend functionality. This is a great point for data conversion, validation, and logging.
+
+
+.. autosummary::
+   :toctree: generated
+
+   memory.TableMemoryProxyWrapper
+   memory.LoggingProxyWrapper
 
 
 .. contents:: emote.memory

@@ -1,7 +1,7 @@
 import logging
 import time
 
-from optparse import Option
+from collections import deque
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -24,12 +24,17 @@ class LoggingMixin:
     handled by a Logger.
     """
 
-    def __init__(self, cycle: int = 0):
-        super().__init__(cycle)
+    def __init__(self, *, default_window_length: int = 250, **kwargs):
+        super().__init__(**kwargs)
+
         self.scalar_logs: Dict[str, Union[float, torch.Tensor]] = {}
+        self.windowed_scalar: Dict[str, deque[Union[float, torch.Tensor]]] = {}
+        self.windowed_scalar_cumulative: Dict[str, int] = {}
         self.image_logs: Dict[str, torch.Tensor] = {}
         self.hist_logs: Dict[str, Union[float, torch.Tensor]] = {}
         self.video_logs: Dict[str, Tuple[np.ndarray, int]] = {}
+
+        self._default_window_length = default_window_length
 
     def log_scalar(self, key: str, value: Union[float, torch.Tensor]):
         """Use log_scalar to periodically log scalar data."""
@@ -37,6 +42,25 @@ class LoggingMixin:
             self.scalar_logs[key] = value.item()
         else:
             self.scalar_logs[key] = value
+
+    def log_windowed_scalar(self, key: str, value: Union[float, torch.Tensor]):
+        """Use log_windowed_scalar to periodically log scalar data."""
+
+        if key not in self.windowed_scalar:
+            # we allow windowed[100]:some_key/foobar to override window size
+            if "[" in key:
+                p, k = key.split(":")
+                length = int(p.split("[")[1][:-1])
+            else:
+                length = self._default_window_length
+
+            self.windowed_scalar[key] = deque(maxlen=length)
+            self.windowed_scalar_cumulative[key] = 0
+
+        if isinstance(value, torch.Tensor):
+            self.windowed_scalar[key].append(value.item())
+        else:
+            self.windowed_scalar[key].append(value)
 
     def log_image(self, key: str, value: torch.Tensor):
         """Use log_image to periodically log image data."""
@@ -56,6 +80,10 @@ class LoggingMixin:
         state_dict["hist_logs"] = self.hist_logs
         state_dict["image_logs"] = self.image_logs
         state_dict["video_logs"] = self.video_logs
+        state_dict["windowed_scalar"] = {
+            k: (list(v), v.maxlen) for (k, v) in self.windowed_scalar.items()
+        }
+        state_dict["windowed_scalar_cumulative"] = self.windowed_scalar_cumulative
         return state_dict
 
     def load_state_dict(self, state_dict: Dict[str, Any]):
@@ -63,6 +91,11 @@ class LoggingMixin:
         self.hist_logs = state_dict.pop("hist_logs")
         self.video_logs = state_dict.pop("video_logs")
         self.image_logs = state_dict.pop("image_logs")
+        self.windowed_scalar = {
+            k: deque(v[0], maxlen=v[1]) for (k, v) in self.windowed_scalar.items()
+        }
+        self.windowed_scalar_cumulative = state_dict.pop("windowed_scalar_cumulative")
+
         super().load_state_dict(state_dict)
 
 
@@ -153,7 +186,24 @@ class TensorboardLogger(Callback):
                     k_split = k.split("/")
                     k_split[0] = k_split[0] + "_" + suffix
                     k = "/".join(k_split)
+
                 self._writer.add_scalar(k, v, bp_step)
+
+            for k, v in cb.windowed_scalar.items():
+                if suffix:
+                    k_split = k.split("/")
+                    k_split[0] = k_split[0] + "_" + suffix
+                    k = "/".join(k_split)
+
+                self._writer.add_scalar(k, sum(v) / len(v), bp_step)
+
+            for k, v in cb.windowed_scalar_cumulative.items():
+                if suffix:
+                    k_split = k.split("/")
+                    k_split[0] = k_split[0] + "_" + suffix
+                    k = "/".join(k_split)
+
+                self._writer.add_scalar(f"{k}/cumulative", v, bp_step)
 
             for k, v in cb.image_logs.items():
                 if suffix:
