@@ -141,7 +141,7 @@ class TensorboardLogger(Callback):
         self._writer = writer
         self._log_samples = log_by_samples
 
-    def begin_training(self, *args, **kwargs):
+    def begin_training(self):
         self._start_time = time.monotonic()
 
     def end_cycle(self, bp_step, bp_samples):

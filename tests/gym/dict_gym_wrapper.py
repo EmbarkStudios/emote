@@ -40,7 +40,8 @@ class DictGymWrapper(VectorEnvWrapper):
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
         )
         self.step_async(batched_actions)
-        next_obs, rewards, dones, truncated, info = super().step_wait()
+        next_obs, rewards, terminated, truncated, info = super().step_wait()
+        dones = np.logical_or(terminated, truncated)
         new_agents = []
         results = {}
         completed_episode_rewards = []
