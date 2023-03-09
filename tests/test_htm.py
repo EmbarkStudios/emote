@@ -1,6 +1,6 @@
 import torch
 
-from gym.vector import AsyncVectorEnv
+from gymnasium.vector import AsyncVectorEnv
 from torch import nn
 from torch.optim import Adam
 
