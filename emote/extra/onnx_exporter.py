@@ -12,7 +12,8 @@ import torch
 
 from google.protobuf import text_format
 
-from emote.callbacks import LoggingCallback
+from emote.callback import Callback
+from emote.callbacks import LoggingMixin
 from emote.extra.crud_storage import CRUDStorage, StorageItem, StorageItemHandle
 from emote.proxies import AgentProxy
 from emote.utils.spaces import MDPSpace
@@ -57,7 +58,7 @@ def _save_protobuf(path, message, as_text: bool = False):
             f.write(message.SerializeToString())
 
 
-class OnnxExporter(LoggingCallback):
+class OnnxExporter(LoggingMixin, Callback):
     """Handles onnx exports of a ML policy.
 
     Call `export` whenever you want to save an onnx version of the

@@ -6,10 +6,11 @@ import os
 
 import psutil
 
-from emote.callbacks import LoggingCallback
+from emote.callback import Callback
+from emote.callbacks import LoggingMixin
 
 
-class SystemLogger(LoggingCallback):
+class SystemLogger(LoggingMixin, Callback):
     def __init__(self):
         super().__init__(cycle=1_000)
         self._proc = psutil.Process(os.getpid())
