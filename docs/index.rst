@@ -33,6 +33,7 @@ to build other algorithms.
    self
    installing-torch
    coding-standard
+   📚 Editing documentation <documentation.md>
 
 .. toctree::
    :maxdepth: 6
@@ -53,6 +54,8 @@ to build other algorithms.
 
 ..
    .. include:: adr/doc.md
+   .. include:: documentation.md
+
 	  :parser: myst_parser.sphinx_
 
 * :ref:`genindex`
