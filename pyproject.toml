@@ -17,13 +17,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-torch = ["torch==1.11"]
+torch = ["torch==1.10.2"]
 atari = [
     "gymnasium>=0.27.1",
-    "box2d-py>=2.3.5",
+    "box2d-py==2.3.5",
     "pygame~=2.1.0"
 ]
-ci = ["gsutil>=4.66"]
+ci = ["gsutil>=4.66", "emote-rl[atari]"]
 
 [tool.pdm.dev-dependencies]
 tools = [
@@ -44,6 +44,8 @@ docs = [
 [tool.pdm.scripts]
 post_install = "pdm plugin add pdm-plugin-torch==23.0.0"
 post_lock = "pdm torch lock"
+docs = "bash -c 'cd docs && rm -rf _build/dirhtml/ && make dirhtml'"
+docs-serve = "python -m http.server --directory docs/_build/dirhtml"
 
 [[tool.pdm.source]]
 type = "index"
@@ -55,7 +57,7 @@ respect-source-order = true
 
 [tool.pdm.plugins.torch]
 dependencies = [
-   "torch==1.11"
+   "torch==1.10.2"
 ]
 lockfile = "torch.lock"
 enable-cpu = true
