@@ -49,7 +49,7 @@ class HitTheMiddle(Env):
         vel = random.random() * 0.5 - 0.25
         self._state = np.array([pos, vel])
         self._step = 0
-        return self._state, {'info': []}
+        return self._state, {"info": []}
 
     def render(self, mode="human"):
         screen_width = 600
