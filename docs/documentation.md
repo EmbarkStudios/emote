@@ -1,8 +1,8 @@
 # 📚 Documentation
 
-To write documentation for *emote* we support both classic *ReStructured Text* (`.rst`) and modern `MarkDown` (`.md`) files. These can also reference each other, though for ease of use a tree should maintain the same type.
+To write documentation for *emote* we support both classic *ReStructured Text* (`.rst`) and modern `Markdown` (`.md`) files. These can also reference each other, though for ease of use a tree should maintain the same type.
 
-To include RST text into MarkDown code, use the following pattern:
+To include RST text into Markdown code, use the following pattern:
 
 
     ```{eval-rst}
