@@ -1,25 +1,15 @@
 from __future__ import annotations
 
 import pytest
-import torch
 
-from gym.vector import AsyncVectorEnv
-from torch import nn
-from torch.optim import Adam
+from gymnasium.vector import AsyncVectorEnv
 from torch.utils.tensorboard import SummaryWriter
 
-from emote import Trainer
-from emote.callback import Callback
-from emote.callbacks import FinalRewardTestCheck, TerminalLogger
-from emote.extra.onnx_exporter import OnnxExporter
-from emote.memory import LoggingProxyWrapper, MemoryLoader, TableMemoryProxy
+from emote.memory import LoggingProxyWrapper, TableMemoryProxy
 from emote.memory.builder import DictObsTable
-from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
-from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
-from emote.trainer import Trainer, TrainingShutdownException
-from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState, MetaData
+from emote.typing import DictObservation, DictResponse, EpisodeState, MetaData
 
-from .gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
+from .gym import DictGymWrapper, HitTheMiddle
 
 
 @pytest.fixture
