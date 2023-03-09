@@ -2,8 +2,8 @@ import random
 
 import numpy as np
 
-from gym import Env, spaces
-from gym.utils import seeding
+from gymnasium import Env, spaces
+from gymnasium.utils import seeding
 
 
 class HitTheMiddle(Env):
@@ -31,10 +31,12 @@ class HitTheMiddle(Env):
             self._step = 0
             done = True
 
+        truncated = False
         return (
             self._state,
             float(-self._state[0] ** 2),
             done,
+            truncated,
             {},
         )
 
@@ -42,12 +44,12 @@ class HitTheMiddle(Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def reset(self):
+    def reset(self, seed=None):
         pos = random.random() * 20 - 10
         vel = random.random() * 0.5 - 0.25
         self._state = np.array([pos, vel])
         self._step = 0
-        return self._state
+        return self._state, {"info": []}
 
     def render(self, mode="human"):
         screen_width = 600
@@ -59,7 +61,7 @@ class HitTheMiddle(Env):
         ballwidth = 30.0
 
         if self.viewer is None:
-            from gym.envs.classic_control import rendering
+            from gymnasium.envs.classic_control import rendering
 
             self.viewer = rendering.Viewer(screen_width, screen_height)
             ball = rendering.make_circle(ballwidth / 2)

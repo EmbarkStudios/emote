@@ -9,11 +9,11 @@ from collections import deque
 from tests.gym.dict_gym_wrapper import DictGymWrapper
 
 from emote.callback import Callback
-from emote.callbacks import LoggingCallback
+from emote.callbacks import LoggingMixin
 from emote.proxies import AgentProxy, MemoryProxy
 
 
-class GymCollector(LoggingCallback):
+class GymCollector(LoggingMixin, Callback):
     MAX_NUMBER_REWARDS = 1000
 
     def __init__(

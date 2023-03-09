@@ -11,7 +11,8 @@ from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 
-from .callbacks import LoggingCallback, LossCallback
+from .callback import Callback
+from .callbacks import LoggingMixin, LossCallback
 
 
 def soft_update_from_to(source, target, tau):  # From rlkit
@@ -62,7 +63,7 @@ class QLoss(LossCallback):
         return self.mse(q_value, q_target)
 
 
-class QTarget(LoggingCallback):
+class QTarget(LoggingMixin, Callback):
     r"""Creates rolling averages of the Q nets, and predicts q values using these.
 
     The module is responsible both for keeping the averages correct in the target q

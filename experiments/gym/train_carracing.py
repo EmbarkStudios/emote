@@ -16,7 +16,8 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
-from emote.callbacks import LoggingCallback, TensorboardLogger
+from emote.callback import Callback
+from emote.callbacks import LoggingMixin, TensorboardLogger
 from emote.env.box2d import make_vision_box2d_env
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
@@ -58,7 +59,7 @@ class Policy(nn.Module):
         return list(self.mlp_encoder.parameters()) + list(self.policy.parameters())
 
 
-class ImageLoggerCallback(LoggingCallback):
+class ImageLoggerCallback(LoggingMixin, Callback):
     def __init__(self):
         super().__init__()
         self.data_group = "default"

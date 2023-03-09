@@ -1,9 +1,9 @@
 import time
 
-import gym
+import gymnasium as gym
 import torch
 
-from gym.vector import AsyncVectorEnv
+from gymnasium.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import nn
@@ -19,12 +19,11 @@ from emote.nn.initialization import ortho_init_
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 
-def _make_env(rank):
+def _make_env():
     def _thunk():
         env = gym.make("LunarLander-v2", continuous=True)
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
-        env.seed(rank)
         return env
 
     return _thunk
@@ -78,7 +77,7 @@ def setup_lunar_lander():
     learning_rate = 5e-3
     max_grad_norm = 1
 
-    env = DictGymWrapper(AsyncVectorEnv([_make_env(i) for i in range(n_env)]))
+    env = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(n_env)]))
     table = DictObsNStepTable(
         spaces=env.dict_space,
         use_terminal_column=True,
