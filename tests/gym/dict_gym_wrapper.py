@@ -1,10 +1,10 @@
 from itertools import count
 from typing import Dict, List
 
-import gym.spaces
+import gymnasium.spaces
 import numpy as np
 
-from gym.vector import VectorEnv, VectorEnvWrapper
+from gymnasium.vector import VectorEnv, VectorEnvWrapper
 
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
@@ -18,8 +18,8 @@ class DictGymWrapper(VectorEnvWrapper):
             next(self._next_agent) for i in range(self.num_envs)
         ]
         self._episode_rewards: List[float] = [0.0 for i in range(self.num_envs)]
-        assert isinstance(env.single_observation_space, gym.spaces.Box)
-        os: gym.spaces.Box = env.single_observation_space
+        assert isinstance(env.single_observation_space, gymnasium.spaces.Box)
+        os: gymnasium.spaces.Box = env.single_observation_space
         if len(env.single_action_space.shape) > 0:
             action_space_shape = env.single_action_space.shape
         else:
@@ -40,7 +40,7 @@ class DictGymWrapper(VectorEnvWrapper):
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
         )
         self.step_async(batched_actions)
-        next_obs, rewards, dones, info = super().step_wait()
+        next_obs, rewards, dones, truncated, info = super().step_wait()
         new_agents = []
         results = {}
         completed_episode_rewards = []
@@ -93,7 +93,7 @@ class DictGymWrapper(VectorEnvWrapper):
         return {
             agent_id: DictObservation(
                 episode_state=EpisodeState.INITIAL,
-                array_data={"obs": obs[i]},
+                array_data={"obs": obs[0][i]},
                 rewards={"reward": None},
             )
             for i, agent_id in enumerate(self._agent_ids)

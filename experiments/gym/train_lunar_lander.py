@@ -3,11 +3,11 @@ import time
 
 from functools import partial
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 
-from gym.vector import AsyncVectorEnv
+from gymnasium.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import nn
@@ -23,12 +23,11 @@ from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 
-def _make_env(rank):
+def _make_env():
     def _thunk():
         env = gym.make("LunarLander-v2", continuous=True)
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
-        env.seed(rank)
         return env
 
     return _thunk
@@ -82,7 +81,7 @@ class Policy(nn.Module):
 
 
 def train_lunar_lander(args):
-    device = torch.device("cuda")
+    device = torch.device(args.device)
 
     hidden_dims = [256, 256]
     batch_size = 2000
@@ -93,7 +92,7 @@ def train_lunar_lander(args):
     init_alpha = 1.0
     learning_rate = 8e-3
 
-    env = DictGymWrapper(AsyncVectorEnv([_make_env(i) for i in range(n_env)]))
+    env = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(n_env)]))
     table = DictObsNStepTable(
         spaces=env.dict_space,
         use_terminal_column=False,
@@ -181,7 +180,8 @@ def train_lunar_lander(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default="ll")
-    parser.add_argument("--log_dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
+    parser.add_argument("--log-dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
+    parser.add_argument("--device", type=str, default="cuda:0")
     args = parser.parse_args()
 
     train_lunar_lander(args)

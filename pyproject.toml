@@ -14,17 +14,14 @@ dependencies = [
     "setuptools==59.5",
     "psutil>=5.8.0",
     "onnx>=1.10",
+    "gymnasium==0.27.1",
+    "box2d-py>=2.3.8",
+    "pygame>=2.2.0",
 ]
 
 [project.optional-dependencies]
-torch = ["torch==1.10.2"]
-atari = [
-    "gym[atari,classic_control]~=0.23.0",
-    # This is the last release with a src-release that can be used with any python version
-    "box2d-py==2.3.5",
-    "pygame~=2.1.0"
-]
-ci = ["gsutil>=4.66", "emote-rl[atari]"]
+torch = ["torch==1.11"]
+ci = ["gsutil>=4.66"]
 
 [tool.pdm.dev-dependencies]
 tools = [
