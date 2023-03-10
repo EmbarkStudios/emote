@@ -19,3 +19,5 @@ runs/**
 /dist/
 /.buildkite/digest.txt
 /docs/adr/
+
+__pypackages__/
