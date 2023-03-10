@@ -16,7 +16,6 @@ from .strategy import EjectionStrategy, SampleStrategy
 
 
 class Table(Protocol):
-
     adaptors: List[Adaptor]
 
     def sample(self, count: int, sequence_length: int) -> SampleResult:
@@ -111,7 +110,7 @@ class ArrayTable:
             lines.append(f"\t{key} -> {store[episode_id].shape}")
 
         lines.append(
-            f"and an error occured when slicing the range {slice_begin}..{slice_end}"
+            f"and an error occurred when slicing the range {slice_begin}..{slice_end}"
         )
 
         raise ValueError("\n".join(lines))
@@ -128,12 +127,16 @@ class ArrayTable:
                 output_store = store.get_empty_storage(count, local_seq_length)
                 idx = 0
                 next_idx = idx + local_seq_length
+
                 for identity, start, end in sample_points:
                     try:
                         output_store[idx:next_idx] = store[identity][start:end]
                         idx = next_idx
 
                     except ValueError as err:
+                        self._diagnostic_broadcast_error(err, key, identity, start, end)
+
+                    except KeyError as err:
                         self._diagnostic_broadcast_error(err, key, identity, start, end)
 
                     next_idx += local_seq_length
@@ -193,12 +196,9 @@ class ArrayTable:
                         self._eject_count(size_after_add - self._maxlen)
 
                     for name, value in sequence.items():
-                        try:
-                            self._data[name][identity] = np.array(
-                                value, dtype=self._columns[name].dtype
-                            ).reshape(-1, *self._columns[name].shape)
-                        except:
-                            print("foo")
+                        self._data[name][identity] = np.array(
+                            value, dtype=self._columns[name].dtype
+                        ).reshape(-1, *self._columns[name].shape)
 
                     self._total_length += sequence_length
                     self._lengths[identity] = sequence_length
@@ -244,7 +244,7 @@ class ArrayTable:
 
                         cloudpickle.dump(parts, data_file)
 
-                    for (key, data) in self._data.items():
+                    for key, data in self._data.items():
                         if isinstance(data, VirtualStorage):
                             continue
 
@@ -269,13 +269,13 @@ class ArrayTable:
                     self._lengths = parts["lengths"]
                     self._filled = parts["filled"]
 
-                for (key, data) in self._data.items():
+                for key, data in self._data.items():
                     if isinstance(data, VirtualStorage):
                         continue
 
                     with zip_.open(f"{key}.npy", "r") as npz:
                         loaded = np.load(npz, allow_pickle=True).item(0)
-                        for (d, v) in loaded.items():
+                        for d, v in loaded.items():
                             data[d] = v
 
             for column in self._columns.values():
