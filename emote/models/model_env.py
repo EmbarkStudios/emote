@@ -1,14 +1,14 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# This file contains codes/text mostly restructured from the following github repository
-# https://github.com/facebookresearch/mbrl-lib
-
 from collections import deque
 from itertools import count
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import gymnasium as gym
+
+# This file contains codes and texts that are copied from
+# https://github.com/facebookresearch/mbrl-lib
 import numpy as np
 import torch
 
@@ -33,7 +33,6 @@ from emote.utils.model import to_numpy, to_tensor
 
 class ModelEnv:
     """Wraps a dynamics model into a gym-like environment.
-
     Args:
         env (gym.Env): the original gym environment for which the model was trained.
         num_envs (int): the number of envs to simulate in parallel (batch_size).
@@ -68,11 +67,11 @@ class ModelEnv:
         self._timestep = 0
         self._len_rollout = 0
         if generator:
-            self._rng = generator
+            self.rng = generator
         else:
-            self._rng = torch.Generator(device=self.device)
+            self.rng = torch.Generator(device=self.device)
         self._next_agent = count()
-        self._agent_ids: List[AgentId] = [
+        self._agent_ids: list[AgentId] = [
             next(self._next_agent) for i in range(self.num_envs)
         ]
 
@@ -105,7 +104,7 @@ class ModelEnv:
                 converted to a torch.Tensor and sent to the model device.
 
         Returns:
-            (Union[tuple, Dict]): contains the predicted next observation, reward, done flag.
+            (Union[tuple, dict]): contains the predicted next observation, reward, done flag.
             The done flag and rewards are computed using the termination_fn and
             reward_fn passed in the constructor. The rewards can also be predicted
             by the model.
@@ -117,7 +116,7 @@ class ModelEnv:
             (next_observs, pred_rewards,) = self.dynamics_model.sample(
                 action=actions,
                 observation=self._current_obs,
-                rng=self._rng,
+                rng=self.rng,
             )
             rewards = (
                 pred_rewards
@@ -134,8 +133,8 @@ class ModelEnv:
             return next_observs, rewards, dones, info
 
     def dict_step(
-        self, actions: Dict[AgentId, DictResponse]
-    ) -> Tuple[Dict[AgentId, DictObservation], Dict[str, float]]:
+        self, actions: dict[AgentId, DictResponse]
+    ) -> tuple[dict[AgentId, DictObservation], dict[str, float]]:
         batched_actions = np.stack(
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
         )
@@ -180,7 +179,7 @@ class ModelEnv:
         self,
         obs: TensorType,
         len_rollout: int,
-    ) -> Dict[AgentId, DictObservation]:
+    ) -> dict[AgentId, DictObservation]:
         """resets the model env.
         Args:
             obs (torch.Tensor or np.ndarray): the initial observations.
@@ -208,13 +207,13 @@ class ModelBasedCollector(CollectorCallback):
         agent: AgentProxy,
         memory: MemoryProxy,
         dataloader: MemoryLoader,
-        rollout_schedule: List[int] = [
+        rollout_schedule: list[int] = [
             0,
             1000,
             4,
             4,
         ],  # [bp_min, bp_max, length_min, length_max]
-        data_group_prob_schedule: List[float] = [
+        data_group_prob_schedule: list[float] = [
             0,
             1000,
             0.1,
@@ -240,9 +239,9 @@ class ModelBasedCollector(CollectorCallback):
         self._prob_of_sampling_model_data = data_group_prob_schedule[2]
         self._data_group_prob_schedule = data_group_prob_schedule
         self.num_bp_to_retain_buffer = num_bp_to_retain_buffer
-        self._obs: Dict[AgentId, DictObservation] = None
+        self._obs: dict[AgentId, DictObservation] = None
         self._prob_of_sampling_model_data = 0.0
-        self._rng = generator if generator else torch.Generator()
+        self.rng = generator if generator else torch.Generator()
         self.bp_counter = 0
 
     def begin_batch(self, *args, **kwargs):
@@ -276,7 +275,6 @@ class ModelBasedCollector(CollectorCallback):
 
     def collect_multiple(self, observation):
         """Collect multiple rollouts
-
         :param observation: initial observations
         """
         self._obs = self._model_env.dict_reset(observation["obs"], self._len_rollout)
@@ -298,7 +296,7 @@ class ModelBasedCollector(CollectorCallback):
         self._prob_of_sampling_model_data = truncated_linear(
             *(self._data_group_prob_schedule + [self.bp_counter + 1])
         )
-        rnd = torch.rand(size=(1,), generator=self._rng)[0]
+        rnd = torch.rand(size=(1,), generator=self.rng)[0]
         self._data_group_to_dictate = (
             "model_samples" if rnd < self._prob_of_sampling_model_data else "default"
         )

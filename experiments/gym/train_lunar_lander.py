@@ -13,7 +13,7 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
-from emote.callbacks import TensorboardLogger
+from emote.callbacks import TensorboardLogger, BackPropStepsTerminator
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
@@ -234,6 +234,9 @@ def train_lunar_lander(args):
             ),
             100,
         ),
+        BackPropStepsTerminator(
+            bp_steps=args.bp_steps,
+        ),
     ]
 
     trainer = Trainer(callbacks, dataloader)
@@ -250,6 +253,7 @@ if __name__ == "__main__":
     parser.add_argument("--actor-lr", type=float, default=8e-3, help='The policy learning rate')
     parser.add_argument("--critic-lr", type=float, default=8e-3, help='Q-function learning rate')
     parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--bp-steps", type=int, default=10000)
 
     parser.add_argument('--model-based', action='store_true')
     parser.add_argument("--num-model-ensembles", type=int, default=5,

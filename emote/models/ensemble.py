@@ -1,11 +1,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# This file contains codes/text mostly restructured from the following github repository
+from typing import Optional, Sequence, Union
+
+# This file contains codes and texts that are copied from
 # https://github.com/facebookresearch/mbrl-lib
-
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
-
 import numpy as np
 import torch
 
@@ -15,8 +14,6 @@ from torch.nn import functional as F
 from emote.utils.math import gaussian_nll
 
 
-# inplace truncated normal function for pytorch.
-# credit to https://github.com/Xingyu-Lin/mbpo_pytorch/blob/main/model.py#L64
 def truncated_normal_(
     tensor: torch.Tensor, mean: float = 0, std: float = 1
 ) -> torch.Tensor:
@@ -43,8 +40,6 @@ def truncated_normal_(
     return tensor
 
 
-# credit to
-# https://github.com/facebookresearch/mbrl-lib/blob/0f2b773431621503fb12d7035e2f8921bbfd8dc4/mbrl/models/util.py#L15
 def truncated_normal_init(m: nn.Module):
     """Initializes the weights of the given module using a truncated normal distribution."""
     if isinstance(m, nn.Linear):
@@ -73,25 +68,24 @@ class EnsembleLinearLayer(nn.Module):
         self.weight = nn.Parameter(
             torch.rand(self.num_members, self.in_size, self.out_size)
         )
-        if bias:
-            self.bias = nn.Parameter(torch.rand(self.num_members, 1, self.out_size))
-            self.use_bias = True
-        else:
-            self.use_bias = False
-
-        self.elite_models: List[int] = None
+        self.bias = (
+            nn.Parameter(torch.rand(self.num_members, 1, self.out_size))
+            if bias
+            else None
+        )
+        self.elite_models: list[int] = None
         self.use_only_elite = False
 
     def forward(self, x):
         if self.use_only_elite:
             xw = x.matmul(self.weight[self.elite_models, ...])
-            if self.use_bias:
+            if self.bias is not None:
                 return xw + self.bias[self.elite_models, ...]
             else:
                 return xw
         else:
             xw = x.matmul(self.weight)
-            if self.use_bias:
+            if self.bias is not None:
                 return xw + self.bias
             else:
                 return xw
@@ -121,7 +115,7 @@ class EnsembleBase(nn.Module):
         self.num_members = num_members
         self.propagation_method = propagation_method
         self.propagation_indices: torch.Tensor = None
-        self.elite_models: List[int] = None
+        self.elite_models: list[int] = None
         self.deterministic = deterministic
         self.device = torch.device(device)
         self.to(device)
@@ -132,28 +126,44 @@ class EnsembleBase(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        use_propagation: bool = True,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Computes mean and logvar predictions for the given input.
+        Args:
+            x (tensor): the input to the model.
+            use_propagation (bool): if False, the propagation method will be ignored
+
+        Returns:
+            (tuple of two tensors): the predicted mean and log variance of the output.
+        """
         raise NotImplementedError("forward method must be implemented.")
 
     def loss(
         self,
         model_in: torch.Tensor,
-        target: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+        target: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict[str, any]]:
+        """Computes loss.
+        Args:
+            model_in (tensor): input tensor.
+            target (tensor): target tensor.
+        Returns:
+            (a tuple of tensor and dict): a loss tensor and a dict which includes
+            extra info.
+        """
         raise NotImplementedError("loss method must be implemented.")
 
     def sample(
         self,
         model_input: torch.Tensor,
-        rng: Optional[torch.Generator] = None,
+        rng: torch.Generator,
     ) -> torch.Tensor:
         """Samples an output from the model using .
 
         Args:
             model_input (tensor): the observation and action at.
                 "sample" (e.g., the mean prediction). Defaults to ``False``.
-            rng (`torch.Generator`, optional): an optional random number generator
-                to use.
+            rng (`torch.Generator`): a random number generator.
 
         Returns:
             (tuple): predicted observation, rewards, terminal indicator and model
@@ -165,12 +175,11 @@ class EnsembleBase(nn.Module):
         means, logvars = self.forward(model_input)
         variances = logvars.exp()
         stds = torch.sqrt(variances)
-        assert rng is not None
+        assert rng is not None  # rng is required for stochastic inference
         return torch.normal(means, stds, generator=rng)
 
     def set_elite(self, elite_indices: Sequence[int]):
-        if len(elite_indices) != self.num_members:
-            self.elite_models = list(elite_indices)
+        self.elite_models = list(elite_indices)
 
     def save(self, save_dir: str):
         """Saves the model to the given directory."""
@@ -200,53 +209,39 @@ class EnsembleOfGaussian(EnsembleBase):
         learn_logvar_bounds: bool = False,
     ):
         super().__init__(in_size, out_size, ensemble_size, device, propagation_method)
-
         activation_func = nn.ReLU()
 
-        def create_linear_layer(l_in, l_out):
-            return EnsembleLinearLayer(ensemble_size, l_in, l_out)
-
         hidden_layers = [
-            nn.Sequential(create_linear_layer(in_size, hid_size), activation_func)
+            nn.Sequential(
+                EnsembleLinearLayer(ensemble_size, in_size, hid_size), activation_func
+            )
         ]
         for i in range(num_layers - 1):
             hidden_layers.append(
                 nn.Sequential(
-                    create_linear_layer(hid_size, hid_size),
+                    EnsembleLinearLayer(ensemble_size, hid_size, hid_size),
                     activation_func,
                 )
             )
         self.hidden_layers = nn.Sequential(*hidden_layers)
-        self.mean_and_logvar = create_linear_layer(hid_size, 2 * out_size)
+        self.mean_and_logvar = EnsembleLinearLayer(
+            ensemble_size, hid_size, 2 * out_size
+        )
         self.min_logvar = nn.Parameter(
             -10 * torch.ones(1, out_size), requires_grad=learn_logvar_bounds
         )
         self.max_logvar = nn.Parameter(
             0.5 * torch.ones(1, out_size), requires_grad=learn_logvar_bounds
         )
-
+        self.logvar_loss_weight = 0.01
         self.apply(truncated_normal_init)
         self.to(self.device)
 
-    def _maybe_toggle_layers_use_only_elite(self, only_elite: bool):
-        if self.elite_models is None:
-            return
-        if self.num_members > 1 and only_elite:
-            for layer in self.hidden_layers:
-                # each layer is (linear layer, activation_func)
-                layer[0].set_elite(self.elite_models)
-                layer[0].toggle_use_only_elite()
-            self.mean_and_logvar.set_elite(self.elite_models)
-            self.mean_and_logvar.toggle_use_only_elite()
-
     def _default_forward(
         self, x: torch.Tensor, only_elite: bool = False, **_kwargs
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        self._maybe_toggle_layers_use_only_elite(only_elite)
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
         x = self.hidden_layers(x)
         mean_and_logvar = self.mean_and_logvar(x)
-        self._maybe_toggle_layers_use_only_elite(only_elite)
-
         mean = mean_and_logvar[..., : self.out_size]
         logvar = mean_and_logvar[..., self.out_size :]
         logvar = self.max_logvar - F.softplus(self.max_logvar - logvar)
@@ -255,7 +250,7 @@ class EnsembleOfGaussian(EnsembleBase):
 
     def _forward_from_indices(
         self, x: torch.Tensor, model_shuffle_indices: torch.Tensor
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
         _, batch_size, _ = x.shape
 
         num_models = (
@@ -278,7 +273,17 @@ class EnsembleOfGaussian(EnsembleBase):
 
     def _forward_ensemble(
         self, x: torch.Tensor
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """
+        Valid propagation options are:
+            - "random_model": for each output in the batch a model will be chosen at random.
+              This corresponds to TS1 propagation in the PETS paper.
+            - "fixed_model": for output j-th in the batch, the model will be chosen according to
+              the model index in `propagation_indices[j]`. This can be used to implement TSinf
+              propagation, described in the PETS paper.
+            - "expectation": the output for each element in the batch will be the mean across
+              models.
+        """
         if self.propagation_method is None:
             mean, logvar = self._default_forward(x, only_elite=False)
             if self.num_members == 1:
@@ -316,63 +321,13 @@ class EnsembleOfGaussian(EnsembleBase):
         self,
         x: torch.Tensor,
         use_propagation: bool = True,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Computes mean and logvar predictions for the given input.
-
-        When ``self.num_members > 1``, the model supports uncertainty propagation options
-        that can be used to aggregate the outputs of the different models in the ensemble.
-        Valid propagation options are:
-
-            - "random_model": for each output in the batch a model will be chosen at random.
-              This corresponds to TS1 propagation in the PETS paper.
-            - "fixed_model": for output j-th in the batch, the model will be chosen according to
-              the model index in `propagation_indices[j]`. This can be used to implement TSinf
-              propagation, described in the PETS paper.
-            - "expectation": the output for each element in the batch will be the mean across
-              models.
-
-        If a set of elite models has been indicated (via :meth:`set_elite()`), then all
-        propagation methods will operate with only on the elite set. This has no effect when
-        ``propagation is None``, in which case the forward pass will return one output for
-        each model.
-
-        Args:
-            x (tensor): the input to the model. When ``self.propagation is None``,
-                the shape must be ``E x B x Id`` or ``B x Id``, where ``E``, ``B``
-                and ``Id`` represent ensemble size, batch size, and input dimension,
-                respectively. In this case, each model in the ensemble will get one slice
-                from the first dimension (e.g., the i-th ensemble member gets ``x[i]``).
-
-                For other values of ``self.propagation`` (and ``use_propagation=True``),
-                the shape must be ``B x Id``.
-            use_propagation (bool): if ``False``, the propagation method will be ignored
-                and the method will return outputs for all models. Defaults to ``True``.
-
-        Returns:
-            (tuple of two tensors): the predicted mean and log variance of the output. If
-            ``propagation is not None``, the output will be 2-D (batch size, and output dimension).
-            Otherwise, the outputs will have shape ``E x B x Od``, where ``Od`` represents
-            output dimension.
-
-        Note:
-            For efficiency considerations, the propagation method used by this class is an
-            approximate version of that described by Chua et al. In particular, instead of
-            sampling models independently for each input in the batch, we ensure that each
-            model gets exactly the same number of samples (which are assigned randomly
-            with equal probability), resulting in a smaller batch size which we use for the forward
-            pass. If this is a concern, consider using ``propagation=None``, and passing
-            the output to :func:`mbrl.util.math.propagate`.
-
-        """
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         if use_propagation and self.propagation_method is not None:
             return self._forward_ensemble(x)
         return self._default_forward(x)
 
     def _nll_loss(self, model_in: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """Computes Gaussian NLL loss.
-        It also includes terms for ``max_logvar`` and ``min_logvar`` with small weights,
-        with positive and negative signs, respectively.
-        """
+        """Computes Gaussian NLL loss."""
         assert model_in.ndim == target.ndim
         if model_in.ndim == 2:  # add ensemble dimension
             model_in = model_in.unsqueeze(0)
@@ -385,32 +340,12 @@ class EnsembleOfGaussian(EnsembleBase):
             .mean((1, 2))  # average over batch and target dimension
             .sum()  # sum over ensemble dimension
         )
-        nll += 0.01 * (self.max_logvar.sum() - self.min_logvar.sum())
+        nll += self.logvar_loss_weight * (self.max_logvar.sum() - self.min_logvar.sum())
         return nll
 
     def loss(
         self,
         model_in: torch.Tensor,
         target: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
-        """Computes Gaussian NLL loss.
-
-        It also includes terms for ``max_logvar`` and ``min_logvar`` with small weights,
-        with positive and negative signs, respectively.
-
-        This function returns no metadata, so the second output is set to an empty dict.
-
-        Args:
-            model_in (tensor): input tensor. The shape must be ``E x B x Id``, or ``B x Id``
-                where ``E``, ``B`` and ``Id`` represent ensemble size, batch size, and input
-                dimension, respectively.
-            target (tensor): target tensor. The shape must be ``E x B x Od``, or ``B x Od``
-                where ``E``, ``B`` and ``Od`` represent ensemble size, batch size, and output
-                dimension, respectively.
-
-        Returns:
-            (tensor): a loss tensor representing the Gaussian negative log-likelihood of
-            the model over the given input/target. If the model is an ensemble, returns
-            the average over all models.
-        """
+    ) -> tuple[torch.Tensor, dict[str, any]]:
         return self._nll_loss(model_in, target), {}
