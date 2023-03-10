@@ -7,6 +7,7 @@ import numpy as np
 import torch
 
 from torch import nn, optim
+from torch.utils.tensorboard import SummaryWriter
 
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
@@ -299,28 +300,16 @@ class AlphaLoss(LossCallback):
 
 
 class AgentProxyWrapper:
-    def __init__(self, inner: AgentProxy):
+    def __init__(self, *, inner: AgentProxy, **kwargs):
+        super().__init__(**kwargs)
         self._inner = inner
 
+    def __call__(self, *args, **kwargs):
+        self._inner(*args, **kwargs)
 
-class LoggingProxyWrapper(AgentProxyWrapper):
-    def __init__(self, inner: AgentProxy, cycle: int):
-        super().__init__(inner)
-
-        self._cycle = cycle
-        self._counter = 0
-
-    def __call__(
-        self,
-        observations: Dict[AgentId, DictObservation],
-    ) -> Dict[AgentId, DictResponse]:
-        self._counter += 1
-
-        if (self._counter % self._cycle) == 0:
-            self._end_cycle()
-            self._counter = 0
-
-        return self._inner(observations)
+    @property
+    def input_names(self):
+        return self._inner.input_names
 
 
 class FeatureAgentProxy:
