@@ -5,17 +5,14 @@ Collectors for running OpenAI gym environments
 import threading
 
 from collections import deque
-from typing import Dict
-from emote.typing import AgentId, DictObservation
-
 from tests.gym.dict_gym_wrapper import DictGymWrapper
-from emote.callbacks import LoggingCallback
-from emote.proxies import AgentProxy, MemoryProxy
 
 from emote.callback import Callback
+from emote.callbacks import LoggingMixin
+from emote.proxies import AgentProxy, MemoryProxy
 
 
-class CollectorCallback(LoggingCallback):
+class CollectorCallback(LoggingMixin):
     def __init__(
             self,
             data_group: str = "default",
@@ -31,7 +28,7 @@ class CollectorCallback(LoggingCallback):
         pass
 
 
-class GymCollector(LoggingCallback):
+class GymCollector(LoggingMixin, Callback):
     MAX_NUMBER_REWARDS = 1000
 
     def __init__(

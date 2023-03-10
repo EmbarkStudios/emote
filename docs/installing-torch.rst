@@ -7,10 +7,10 @@ their packages; it is impossible to use all of these as dependencies,
 optional or not. We still want to make it easy and quick to install
 this package, and develop it.
 
-As a starting step, we offer the extra group `torch-cpu`. As the name
-implies, this'll use our pinned version of torch with CPU sort. This
-is quick and easy to install, and works well for testing and
-development.
+As a starting step, we offer the extra group `torch`. As the name
+implies, this'll use our pinned version of torch with CPU sort and the
+default CUDA support. This is quick and easy to install, and works
+well for testing and development.
 
 GPU support
 -----------

@@ -57,6 +57,7 @@ class EpisodeState(Enum):
 FloatList = List[float]
 
 
+@dataclass
 class MetaData:
     info: Dict[str, float]
     info_lists: Dict[str, FloatList]

@@ -1,10 +1,10 @@
 import argparse
 import time
 from functools import partial
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
-from gym.vector import AsyncVectorEnv
+from gymnasium.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from emote.models.model_env import ModelBasedCollector
@@ -20,19 +20,16 @@ from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
-from typing import List, Union
-
 from emote.models.ensemble import EnsembleOfGaussian
 from emote.models.model import DynamicModel, ModelLoss
 from emote.models.model_env import ModelEnv
 
 
-def _make_env(rank):
+def _make_env():
     def _thunk():
         env = gym.make("LunarLander-v2", continuous=True)
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
-        # env.seed(rank) #TODO: Gym version problem. Upgrade Gym
         return env
 
     return _thunk
@@ -86,16 +83,6 @@ class Policy(nn.Module):
 
 
 def train_lunar_lander(args):
-    
-    logged_cbs: List[Union[QLoss,
-                     PolicyLoss,
-                     AlphaLoss,
-                     QTarget,
-                     ThreadedGymCollector,
-                     ModelLoss,
-                     ModelBasedCollector,
-                     TensorboardLogger]]
-
     device = torch.device(args.device)
 
     hidden_dims = [256, 256]
@@ -106,7 +93,7 @@ def train_lunar_lander(args):
     len_rollout = args.rollout_length
     init_alpha = 1.0
 
-    env = DictGymWrapper(AsyncVectorEnv([_make_env(i) for i in range(n_env)]))
+    env = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(n_env)]))
     table = DictObsNStepTable(
         spaces=env.dict_space,
         use_terminal_column=False,

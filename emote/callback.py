@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import logging
 import warnings
@@ -133,7 +135,7 @@ class CallbackMeta(ABCMeta):
             concrete_func = getattr(instance, name)
 
             if concrete_func.__qualname__ == func.__qualname__:
-                logging.debug("skipping patch of %s: not overriden", func.__qualname__)
+                logging.debug("skipping patch of %s: not overridden", func.__qualname__)
                 continue
 
             group_name = getattr(instance, "data_group", None)
@@ -175,7 +177,7 @@ class Callback(metaclass=CallbackMeta):
     The concept has been borrowed from Keras and FastAI.
     """
 
-    def __init__(self, cycle=0):
+    def __init__(self, cycle: int | None = None):
         super().__init__()
         self._order = 0
         self.cycle = cycle

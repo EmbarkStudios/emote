@@ -1,11 +1,10 @@
 import argparse
 import time
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import partial
-from typing import Any, List, Tuple
+from typing import Tuple
 
-import gym
 import numpy as np
 import torch
 
@@ -17,7 +16,8 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
-from emote.callbacks import LoggingCallback, TensorboardLogger
+from emote.callback import Callback
+from emote.callbacks import LoggingMixin, TensorboardLogger
 from emote.env.box2d import make_vision_box2d_env
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
@@ -59,13 +59,13 @@ class Policy(nn.Module):
         return list(self.mlp_encoder.parameters()) + list(self.policy.parameters())
 
 
-class ImageLoggerCallback(LoggingCallback):
+class ImageLoggerCallback(LoggingMixin, Callback):
     def __init__(self):
         super().__init__()
         self.data_group = "default"
 
     def begin_batch(self, observation):
-        self.log_image(f"images/obs", observation["obs"][0])
+        self.log_image("images/obs", observation["obs"][0])
 
 
 @dataclass

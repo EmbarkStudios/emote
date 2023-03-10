@@ -15,16 +15,17 @@ from .callback import Callback
 from .trainer import TrainingShutdownException
 
 
-class LoggingCallback(Callback):
-    """A Callback that accepts logging calls.
+class LoggingMixin:
+    """A Mixin that accepts logging calls.
 
-    Logged data is saved on this object and gets written
-    by a Logger callback. LoggingCallback therefore doesn't
-    care how the data is logged, it only provides a standard
-    interface for storing the data to be handled by a Logger."""
+    Logged data is saved on this object and gets written by a
+    Logger. This therefore doesn't care how the data is logged, it
+    only provides a standard interface for storing the data to be
+    handled by a Logger.
+    """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, cycle: int = 0):
+        super().__init__(cycle)
         self.scalar_logs: Dict[str, Union[float, torch.Tensor]] = {}
         self.image_logs: Dict[str, torch.Tensor] = {}
         self.hist_logs: Dict[str, Union[float, torch.Tensor]] = {}
@@ -65,7 +66,7 @@ class LoggingCallback(Callback):
         super().load_state_dict(state_dict)
 
 
-class LossCallback(LoggingCallback):
+class LossCallback(LoggingMixin, Callback):
     """Losses are callbacks that implement a *loss function*."""
 
     def __init__(
@@ -138,7 +139,7 @@ class TensorboardLogger(Callback):
 
     def __init__(
         self,
-        callbacks: List[LoggingCallback],
+        callbacks: List[LoggingMixin],
         writer: SummaryWriter,
         log_interval: int,
         log_by_samples: bool = False,
@@ -148,55 +149,33 @@ class TensorboardLogger(Callback):
         self._writer = writer
         self._log_samples = log_by_samples
 
-    def begin_training(self, *args, **kwargs):
+    def begin_training(self):
         self._start_time = time.monotonic()
 
-    def log_scalars(self, step, suffix=None):
-        """Logs scalar logs adding optional suffix on the first level.
+    def end_cycle(self, bp_step, bp_samples):
+        suffix = "bp_step"
 
-        **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
-        'training_bp_step/loss'.
-        """
         for cb in self._cbs:
             for k, v in cb.scalar_logs.items():
                 if suffix:
                     k_split = k.split("/")
                     k_split[0] = k_split[0] + "_" + suffix
                     k = "/".join(k_split)
-                self._writer.add_scalar(k, v, step)
+                self._writer.add_scalar(k, v, bp_step)
 
-    def log_images(self, step, suffix=None):
-        """Logs images adding optional suffix on the first level.
-
-        **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
-        'training_bp_step/loss'.
-        """
-        for cb in self._cbs:
             for k, v in cb.image_logs.items():
                 if suffix:
                     k_split = k.split("/")
                     k_split[0] = k_split[0] + "_" + suffix
                     k = "/".join(k_split)
-                self._writer.add_image(k, v, step, dataformats="HWC")
+                self._writer.add_image(k, v, bp_step, dataformats="HWC")
 
-    def log_videos(self, step, suffix=None):
-        """Logs videos.
-
-        **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
-        'training_bp_step/loss'.
-        """
-        for cb in self._cbs:
             for k, (video_array, fps) in cb.video_logs.items():
                 if suffix:
                     k_split = k.split("/")
                     k_split[0] = k_split[0] + "_" + suffix
                     k = "/".join(k_split)
-                self._writer.add_video(k, video_array, step, fps=fps, walltime=None)
-
-    def end_cycle(self, bp_step, bp_samples):
-        self.log_scalars(bp_step, suffix="bp_step")
-        self.log_images(bp_step, suffix="bp_step")
-        self.log_videos(bp_step, suffix="bp_step")
+                self._writer.add_video(k, video_array, bp_step, fps=fps, walltime=None)
 
         time_since_start = time.monotonic() - self._start_time
         self._writer.add_scalar(
@@ -212,11 +191,11 @@ class TerminalLogger(Callback):
 
     def __init__(
         self,
-        callbacks: List[LoggingCallback],
+        callbacks: List[LoggingMixin],
         log_interval: int,
     ):
         super().__init__(cycle=log_interval)
-        self._cbs = callbacks
+        self._logs = callbacks
 
     def log_scalars(self, step, suffix=None):
         """Logs scalar logs adding optional suffix on the first level.
@@ -224,8 +203,8 @@ class TerminalLogger(Callback):
         **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
         'training_bp_step/loss'.
         """
-        for cb in self._cbs:
-            for k, v in cb.scalar_logs.items():
+        for log in self._logs:
+            for k, v in log.scalar_logs.items():
                 if suffix:
                     k_split = k.split("/")
                     k_split[0] = k_split[0] + "_" + suffix
@@ -368,4 +347,22 @@ class FinalLossTestCheck(Callback):
             loss = cb.scalar_logs[f"loss/{cb.name}_loss"]
             if loss > cutoff:
                 raise Exception(f"Loss for {cb.name} too high: {loss}")
+        raise TrainingShutdownException()
+
+
+class FinalRewardTestCheck(Callback):
+    def __init__(
+        self,
+        callback: LoggingMixin,
+        cutoff: float,
+        test_length: int,
+    ):
+        super().__init__(cycle=test_length)
+        self._cb = callback
+        self._cutoff = cutoff
+
+    def end_cycle(self):
+        reward = self._cb.scalar_logs["training/scaled_reward"]
+        if reward < self._cutoff:
+            raise Exception(f"Reward too low: {reward}")
         raise TrainingShutdownException()

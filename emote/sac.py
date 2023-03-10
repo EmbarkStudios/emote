@@ -7,10 +7,12 @@ import torch
 
 from torch import nn, optim
 
+from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 
-from .callbacks import LoggingCallback, LossCallback
+from .callback import Callback
+from .callbacks import LoggingMixin, LossCallback
 
 import time
 
@@ -63,7 +65,7 @@ class QLoss(LossCallback):
         return self.mse(q_value, q_target)
 
 
-class QTarget(LoggingCallback):
+class QTarget(LoggingMixin, Callback):
     r"""Creates rolling averages of the Q nets, and predicts q values using these.
 
     The module is responsible both for keeping the averages correct in the target q
@@ -207,9 +209,9 @@ class PolicyLoss(LossCallback):
         alpha = torch.exp(self._ln_alpha).detach()
         policy_loss = alpha * logp_pi - q_pi_min
         policy_loss = torch.mean(policy_loss)
-        self.log_scalar(f"policy/q_pi_min", torch.mean(q_pi_min))
-        self.log_scalar(f"policy/logp_pi", torch.mean(logp_pi))
-        self.log_scalar(f"policy/alpha", torch.mean(alpha))
+        self.log_scalar("policy/q_pi_min", torch.mean(q_pi_min))
+        self.log_scalar("policy/logp_pi", torch.mean(logp_pi))
+        self.log_scalar("policy/alpha", torch.mean(alpha))
         assert policy_loss.dim() == 0
         return policy_loss
 
@@ -297,16 +299,53 @@ class AlphaLoss(LossCallback):
         super().load_state_dict(state_dict)
 
 
-class FeatureAgentProxy:
-    """This AgentProxy assumes that the observations will contain flat array of observations names 'obs'"""
+class AgentProxyWrapper:
+    def __init__(self, inner: AgentProxy):
+        self._inner = inner
 
-    def __init__(self, policy: nn.Module, device: torch.device):
+
+class LoggingProxyWrapper(AgentProxyWrapper):
+    def __init__(self, inner: AgentProxy, cycle: int):
+        super().__init__(inner)
+
+        self._cycle = cycle
+        self._counter = 0
+
+    def __call__(
+        self,
+        observations: Dict[AgentId, DictObservation],
+    ) -> Dict[AgentId, DictResponse]:
+        self._counter += 1
+
+        if (self._counter % self._cycle) == 0:
+            self._end_cycle()
+            self._counter = 0
+
+        return self._inner(observations)
+
+
+class FeatureAgentProxy:
+    """An agent proxy for basic MLPs.
+
+    This AgentProxy assumes that the observations will contain a single flat array of features.
+    """
+
+    def __init__(self, policy: nn.Module, device: torch.device, input_key: str = "obs"):
+        """Create a new proxy.
+
+        :param policy: The policy to execute for actions.
+        :param device: The device to run on.
+        :param input_key: The name of the features. (default: "obs")
+        """
         self.policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device
 
+        self._input_key = input_key
+
     def __call__(
-        self, observations: Dict[AgentId, DictObservation]
+        self,
+        observations: Dict[AgentId, DictObservation],
     ) -> Dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
@@ -318,14 +357,23 @@ class FeatureAgentProxy:
         ]
         tensor_obs = torch.tensor(
             np.array(
-                [observations[agent_id].array_data["obs"] for agent_id in active_agents]
+                [
+                    observations[agent_id].array_data[self._input_key]
+                    for agent_id in active_agents
+                ]
             )
         ).to(self.device)
+
         actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
+
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
         }
+
+    @property
+    def input_names(self):
+        return (self._input_key,)
 
 
 class VisionAgentProxy:

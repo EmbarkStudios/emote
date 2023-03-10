@@ -3,7 +3,7 @@ import os
 import time
 
 from emote import Callback
-from emote.callbacks import LoggingCallback
+from emote.callbacks import LoggingMixin
 from emote.utils import BlockTimers
 
 from .table import Table
@@ -41,7 +41,7 @@ class MemoryImporterCallback(Callback):
         logging.info(f"Loading memory dump {restore_path}")
 
 
-class MemoryExporterCallback(LoggingCallback):
+class MemoryExporterCallback(LoggingMixin, Callback):
     """Export the memory at regular intervals"""
 
     def __init__(
