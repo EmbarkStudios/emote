@@ -44,13 +44,20 @@ class LoggingMixin:
             self.scalar_logs[key] = value
 
     def log_windowed_scalar(self, key: str, value: Union[float, torch.Tensor]):
-        """Use log_windowed_scalar to periodically log scalar data."""
+        """Log scalars using a moving window average.
+
+        By default this will use `default_window_length` from the constructor as the window
+        length. It can also be overridden on a per-key basis using the format
+        windowed[LENGTH]:foo/bar. Note that this cannot be changed between multiple invocations -
+        whichever length is found first will be permanent.
+        """
 
         if key not in self.windowed_scalar:
             # we allow windowed[100]:some_key/foobar to override window size
-            if "[" in key:
+            if "windowed[" in key:
                 p, k = key.split(":")
-                length = int(p.split("[")[1][:-1])
+                length = int(key.split("[")[1][:-1])
+                key = k
             else:
                 length = self._default_window_length
 
