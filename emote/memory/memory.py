@@ -7,12 +7,16 @@ them into episodes before submission into the memory.
 """
 
 import logging
+import time
 
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Tuple
 
+from torch.utils.tensorboard import SummaryWriter
+
 from emote.callback import Callback
+from emote.callbacks import LoggingMixin
 
 from ..typing import AgentId, DictObservation, DictResponse, EpisodeState
 from ..utils import TimedBlock
@@ -136,6 +140,115 @@ class TableMemoryProxy:
 
         for agent_id, sequence in completed_episodes.items():
             self._table.add_sequence(agent_id, sequence)
+
+
+class TableMemoryProxyWrapper:
+    def __init__(self, *, inner: TableMemoryProxy, **kwargs):
+        super().__init__(**kwargs)
+        self._inner = inner
+
+
+class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
+    def __init__(
+        self,
+        inner: TableMemoryProxy,
+        writer: SummaryWriter,
+        log_interval: int,
+    ):
+        super().__init__(inner=inner, default_window_length=1000)
+
+        self._writer = writer
+        self._log_interval = log_interval
+        self._counter = 0
+        self._start_time = time.monotonic()
+        self.completed_inferences = 0
+        self.completed_episodes = 0
+        self._cycle_start_infs = self.completed_inferences
+        self._cycle_start_time = time.perf_counter()
+        self._infs = 0
+
+    def add(
+        self,
+        observations: Dict[AgentId, DictObservation],
+        responses: Dict[AgentId, DictResponse],
+    ):
+        self._counter += 1
+
+        self.completed_inferences += len(observations)
+        self.completed_episodes += len(observations) - len(responses)
+
+        for obs in observations.values():
+            # todo: handle info lists how?
+
+            if obs.metadata is None:
+                continue
+
+            # all infos for agents are windowed
+            for k, v in obs.metadata.info.items():
+                if k.startswith("histogram:"):
+                    continue
+
+                self.log_windowed_scalar(k, v)
+
+        if (self._counter % self._log_interval) == 0:
+            self._end_cycle()
+            self._counter = 0
+
+        return self._inner.add(observations, responses)
+
+    def _end_cycle(self):
+        now_time = time.perf_counter()
+        cycle_time = now_time - self._cycle_start_time
+        cycle_infs = self.completed_inferences - self._cycle_start_infs
+        inf_step = self.completed_inferences
+        self.log_scalar("training/inf_per_sec", cycle_infs / cycle_time)
+        self.log_scalar("episode/completed", self.completed_episodes)
+        suffix = "inf_step"
+        for k, v in self.scalar_logs.items():
+            if suffix:
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
+            self._writer.add_scalar(k, v, inf_step)
+
+        for k, v in self.windowed_scalar.items():
+            if suffix:
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
+
+            self._writer.add_scalar(k, sum(v) / len(v), inf_step)
+
+        for k, v in self.windowed_scalar_cumulative.items():
+            if suffix:
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
+
+            self._writer.add_scalar(f"{k}/cumulative", v, inf_step)
+
+        for k, v in self.image_logs.items():
+            if suffix:
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
+            self._writer.add_image(k, v, inf_step, dataformats="HWC")
+
+        for k, (video_array, fps) in self.video_logs.items():
+            if suffix:
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
+            self._writer.add_video(k, video_array, inf_step, fps=fps, walltime=None)
+
+        time_since_start = time.monotonic() - self._start_time
+
+        self._writer.add_scalar(
+            "performance/inf_steps_per_sec", inf_step / time_since_start, inf_step
+        )
+
+        self._cycle_start_infs = self.completed_inferences
+        self._cycle_start_time = now_time
 
 
 class MemoryLoader:

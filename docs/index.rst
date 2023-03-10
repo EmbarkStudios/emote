@@ -34,6 +34,7 @@ to build other algorithms.
    installing-torch
    coding-standard
    📚 Editing documentation <documentation.md>
+   🌡 Metrics <metrics.md>
 
 .. toctree::
    :maxdepth: 6
@@ -43,6 +44,7 @@ to build other algorithms.
    emote
    memory
    callback
+   callbacks
 
 .. toctree::
    :caption: Extras
@@ -55,6 +57,7 @@ to build other algorithms.
 ..
    .. include:: adr/doc.md
    .. include:: documentation.md
+   .. include:: metrics.md
 
 	  :parser: myst_parser.sphinx_
 

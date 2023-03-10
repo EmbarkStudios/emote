@@ -3,7 +3,7 @@
 """
 
 from .callbacks import MemoryExporterCallback, MemoryImporterCallback
-from .memory import MemoryLoader, TableMemoryProxy
+from .memory import LoggingProxyWrapper, MemoryLoader, TableMemoryProxy
 from .table import Table
 
 
@@ -13,4 +13,5 @@ __all__ = [
     "MemoryLoader",
     "MemoryExporterCallback",
     "MemoryImporterCallback",
+    "LoggingProxyWrapper",
 ]
