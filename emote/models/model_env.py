@@ -4,23 +4,31 @@
 # This file contains codes/text mostly restructured from the following github repository
 # https://github.com/facebookresearch/mbrl-lib
 
-import gym
+from collections import deque
+from itertools import count
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
+import gymnasium as gym
 import numpy as np
 import torch
-from itertools import count
-from typing import Dict, List, Optional, Tuple, Callable, Union
 
+from tests.gym.collector import CollectorCallback
 from torch import Tensor
 
-from emote.models.model import DynamicModel
-from emote.typing import TensorType, AgentId, DictObservation, \
-                         DictResponse, EpisodeState, RewardFnType, TermFnType
-from emote.utils.model import to_tensor, to_numpy
-from tests.gym.collector import CollectorCallback
-from emote.proxies import AgentProxy, MemoryProxy
 from emote.memory import MemoryLoader
+from emote.models.model import DynamicModel
+from emote.proxies import AgentProxy, MemoryProxy
+from emote.typing import (
+    AgentId,
+    DictObservation,
+    DictResponse,
+    EpisodeState,
+    RewardFnType,
+    TensorType,
+    TermFnType,
+)
 from emote.utils.math import truncated_linear
-from collections import deque
+from emote.utils.model import to_numpy, to_tensor
 
 
 class ModelEnv:
@@ -38,13 +46,13 @@ class ModelEnv:
     """
 
     def __init__(
-            self,
-            env: gym.Env,
-            num_envs: int,
-            model: DynamicModel,
-            termination_fn: TermFnType,
-            reward_fn: Optional[RewardFnType] = None,
-            generator: Optional[torch.Generator] = None,
+        self,
+        env: gym.Env,
+        num_envs: int,
+        model: DynamicModel,
+        termination_fn: TermFnType,
+        reward_fn: Optional[RewardFnType] = None,
+        generator: Optional[torch.Generator] = None,
     ):
         self.dynamics_model = model
         self.termination_fn = termination_fn
@@ -69,9 +77,9 @@ class ModelEnv:
         ]
 
     def reset(
-            self,
-            initial_obs_batch: TensorType,
-            len_rollout: int,
+        self,
+        initial_obs_batch: TensorType,
+        len_rollout: int,
     ):
         """Resets the model environment.
 
@@ -83,14 +91,12 @@ class ModelEnv:
         self._len_rollout = len_rollout
 
         assert len(initial_obs_batch.shape) == 2  # batch, obs_dim
-        self._current_obs = to_tensor(
-            initial_obs_batch
-        ).to(self.dynamics_model.device)
+        self._current_obs = to_tensor(initial_obs_batch).to(self.dynamics_model.device)
         self._init_obs = torch.clone(self._current_obs)
 
     def step(
-            self,
-            actions: TensorType,
+        self,
+        actions: TensorType,
     ) -> tuple[Tensor, Tensor | None, Tensor, dict[str, Tensor]]:
         """Steps the model environment with the given batch of actions.
         Args:
@@ -108,10 +114,7 @@ class ModelEnv:
         with torch.no_grad():
             if isinstance(actions, np.ndarray):
                 actions = torch.from_numpy(actions).to(self.device)
-            (
-                next_observs,
-                pred_rewards,
-            ) = self.dynamics_model.sample(
+            (next_observs, pred_rewards,) = self.dynamics_model.sample(
                 action=actions,
                 observation=self._current_obs,
                 rng=self._rng,
@@ -123,15 +126,15 @@ class ModelEnv:
             )
             dones = self.termination_fn(actions, next_observs)
 
-            info = {'terminated': torch.zeros(dones.shape)}
+            info = {"terminated": torch.zeros(dones.shape)}
             self._timestep += 1
             if self._timestep >= self._len_rollout:
-                info['terminated'] += 1.0
+                info["terminated"] += 1.0
             self._current_obs = torch.clone(next_observs)
             return next_observs, rewards, dones, info
 
     def dict_step(
-            self, actions: Dict[AgentId, DictResponse]
+        self, actions: Dict[AgentId, DictResponse]
     ) -> Tuple[Dict[AgentId, DictObservation], Dict[str, float]]:
         batched_actions = np.stack(
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
@@ -139,11 +142,13 @@ class ModelEnv:
         next_obs, rewards, dones, info = self.step(batched_actions)
         new_agents = []
         results = {}
-        terminated = info['terminated']
+        terminated = info["terminated"]
 
         for env_id, (done, term) in enumerate(zip(dones, terminated)):
             if done or term:
-                episode_state = EpisodeState.TERMINAL if done else EpisodeState.INTERRUPTED
+                episode_state = (
+                    EpisodeState.TERMINAL if done else EpisodeState.INTERRUPTED
+                )
                 results[self._agent_ids[env_id]] = DictObservation(
                     episode_state=episode_state,
                     array_data={"obs": to_numpy(next_obs[env_id])},
@@ -171,10 +176,11 @@ class ModelEnv:
         ep_info = {}
         return results, ep_info
 
-    def dict_reset(self,
-                   obs: TensorType,
-                   len_rollout: int,
-                   ) -> Dict[AgentId, DictObservation]:
+    def dict_reset(
+        self,
+        obs: TensorType,
+        len_rollout: int,
+    ) -> Dict[AgentId, DictObservation]:
         """resets the model env.
         Args:
             obs (torch.Tensor or np.ndarray): the initial observations.
@@ -197,21 +203,31 @@ class ModelEnv:
 
 class ModelBasedCollector(CollectorCallback):
     def __init__(
-            self,
-            model_env: ModelEnv,
-            agent: AgentProxy,
-            memory: MemoryProxy,
-            dataloader: MemoryLoader,
-            rollout_schedule: List[int] = [0, 1000, 4, 4],  # [bp_min, bp_max, length_min, length_max]
-            data_group_prob_schedule: List[float] = [0, 1000, 0.1, 0.95],  # [bp_min, bp_max, prob_min, prob_max]
-            num_bp_to_retain_buffer = 1000000,
-            data_group: str = "default",
-            generator: Optional[torch.Generator] = None,
+        self,
+        model_env: ModelEnv,
+        agent: AgentProxy,
+        memory: MemoryProxy,
+        dataloader: MemoryLoader,
+        rollout_schedule: List[int] = [
+            0,
+            1000,
+            4,
+            4,
+        ],  # [bp_min, bp_max, length_min, length_max]
+        data_group_prob_schedule: List[float] = [
+            0,
+            1000,
+            0.1,
+            0.95,
+        ],  # [bp_min, bp_max, prob_min, prob_max]
+        num_bp_to_retain_buffer=1000000,
+        data_group: str = "default",
+        generator: Optional[torch.Generator] = None,
     ):
         super().__init__()
         self.data_group = data_group
         self.data_group_locked = True
-        self._data_group_to_dictate = 'default'
+        self._data_group_to_dictate = "default"
         self._agent = agent
         self._memory = memory
         self._dataloader = dataloader
@@ -234,25 +250,28 @@ class ModelBasedCollector(CollectorCallback):
         self.update_rollout_size()
         self.update_data_group()
 
-        self.log_scalar("training/prob_sampling_from_model", self._prob_of_sampling_model_data)
+        self.log_scalar(
+            "training/prob_sampling_from_model", self._prob_of_sampling_model_data
+        )
         self.log_scalar("training/model_rollout_length", self._len_rollout)
 
-        mb_data_group = True \
-            if self._data_group_to_dictate == 'model_samples' \
-            else False
+        mb_data_group = (
+            True if self._data_group_to_dictate == "model_samples" else False
+        )
 
         self.log_scalar("training/mb_data_group", mb_data_group)
 
         self.collect_multiple(*args, **kwargs)
-        if self._data_group_to_dictate == "model_samples" and \
-                self._memory.size() > 1000:
+        if (
+            self._data_group_to_dictate == "model_samples"
+            and self._memory.size() > 1000
+        ):
             try:
                 batch = next(self._iter)
             except StopIteration:
                 self._iter = iter(self._dataloader)
                 batch = next(self._iter)
-            return {"model_samples": batch,
-                    "data_group": "model_samples"}
+            return {"model_samples": batch, "data_group": "model_samples"}
         return {"data_group": "default"}
 
     def collect_multiple(self, observation):
@@ -260,7 +279,7 @@ class ModelBasedCollector(CollectorCallback):
 
         :param observation: initial observations
         """
-        self._obs = self._model_env.dict_reset(observation['obs'], self._len_rollout)
+        self._obs = self._model_env.dict_reset(observation["obs"], self._len_rollout)
         for _ in range(self._len_rollout + 1):
             self.collect_sample()
 
@@ -280,22 +299,19 @@ class ModelBasedCollector(CollectorCallback):
             *(self._data_group_prob_schedule + [self.bp_counter + 1])
         )
         rnd = torch.rand(size=(1,), generator=self._rng)[0]
-        self._data_group_to_dictate = "model_samples" \
-            if rnd < self._prob_of_sampling_model_data \
-            else "default"
+        self._data_group_to_dictate = (
+            "model_samples" if rnd < self._prob_of_sampling_model_data else "default"
+        )
 
     def update_rollout_size(self):
         len_rollout = int(
-            truncated_linear(
-                *(self._rollout_schedule + [self.bp_counter + 1])
-            )
+            truncated_linear(*(self._rollout_schedule + [self.bp_counter + 1]))
         )
         if self._len_rollout != len_rollout:
             self._len_rollout = len_rollout
             new_memory_size = (
-                    self._len_rollout *
-                    self._model_env.num_envs *
-                    self.num_bp_to_retain_buffer
+                self._len_rollout
+                * self._model_env.num_envs
+                * self.num_bp_to_retain_buffer
             )
             self._memory.resize(new_memory_size)
-

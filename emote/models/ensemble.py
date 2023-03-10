@@ -4,11 +4,14 @@
 # This file contains codes/text mostly restructured from the following github repository
 # https://github.com/facebookresearch/mbrl-lib
 
-import torch
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+
 import numpy as np
+import torch
+
 from torch import nn as nn
 from torch.nn import functional as F
-from typing import Sequence, List, Union, Tuple, Optional, Dict, Any
+
 from emote.utils.math import gaussian_nll
 
 
@@ -59,6 +62,7 @@ def truncated_normal_init(m: nn.Module):
 
 class EnsembleLinearLayer(nn.Module):
     """Efficient linear layer for ensemble models."""
+
     def __init__(
         self, num_members: int, in_size: int, out_size: int, bias: bool = True
     ):
@@ -126,21 +130,17 @@ class EnsembleBase(nn.Module):
         return self.num_members
 
     def forward(
-            self,
-            x: torch.Tensor,
+        self,
+        x: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        raise NotImplementedError(
-            "forward method must be implemented."
-        )
+        raise NotImplementedError("forward method must be implemented.")
 
     def loss(
-            self,
-            model_in: torch.Tensor,
-            target: Optional[torch.Tensor] = None,
+        self,
+        model_in: torch.Tensor,
+        target: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Dict[str, Any]]:
-        raise NotImplementedError(
-            "loss method must be implemented."
-        )
+        raise NotImplementedError("loss method must be implemented.")
 
     def sample(
         self,
@@ -161,9 +161,7 @@ class EnsembleBase(nn.Module):
                 be returned with value ``None``.
         """
         if self.deterministic:
-            return self.forward(
-                    model_input
-                )[0]
+            return self.forward(model_input)[0]
         means, logvars = self.forward(model_input)
         variances = logvars.exp()
         stds = torch.sqrt(variances)
@@ -198,7 +196,7 @@ class EnsembleOfGaussian(EnsembleBase):
         num_layers: int = 4,
         ensemble_size: int = 1,
         hid_size: int = 200,
-        propagation_method: str = 'expectation',
+        propagation_method: str = "expectation",
         learn_logvar_bounds: bool = False,
     ):
         super().__init__(in_size, out_size, ensemble_size, device, propagation_method)
@@ -250,7 +248,7 @@ class EnsembleOfGaussian(EnsembleBase):
         self._maybe_toggle_layers_use_only_elite(only_elite)
 
         mean = mean_and_logvar[..., : self.out_size]
-        logvar = mean_and_logvar[..., self.out_size:]
+        logvar = mean_and_logvar[..., self.out_size :]
         logvar = self.max_logvar - F.softplus(self.max_logvar - logvar)
         logvar = self.min_logvar + F.softplus(logvar - self.min_logvar)
         return mean, logvar
@@ -279,8 +277,7 @@ class EnsembleOfGaussian(EnsembleBase):
         return mean, logvar
 
     def _forward_ensemble(
-        self,
-        x: torch.Tensor
+        self, x: torch.Tensor
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         if self.propagation_method is None:
             mean, logvar = self._default_forward(x, only_elite=False)
@@ -289,7 +286,9 @@ class EnsembleOfGaussian(EnsembleBase):
                 logvar = logvar[0] if logvar is not None else None
             return mean, logvar
         assert x.ndim == 2
-        model_len = len(self.elite_models) if self.elite_models is not None else len(self)
+        model_len = (
+            len(self.elite_models) if self.elite_models is not None else len(self)
+        )
         if x.shape[0] % model_len != 0:
             raise ValueError(
                 f"GaussianMLP ensemble requires batch size to be a multiple of the "
@@ -383,8 +382,8 @@ class EnsembleOfGaussian(EnsembleBase):
             target = target.repeat(self.num_members, 1, 1)
         nll = (
             gaussian_nll(pred_mean, pred_logvar, target, reduce=False)
-            .mean((1, 2))   # average over batch and target dimension
-            .sum()          # sum over ensemble dimension
+            .mean((1, 2))  # average over batch and target dimension
+            .sum()  # sum over ensemble dimension
         )
         nll += 0.01 * (self.max_logvar.sum() - self.min_logvar.sum())
         return nll

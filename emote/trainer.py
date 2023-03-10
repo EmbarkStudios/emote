@@ -58,7 +58,7 @@ class Trainer:
 
         self._begin_training()
         self.state["bp_samples"] = 0
-        self.state["data_group"] = 'default'
+        self.state["data_group"] = "default"
 
         try:
             for bp_step, batch in zip(count(1), self.dataloader):

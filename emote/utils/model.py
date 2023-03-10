@@ -5,8 +5,9 @@
 # https://github.com/facebookresearch/mbrl-lib
 
 
-import torch
 import numpy as np
+import torch
+
 from emote.typing import TensorType
 
 
@@ -20,7 +21,7 @@ def to_tensor(x: TensorType):
 
 def to_numpy(x: TensorType):
     if isinstance(x, torch.Tensor):
-        return x.detach().to('cpu').numpy()
+        return x.detach().to("cpu").numpy()
     if isinstance(x, np.ndarray):
         return x
     raise ValueError("Input must be torch.Tensor or np.ndarray.")

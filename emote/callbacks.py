@@ -78,7 +78,7 @@ class LossCallback(LoggingMixin, Callback):
         optimizer: Optional[optim.Optimizer],
         max_grad_norm: float,
         data_group: str,
-        data_group_locked: bool = False
+        data_group_locked: bool = False,
     ):
         super().__init__()
         self.data_group = data_group
@@ -95,8 +95,8 @@ class LossCallback(LoggingMixin, Callback):
         self._max_grad_norm = max_grad_norm
 
     def backward(self, *args, **kwargs):
-        if 'data_group' in kwargs:
-            self.update_data_group(kwargs['data_group'])
+        if "data_group" in kwargs:
+            self.update_data_group(kwargs["data_group"])
         self.optimizer.zero_grad()
         loss = self.loss(*args, **kwargs)
         loss.backward()

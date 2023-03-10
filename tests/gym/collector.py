@@ -5,6 +5,7 @@ Collectors for running OpenAI gym environments
 import threading
 
 from collections import deque
+
 from tests.gym.dict_gym_wrapper import DictGymWrapper
 
 from emote.callback import Callback
@@ -12,10 +13,10 @@ from emote.callbacks import LoggingMixin
 from emote.proxies import AgentProxy, MemoryProxy
 
 
-class CollectorCallback(LoggingMixin):
+class CollectorCallback(LoggingMixin, Callback):
     def __init__(
-            self,
-            data_group: str = "default",
+        self,
+        data_group: str = "default",
     ):
         super().__init__()
         self.data_group = data_group
@@ -32,12 +33,12 @@ class GymCollector(LoggingMixin, Callback):
     MAX_NUMBER_REWARDS = 1000
 
     def __init__(
-            self,
-            env: DictGymWrapper,
-            agent: AgentProxy,
-            memory: MemoryProxy,
-            render: bool = True,
-            warmup_steps: int = 0,
+        self,
+        env: DictGymWrapper,
+        agent: AgentProxy,
+        memory: MemoryProxy,
+        render: bool = True,
+        warmup_steps: int = 0,
     ):
         super().__init__()
         self._agent = agent
@@ -82,12 +83,12 @@ class GymCollector(LoggingMixin, Callback):
 
 class ThreadedGymCollector(GymCollector):
     def __init__(
-            self,
-            env: DictGymWrapper,
-            agent: AgentProxy,
-            memory: MemoryProxy,
-            render: bool = True,
-            warmup_steps: int = 0,
+        self,
+        env: DictGymWrapper,
+        agent: AgentProxy,
+        memory: MemoryProxy,
+        render: bool = True,
+        warmup_steps: int = 0,
     ):
         super().__init__(env, agent, memory, render, warmup_steps)
         self._warmup_steps = warmup_steps
@@ -130,13 +131,13 @@ class ThreadedGymCollector(GymCollector):
 
 class SimpleGymCollector(GymCollector):
     def __init__(
-            self,
-            env: DictGymWrapper,
-            agent: AgentProxy,
-            memory: MemoryProxy,
-            render: bool = True,
-            warmup_steps: int = 0,
-            bp_steps_per_inf: int = 10,
+        self,
+        env: DictGymWrapper,
+        agent: AgentProxy,
+        memory: MemoryProxy,
+        render: bool = True,
+        warmup_steps: int = 0,
+        bp_steps_per_inf: int = 10,
     ):
         super().__init__(env, agent, memory, render, warmup_steps)
         self._bp_steps_per_inf = bp_steps_per_inf

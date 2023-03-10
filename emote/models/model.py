@@ -4,63 +4,65 @@
 # This file contains codes/text mostly restructured from the following github repository
 # https://github.com/facebookresearch/mbrl-lib
 
-import torch
-import numpy as np
-from torch import nn, optim
-from typing import Tuple, Dict, Optional, List, Any, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from emote.utils.math import Normalizer
-from emote.utils.model import to_tensor
-from emote.typing import TensorType
+import numpy as np
+import torch
+
+from torch import nn, optim
 
 from emote.callbacks import LossCallback
+from emote.typing import TensorType
+from emote.utils.math import Normalizer
+from emote.utils.model import to_tensor
 
 
 class DynamicModel(nn.Module):
-    """ Wrapper class for model.
+    """Wrapper class for model.
 
-        DynamicModel class functions as a wrapper for models including ensembles. It also provides
-        data manipulations that are common when using dynamics models with observations
-        and actions, so that users don't have to manipulate the underlying model's
-        inputs and outputs directly (e.g., predicting delta observations, input
-        normalization).
+    DynamicModel class functions as a wrapper for models including ensembles. It also provides
+    data manipulations that are common when using dynamics models with observations
+    and actions, so that users don't have to manipulate the underlying model's
+    inputs and outputs directly (e.g., predicting delta observations, input
+    normalization).
 
-        The wrapper assumes that the wrapped model inputs/outputs will be consistent with
+    The wrapper assumes that the wrapped model inputs/outputs will be consistent with
 
-            [pred_obs_{t+1}, pred_rewards_{t+1} (optional)] = model([obs_t, action_t]).
+        [pred_obs_{t+1}, pred_rewards_{t+1} (optional)] = model([obs_t, action_t]).
 
-        Args:
-            model: the model to wrap.
-            target_is_delta (bool): if ``True``, the predicted observations will represent
-                the difference respect to the input observations.
-                That is, ignoring rewards, pred_obs_{t + 1} = obs_t + model([obs_t, act_t]).
-                Defaults to ``True``. Can be deactivated per dimension using ``no_delta_list``.
-            normalize (bool): if true, the wrapper will create a normalizer for model inputs,
-                which will be used every time the model is called using the methods in this
-                class. Assumes the given base model has an attributed ``in_size``.
-                To update the normalizer statistics, the user needs to call
-                :meth:`update_normalizer` before using the model. Defaults to ``False``.
-            normalize_double_precision (bool): if ``True``, the normalizer will work with
-                double precision.
-            learned_rewards (bool): if ``True``, the wrapper considers the last output of the model
-                to correspond to reward predictions, and will use it to construct training
-                targets for the model and when returning model predictions. Defaults to ``True``.
-            obs_process_fn (callable, optional): if provided, observations will be passed through
-                this function before being given to the model (and before the normalizer also).
-                The processed observations should have the same dimensions as the original.
-                Defaults to ``None``.
-            no_delta_list (list(int), optional): if provided, represents a list of dimensions over
-                which the model predicts the actual observation and not just a delta.
-        """
+    Args:
+        model: the model to wrap.
+        target_is_delta (bool): if ``True``, the predicted observations will represent
+            the difference respect to the input observations.
+            That is, ignoring rewards, pred_obs_{t + 1} = obs_t + model([obs_t, act_t]).
+            Defaults to ``True``. Can be deactivated per dimension using ``no_delta_list``.
+        normalize (bool): if true, the wrapper will create a normalizer for model inputs,
+            which will be used every time the model is called using the methods in this
+            class. Assumes the given base model has an attributed ``in_size``.
+            To update the normalizer statistics, the user needs to call
+            :meth:`update_normalizer` before using the model. Defaults to ``False``.
+        normalize_double_precision (bool): if ``True``, the normalizer will work with
+            double precision.
+        learned_rewards (bool): if ``True``, the wrapper considers the last output of the model
+            to correspond to reward predictions, and will use it to construct training
+            targets for the model and when returning model predictions. Defaults to ``True``.
+        obs_process_fn (callable, optional): if provided, observations will be passed through
+            this function before being given to the model (and before the normalizer also).
+            The processed observations should have the same dimensions as the original.
+            Defaults to ``None``.
+        no_delta_list (list(int), optional): if provided, represents a list of dimensions over
+            which the model predicts the actual observation and not just a delta.
+    """
+
     def __init__(
-            self,
-            model: nn.Module,
-            target_is_delta: bool = True,
-            normalize: bool = False,
-            normalize_double_precision: bool = False,
-            learned_rewards: bool = True,
-            obs_process_fn: Optional[nn.Module] = None,
-            no_delta_list: Optional[List[int]] = None,
+        self,
+        model: nn.Module,
+        target_is_delta: bool = True,
+        normalize: bool = False,
+        normalize_double_precision: bool = False,
+        learned_rewards: bool = True,
+        obs_process_fn: Optional[nn.Module] = None,
+        no_delta_list: Optional[List[int]] = None,
     ):
         super(DynamicModel, self).__init__()
         self.model = model
@@ -78,12 +80,12 @@ class DynamicModel(nn.Module):
         self.obs_process_fn = obs_process_fn
 
     def forward(self, x: torch.Tensor, *args, **kwargs) -> Tuple[torch.Tensor, ...]:
-        """ Computes the output of the dynamics model.
-                Args:
-                    x (tensor): input
+        """Computes the output of the dynamics model.
+        Args:
+            x (tensor): input
 
-                Returns:
-                    (tuple of tensors): predicted tensors
+        Returns:
+            (tuple of tensors): predicted tensors
         """
         return self.model.forward(x, *args, **kwargs)
 
@@ -93,9 +95,9 @@ class DynamicModel(nn.Module):
         obs: torch.Tensor,
         next_obs: torch.Tensor,
         action: torch.Tensor,
-        reward: torch.Tensor
+        reward: torch.Tensor,
     ) -> Tuple[torch.Tensor, Dict[str, Any]]:
-        """ Computes the model loss over a batch of transitions.
+        """Computes the model loss over a batch of transitions.
 
         This method constructs input and targets for the model,
         then calls `self.model.loss()` on them and returns the value and the metadata
@@ -110,7 +112,9 @@ class DynamicModel(nn.Module):
         Returns:
             (tensor and optional dict): as returned by `model.loss().`
         """
-        model_in, target = self.process_batch(obs=obs, next_obs=next_obs, action=action, reward=reward)
+        model_in, target = self.process_batch(
+            obs=obs, next_obs=next_obs, action=action, reward=reward
+        )
         return self.model.loss(model_in, target=target)
 
     def sample(
@@ -118,19 +122,16 @@ class DynamicModel(nn.Module):
         action: torch.Tensor,
         observation: torch.Tensor,
         rng: Optional[torch.Generator] = None,
-    ) -> Tuple[
-        torch.Tensor,
-        Optional[torch.Tensor]
-    ]:
-        """ Samples a simulated transition from the dynamics model.
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Samples a simulated transition from the dynamics model.
 
-            Args:
-                action (tensor): the action at.
-                observation (tensor): the observation/state st.
-                rng (generator): optional random generator
+        Args:
+            action (tensor): the action at.
+            observation (tensor): the observation/state st.
+            rng (generator): optional random generator
 
-            Returns:
-                (tuple): predicted observation and rewards.
+        Returns:
+            (tuple): predicted observation and rewards.
         """
         obs = to_tensor(observation).to(self.device)
 
@@ -139,14 +140,14 @@ class DynamicModel(nn.Module):
             raise RuntimeError(
                 "DynamicModel requires wrapped model to implement sample method"
             )
-        preds = self.model.sample(
-            model_in, rng=rng
-        )
+        preds = self.model.sample(model_in, rng=rng)
         if len(preds.shape) != 2:
             raise RuntimeError(
                 "Prediction shape is: {} "
-                "Predictions must be \'batch_size x length_of_prediction\'."
-                "Have you forgotten to run propagation on the ensemble?".format(preds.shape)
+                "Predictions must be 'batch_size x length_of_prediction'."
+                "Have you forgotten to run propagation on the ensemble?".format(
+                    preds.shape
+                )
             )
         next_observs = preds[:, :-1] if self.learned_rewards else preds
         if self.target_is_delta:
@@ -180,7 +181,7 @@ class DynamicModel(nn.Module):
         next_obs: torch.Tensor,
         action: torch.Tensor,
         reward: torch.Tensor,
-        _as_float: bool = False
+        _as_float: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         if self.target_is_delta:
             target_obs = next_obs - obs
@@ -267,14 +268,15 @@ class ModelLoss(LossCallback):
             network=model,
             max_grad_norm=max_grad_norm,
             data_group=data_group,
-            data_group_locked=True
+            data_group_locked=True,
         )
         self.model = model
 
     def loss(self, observation, next_observation, actions, rewards):
-        loss, loss_info = self.model.loss(obs=observation['obs'],
-                                          next_obs=next_observation['obs'],
-                                          action=actions,
-                                          reward=rewards)
+        loss, loss_info = self.model.loss(
+            obs=observation["obs"],
+            next_obs=next_observation["obs"],
+            action=actions,
+            reward=rewards,
+        )
         return loss
-

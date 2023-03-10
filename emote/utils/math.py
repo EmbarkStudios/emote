@@ -4,12 +4,16 @@
 # This file contains codes/text mostly restructured from the following github repository
 # https://github.com/facebookresearch/mbrl-lib
 
-import torch
-import numpy as np
-from torch.nn import functional as F
-from emote.typing import TensorType
-from typing import Union
 import pickle
+
+from typing import Union
+
+import numpy as np
+import torch
+
+from torch.nn import functional as F
+
+from emote.typing import TensorType
 
 
 def truncated_linear(
@@ -137,4 +141,3 @@ class Normalizer:
             pickle.dump(
                 {"mean": self.mean.cpu().numpy(), "std": self.std.cpu().numpy()}, f
             )
-

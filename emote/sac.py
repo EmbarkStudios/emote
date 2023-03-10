@@ -1,4 +1,5 @@
 import copy
+import time
 
 from typing import Any, Dict, Optional
 
@@ -13,8 +14,6 @@ from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 
 from .callback import Callback
 from .callbacks import LoggingMixin, LossCallback
-
-import time
 
 
 def soft_update_from_to(source, target, tau):  # From rlkit
