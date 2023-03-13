@@ -15,7 +15,7 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
-from emote.callbacks import TensorboardLogger, WBLogger, BackPropStepsTerminator
+from emote.callbacks import BackPropStepsTerminator, TensorboardLogger, WBLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
