@@ -84,6 +84,7 @@ def _wrap_callback_function(obj, func, *, group: str = None, use_group: bool = T
                 UserWarning,
             )
         return func
+
     arg_names = args.args + args.kwonlyargs
     if arg_names == ["self"]:
         return _make_proxy(func)

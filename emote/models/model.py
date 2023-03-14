@@ -47,7 +47,7 @@ class DynamicModel(nn.Module):
         obs_process_fn: Optional[nn.Module] = None,
         no_delta_list: Optional[list[int]] = None,
     ):
-        super(DynamicModel, self).__init__()
+        super().__init__()
         self.model = model
         self.input_normalizer: Optional[Normalizer] = None
         if normalize:
@@ -62,14 +62,14 @@ class DynamicModel(nn.Module):
         self.no_delta_list = no_delta_list if no_delta_list else []
         self.obs_process_fn = obs_process_fn
 
-    def forward(self, x: torch.Tensor, *args, **kwargs) -> tuple[torch.Tensor, ...]:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Computes the output of the dynamics model.
         Args:
             x (tensor): input
         Returns:
             (tuple of tensors): predicted tensors
         """
-        return self.model.forward(x, *args, **kwargs)
+        return self.model.forward(x)
 
     def loss(
         self,
@@ -108,19 +108,9 @@ class DynamicModel(nn.Module):
         """
         obs = to_tensor(observation).to(self.device)
         model_in = self.get_model_input(obs, action)
-        if not hasattr(self.model, "sample"):
-            raise RuntimeError(
-                "DynamicModel requires wrapped model to implement sample method"
-            )
         preds = self.model.sample(model_in, rng)
-        if len(preds.shape) != 2:
-            raise RuntimeError(
-                "Prediction shape is: {} "
-                "Predictions must be 'batch_size x length_of_prediction'."
-                "Have you forgotten to run propagation on the ensemble?".format(
-                    preds.shape
-                )
-            )
+        assert len(preds.shape) == 2, f"Prediction shape is: {preds.shape} Predictions must be 'batch_size x " \
+                                      f"length_of_prediction. Have you forgotten to run propagation on the ensemble?"
         next_observs = preds[:, :-1] if self.learned_rewards else preds
         if self.target_is_delta:
             tmp_ = next_observs + obs

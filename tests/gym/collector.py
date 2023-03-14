@@ -13,22 +13,6 @@ from emote.callbacks import LoggingMixin
 from emote.proxies import AgentProxy, MemoryProxy
 
 
-class CollectorCallback(LoggingMixin, Callback):
-    def __init__(
-        self,
-        data_group: str = "default",
-    ):
-        super().__init__()
-        self.data_group = data_group
-
-    def begin_batch(self, *args, **kwargs):
-        pass
-
-    @Callback.extend
-    def collect_multiple(self, *args, **kwargs):
-        pass
-
-
 class GymCollector(LoggingMixin, Callback):
     MAX_NUMBER_REWARDS = 1000
 

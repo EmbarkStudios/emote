@@ -55,6 +55,18 @@ class EpisodeState(Enum):
     INITIAL = 3
 
 
+class BPStepScheduler:
+    def __init__(self,
+                 bp_step_begin: float,
+                 bp_step_end: float,
+                 value_min: float,
+                 value_max: float):
+        self.bp_step_begin = bp_step_begin
+        self.bp_step_end = bp_step_end
+        self.value_min = value_min
+        self.value_max = value_max
+
+
 # In the future we might switch to supporting flat np.arrays here.
 FloatList = List[float]
 

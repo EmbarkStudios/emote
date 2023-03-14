@@ -118,11 +118,9 @@ class LossCallback(LoggingMixin, Callback):
         optimizer: Optional[optim.Optimizer],
         max_grad_norm: float,
         data_group: str,
-        data_group_locked: bool = False,
     ):
         super().__init__()
         self.data_group = data_group
-        self.data_group_locked = data_group_locked
         self.name = name
         self.network = network
         self.optimizer = optimizer
@@ -161,10 +159,6 @@ class LossCallback(LoggingMixin, Callback):
         if self.network:
             self.network.load_state_dict(state_dict.pop("network_state_dict"))
         super().load_state_dict(state_dict)
-
-    def update_data_group(self, data_group):
-        if not self.data_group_locked:
-            self.data_group = data_group
 
     @Callback.extend
     def loss(self, *args, **kwargs) -> Tensor:
