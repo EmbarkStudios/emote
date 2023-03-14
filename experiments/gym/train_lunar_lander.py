@@ -197,7 +197,7 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, default="ll")
     parser.add_argument("--log-dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
     parser.add_argument("--device", type=str, default="cuda:0")
-    parser.add_argument("--num_bp_steps", type=int, default=500)
+    parser.add_argument("--num_bp_steps", type=int, default=10000)
     parser.add_argument("--use_wandb", action="store_true")
     parser.add_argument(
         "--wandb_run",
