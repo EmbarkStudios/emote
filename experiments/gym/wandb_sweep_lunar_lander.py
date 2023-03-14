@@ -98,12 +98,8 @@ def train_lunar_lander(args):
         "rollout_len": rollout_len,
     }
 
-    wandb_run = wandb.init(
-        config=wandb.helper.parse_config(
-            config, exclude=("wandb_project", "wandb_run")
-        ),
-    )
-    # parameters to search defined from wandb.config
+    # parameters to search defined from wandb.config which are set by the sweep agent
+    wandb.init(config=config)
     learning_rate = wandb.config.learning_rate
 
     env = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(n_env)]))
@@ -177,14 +173,13 @@ def train_lunar_lander(args):
         ),
     ]
 
-    logger = [
-        WBLogger(
-            callbacks=logged_cbs,
-            log_interval=100,
-        ),
-    ]
+    logger = WBLogger(
+        callbacks=logged_cbs,
+        config=config,
+        log_interval=100,
+    )
 
-    callbacks = logged_cbs + logger + [BackPropStepsTerminator(args.num_bp_steps)]
+    callbacks = logged_cbs + [logger, BackPropStepsTerminator(args.num_bp_steps)]
     trainer = Trainer(callbacks, dataloader)
     trainer.train()
 

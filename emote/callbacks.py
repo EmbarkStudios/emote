@@ -238,20 +238,32 @@ class TensorboardLogger(Callback):
 class WBLogger(Callback):
     """Logs the provided loggable callbacks to Weights&Biases."""
 
+    import wandb
+
     def __init__(
         self,
         callbacks: List[LoggingMixin],
+        config: Dict,
         log_interval: int,
     ):
         super().__init__(cycle=log_interval)
+
         self._cbs = callbacks
+        self._config = config
+
+        if self.wandb.run is None:
+            wandb_run = self.wandb.init(
+                project=self._config["wandb_project"],
+                name=self._config["wandb_run"],
+                config=self.wandb.helper.parse_config(
+                    self._config, exclude=("wandb_project", "wandb_run")
+                ),
+            )
 
     def begin_training(self):
         self._start_time = time.monotonic()
 
     def end_cycle(self, bp_step, bp_samples):
-        import wandb
-
         log_dict = {}
         suffix = "bp_step"
 
@@ -285,7 +297,7 @@ class WBLogger(Callback):
                     k_split = k.split("/")
                     k_split[0] = k_split[0] + "_" + suffix
                     k = "/".join(k_split)
-                log_dict[k] = wandb.Image(v)
+                log_dict[k] = self.wandb.Image(v)
 
             for k, (video_array, fps) in cb.video_logs.items():
                 if suffix:
@@ -293,13 +305,17 @@ class WBLogger(Callback):
                     k_split[0] = k_split[0] + "_" + suffix
                     k = "/".join(k_split)
 
-                log_dict[k] = wandb.Video(video_array, fps=fps)
+                log_dict[k] = self.wandb.Video(video_array, fps=fps)
 
         time_since_start = time.monotonic() - self._start_time
         log_dict["performance/bp_samples_per_sec"] = bp_samples / time_since_start
         log_dict["performance/bp_steps_per_sec"] = bp_step / time_since_start
         log_dict["log/bp_step"] = bp_step
-        wandb.log(log_dict)
+        self.wandb.log(log_dict)
+
+    def end_training(self):
+        self.wandb.finish()
+        return super().end_training()
 
 
 class TerminalLogger(Callback):

@@ -164,8 +164,6 @@ def train_lunar_lander(args):
     ]
 
     if args.use_wandb:
-        import wandb
-
         config = {
             "wandb_project": args.name,
             "wandb_run": args.wandb_run,
@@ -175,37 +173,23 @@ def train_lunar_lander(args):
             "rollout_len": rollout_len,
         }
 
-        wandb_run = wandb.init(
-            project=config["wandb_project"],
-            name=config["wandb_run"],
-            config=wandb.helper.parse_config(
-                config, exclude=("wandb_project", "wandb_run")
+        logger = WBLogger(
+            callbacks=logged_cbs,
+            config=config,
+            log_interval=100,
+        )
+    else:
+        logger = TensorboardLogger(
+            logged_cbs,
+            SummaryWriter(
+                log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())
             ),
+            100,
         )
 
-        logger = [
-            WBLogger(
-                callbacks=logged_cbs,
-                log_interval=100,
-            ),
-        ]
-    else:
-        logger = [
-            TensorboardLogger(
-                logged_cbs,
-                SummaryWriter(
-                    log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())
-                ),
-                100,
-            ),
-        ]
-
-    callbacks = logged_cbs + logger + [BackPropStepsTerminator(args.num_bp_steps)]
+    callbacks = logged_cbs + [logger, BackPropStepsTerminator(args.num_bp_steps)]
     trainer = Trainer(callbacks, dataloader)
     trainer.train()
-
-    if args.use_wandb:
-        wandb.finish()
 
 
 if __name__ == "__main__":
@@ -213,7 +197,7 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, default="ll")
     parser.add_argument("--log-dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
     parser.add_argument("--device", type=str, default="cuda:0")
-    parser.add_argument("--num_bp_steps", type=int, default=10000)
+    parser.add_argument("--num_bp_steps", type=int, default=500)
     parser.add_argument("--use_wandb", action="store_true")
     parser.add_argument(
         "--wandb_run",
