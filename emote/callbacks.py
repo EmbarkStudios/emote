@@ -238,8 +238,6 @@ class TensorboardLogger(Callback):
 class WBLogger(Callback):
     """Logs the provided loggable callbacks to Weights&Biases."""
 
-    import wandb
-
     def __init__(
         self,
         callbacks: List[LoggingMixin],
@@ -247,6 +245,8 @@ class WBLogger(Callback):
         log_interval: int,
     ):
         super().__init__(cycle=log_interval)
+
+        self.wandb = __import__("wandb")
 
         self._cbs = callbacks
         self._config = config
