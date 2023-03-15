@@ -11,7 +11,7 @@ from numpy.typing import ArrayLike
 TensorType = Union[torch.Tensor, np.ndarray]
 
 RewardFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-TermFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+TermFnType = Callable[[torch.Tensor], torch.Tensor]
 
 # The AgentId is an application-defined integer
 AgentId = int
@@ -56,11 +56,13 @@ class EpisodeState(Enum):
 
 
 class BPStepScheduler:
-    def __init__(self,
-                 bp_step_begin: float,
-                 bp_step_end: float,
-                 value_min: float,
-                 value_max: float):
+    def __init__(
+        self,
+        bp_step_begin: float,
+        bp_step_end: float,
+        value_min: float,
+        value_max: float,
+    ):
         self.bp_step_begin = bp_step_begin
         self.bp_step_end = bp_step_end
         self.value_min = value_min

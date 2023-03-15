@@ -133,8 +133,6 @@ class LossCallback(LoggingMixin, Callback):
         self._max_grad_norm = max_grad_norm
 
     def backward(self, *args, **kwargs):
-        if "data_group" in kwargs:
-            self.update_data_group(kwargs["data_group"])
         self.optimizer.zero_grad()
         loss = self.loss(*args, **kwargs)
         loss.backward()

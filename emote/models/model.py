@@ -109,8 +109,10 @@ class DynamicModel(nn.Module):
         obs = to_tensor(observation).to(self.device)
         model_in = self.get_model_input(obs, action)
         preds = self.model.sample(model_in, rng)
-        assert len(preds.shape) == 2, f"Prediction shape is: {preds.shape} Predictions must be 'batch_size x " \
-                                      f"length_of_prediction. Have you forgotten to run propagation on the ensemble?"
+        assert len(preds.shape) == 2, (
+            f"Prediction shape is: {preds.shape} Predictions must be 'batch_size x "
+            f"length_of_prediction. Have you forgotten to run propagation on the ensemble?"
+        )
         next_observs = preds[:, :-1] if self.learned_rewards else preds
         if self.target_is_delta:
             tmp_ = next_observs + obs
@@ -217,7 +219,6 @@ class ModelLoss(LossCallback):
             network=model,
             max_grad_norm=max_grad_norm,
             data_group=data_group,
-            data_group_locked=True,
         )
         self.model = model
 
