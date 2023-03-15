@@ -1,5 +1,7 @@
 import os
 
+import wandb
+
 from emote.callbacks import Callback, LoggingMixin, WBLogger
 from emote.trainer import Trainer
 
@@ -37,12 +39,12 @@ def test_logging():
     )
 
     # check if a run is initialized
-    assert logger.wandb.run is not None
+    assert wandb.run is not None
 
     # check if the additional info is logged in the config
-    assert "metadata" in logger.wandb.config.keys()
+    assert "metadata" in wandb.config.keys()
 
     Trainer([dummy_cb, logger], DummyLoader()).train()
 
     # wandb.summary() is a dict that should contain the last logged values of the run by default
-    assert logger.wandb.summary["dummy_bp_step"] == N
+    assert wandb.summary["dummy_bp_step"] == N
