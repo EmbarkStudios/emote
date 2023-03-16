@@ -288,7 +288,7 @@ if __name__ == "__main__":
     gym_memory_proxy, dataloader = create_memory(
         env=gym_wrapper,
         memory_size=4_000_000,
-        len_rollout=input_args.len_rollout,
+        len_rollout=input_args.rollout_length,
         batch_size=input_args.batch_size,
         data_group='default',
         device=training_device

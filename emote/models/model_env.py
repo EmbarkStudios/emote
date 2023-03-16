@@ -1,18 +1,13 @@
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-
 # This file contains codes and texts that are copied from
 # https://github.com/facebookresearch/mbrl-lib
 
-from itertools import count
-from typing import Optional, Union
-
 import numpy as np
 import torch
-
 from torch import Tensor
-
+from itertools import count
+from typing import Optional, Union
 from emote.models.model import DynamicModel
+from emote.utils.model import to_numpy, to_tensor
 from emote.typing import (
     AgentId,
     DictObservation,
@@ -22,19 +17,19 @@ from emote.typing import (
     TensorType,
     TermFnType,
 )
-from emote.utils.model import to_numpy, to_tensor
 
 
 class ModelEnv:
     """Wraps a dynamics model into a gym-like environment.
-    Args:
-        num_envs (int): the number of envs to simulate in parallel (batch_size).
-        model (DynamicModel): the dynamic model to wrap.
-        termination_fn (callable): a function that receives actions and observations, and
-            returns a boolean flag indicating whether the episode should end or not.
-        reward_fn (callable, optional): a function that receives actions and observations
-            and returns the value of the resulting reward in the environment.
-        generator (torch.Generator, optional): a torch random number generator
+
+        Arguments:
+            num_envs (int): the number of envs to simulate in parallel (batch_size).
+            model (DynamicModel): the dynamic model to wrap.
+            termination_fn (callable): a function that receives observations, and
+                returns a boolean flag indicating whether the episode should end or not.
+            reward_fn (callable, optional): a function that receives actions and observations
+                and returns the value of the resulting reward in the environment.
+            generator (torch.Generator, optional): a torch random number generator
     """
 
     def __init__(
@@ -56,10 +51,8 @@ class ModelEnv:
         self._model_indices = None
         self._timestep = 0
         self._len_rollout = 0
-        if generator:
-            self.rng = generator
-        else:
-            self.rng = torch.Generator(device=self.device)
+
+        self.rng = generator if generator else torch.Generator(device=self.device)
         self._next_agent = count()
         self._agent_ids: list[AgentId] = [
             next(self._next_agent) for i in range(self.num_envs)
@@ -72,9 +65,9 @@ class ModelEnv:
     ):
         """Resets the model environment.
 
-        Args:
-            initial_obs_batch (TensorType): a batch of initial observations.
-            len_rollout (int): the max length of the model rollout
+            Arguments:
+                initial_obs_batch (TensorType): a batch of initial observations.
+                len_rollout (int): the max length of the model rollout
         """
         self._timestep = 0
         self._len_rollout = len_rollout
@@ -85,24 +78,24 @@ class ModelEnv:
 
     def step(
         self,
-        actions: TensorType,
+        actions: np.ndarray,
     ) -> tuple[Tensor, Tensor | None, Tensor, dict[str, Tensor]]:
         """Steps the model environment with the given batch of actions.
-        Args:
-            actions (torch.Tensor or np.ndarray): the actions for each "episode" to rollout.
-                Shape must be batch_size x dim_actions. If a np.ndarray is given, it's
-                converted to a torch.Tensor and sent to the model device.
 
-        Returns:
-            (Union[tuple, dict]): contains the predicted next observation, reward, done flag.
-            The done flag and rewards are computed using the termination_fn and
-            reward_fn passed in the constructor. The rewards can also be predicted
-            by the model.
+            Arguments:
+                actions (np.ndarray): the actions for each "episode" to rollout.
+                    Shape must be batch_size x dim_actions. If a np.ndarray is given, it's
+                    converted to a torch.Tensor and sent to the model device.
+
+            Returns:
+                (Union[tuple, dict]): contains the predicted next observation, reward, done flag.
+                The done flag and rewards are computed using the termination_fn and
+                reward_fn passed in the constructor. The rewards can also be predicted
+                by the model.
         """
         assert len(actions.shape) == 2  # batch, action_dim
         with torch.no_grad():
-            if isinstance(actions, np.ndarray):
-                actions = torch.from_numpy(actions).to(self.device)
+            actions = torch.from_numpy(actions).to(self.device)
             (next_observs, pred_rewards,) = self.dynamic_model.sample(
                 action=actions,
                 observation=self._current_obs,
@@ -123,8 +116,18 @@ class ModelEnv:
             return next_observs, rewards, dones, info
 
     def dict_step(
-        self, actions: dict[AgentId, DictResponse]
+        self,
+        actions: dict[AgentId, DictResponse],
     ) -> tuple[dict[AgentId, DictObservation], dict[str, float]]:
+        """The function to step the Gym-like model with dict_action.
+
+            Arguments:
+                actions (dict[AgentId, DictResponse]): the dict actions.
+
+            Returns:
+                (tuple[dict[AgentId, DictObservation], dict[str, float]]): the predicted next dict observation,
+                reward, and done flag.
+        """
         batched_actions = np.stack(
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
         )
@@ -171,12 +174,12 @@ class ModelEnv:
         len_rollout: int,
     ) -> dict[AgentId, DictObservation]:
         """resets the model env.
-        Args:
-            obs (torch.Tensor or np.ndarray): the initial observations.
-            len_rollout (int): the max rollout length
+            Args:
+                obs (torch.Tensor or np.ndarray): the initial observations.
+                len_rollout (int): the max rollout length
 
-        Returns:
-            (dict): the formatted initial observation.
+            Returns:
+                (dict): the formatted initial observation.
         """
         self.reset(obs, len_rollout)
         self._agent_ids = [next(self._next_agent) for _ in range(self.num_envs)]

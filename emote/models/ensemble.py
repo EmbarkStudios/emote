@@ -1,16 +1,10 @@
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-
-from typing import Optional, Sequence, Union
-
 # This file contains codes and texts that are copied from
 # https://github.com/facebookresearch/mbrl-lib
 import numpy as np
 import torch
-
 from torch import nn as nn
 from torch.nn import functional as F
-
+from typing import Optional, Union
 from emote.utils.math import gaussian_nll
 
 
@@ -19,7 +13,7 @@ def truncated_normal_(
 ) -> torch.Tensor:
     """Samples from a truncated normal distribution in-place.
 
-    Args:
+    Arguments:
         tensor (tensor): the tensor in which sampled values will be stored.
         mean (float): the desired mean (default = 0).
         std (float): the desired standard deviation (default = 1).
@@ -56,10 +50,16 @@ def truncated_normal_init(m: nn.Module):
 
 
 class EnsembleLinearLayer(nn.Module):
-    """Efficient linear layer for ensemble models."""
+    """Linear layer for ensemble models.
+
+        Arguments:
+            num_members (int): the ensemble size
+            in_size (int): the input size of the model
+            out_size (int): the output size of the model
+    """
 
     def __init__(
-        self, num_members: int, in_size: int, out_size: int, bias: bool = True
+        self, num_members: int, in_size: int, out_size: int
     ):
         super().__init__()
         self.num_members = num_members
@@ -68,135 +68,15 @@ class EnsembleLinearLayer(nn.Module):
         self.weight = nn.Parameter(
             torch.rand(self.num_members, self.in_size, self.out_size)
         )
-        self.bias = (
-            nn.Parameter(torch.rand(self.num_members, 1, self.out_size))
-            if bias
-            else None
+        self.bias = nn.Parameter(
+            torch.rand(self.num_members, 1, self.out_size)
         )
-        self.elite_models: list[int] = None
-        self.use_only_elite = False
 
     def forward(self, x):
-        if self.use_only_elite:
-            xw = x.matmul(self.weight[self.elite_models, ...])
-            if self.bias is not None:
-                return xw + self.bias[self.elite_models, ...]
-            else:
-                return xw
-        else:
-            xw = x.matmul(self.weight)
-            if self.bias is not None:
-                return xw + self.bias
-            else:
-                return xw
-
-    def set_elite(self, elite_models: Sequence[int]):
-        self.elite_models = list(elite_models)
-
-    def toggle_use_only_elite(self):
-        self.use_only_elite = not self.use_only_elite
+        return x.matmul(self.weight) + self.bias
 
 
-class EnsembleBase(nn.Module):
-    def __init__(
-        self,
-        in_size: int,
-        out_size: int,
-        num_members: int,
-        device: Union[str, torch.device],
-        propagation_method: str = None,
-        deterministic: bool = False,
-        *args,
-        **kwargs,
-    ):
-        super().__init__()
-        self.in_size = in_size
-        self.out_size = out_size
-        self.num_members = num_members
-        self.propagation_method = propagation_method
-        self.propagation_indices: torch.Tensor = None
-        self.elite_models: list[int] = None
-        self.deterministic = deterministic
-        self.device = torch.device(device)
-        self.to(device)
-
-    def __len__(self):
-        return self.num_members
-
-    def forward(
-        self,
-        x: torch.Tensor,
-        use_propagation: bool = True,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Computes mean and logvar predictions for the given input.
-        Args:
-            x (tensor): the input to the model.
-            use_propagation (bool): if False, the propagation method will be ignored
-
-        Returns:
-            (tuple of two tensors): the predicted mean and log variance of the output.
-        """
-        raise NotImplementedError("forward method must be implemented.")
-
-    def loss(
-        self,
-        model_in: torch.Tensor,
-        target: torch.Tensor,
-    ) -> tuple[torch.Tensor, dict[str, any]]:
-        """Computes loss.
-        Args:
-            model_in (tensor): input tensor.
-            target (tensor): target tensor.
-        Returns:
-            (a tuple of tensor and dict): a loss tensor and a dict which includes
-            extra info.
-        """
-        raise NotImplementedError("loss method must be implemented.")
-
-    def sample(
-        self,
-        model_input: torch.Tensor,
-        rng: torch.Generator,
-    ) -> torch.Tensor:
-        """Samples an output from the model using .
-
-        Args:
-            model_input (tensor): the observation and action at.
-                "sample" (e.g., the mean prediction). Defaults to ``False``.
-            rng (`torch.Generator`): a random number generator.
-
-        Returns:
-            (tuple): predicted observation, rewards, terminal indicator and model
-                state dictionary. Everything but the observation is optional, and can
-                be returned with value ``None``.
-        """
-        if self.deterministic:
-            return self.forward(model_input)[0]
-        means, logvars = self.forward(model_input)
-        variances = logvars.exp()
-        stds = torch.sqrt(variances)
-        assert rng is not None  # rng is required for stochastic inference
-        return torch.normal(means, stds, generator=rng)
-
-    def set_elite(self, elite_indices: Sequence[int]):
-        self.elite_models = list(elite_indices)
-
-    def save(self, save_dir: str):
-        """Saves the model to the given directory."""
-        model_dict = {
-            "state_dict": self.state_dict(),
-            "elite_models": self.elite_models,
-        }
-        torch.save(model_dict, save_dir)
-
-    def load(self, load_dir: str):
-        """Loads the model from the given path."""
-        model_dict = torch.load(load_dir)
-        self.load_state_dict(model_dict["state_dict"])
-        self.elite_models = model_dict["elite_models"]
-
-
-class EnsembleOfGaussian(EnsembleBase):
+class EnsembleOfGaussian(nn.Module):
     def __init__(
         self,
         in_size: int,
@@ -205,10 +85,16 @@ class EnsembleOfGaussian(EnsembleBase):
         num_layers: int = 4,
         ensemble_size: int = 1,
         hid_size: int = 200,
-        propagation_method: str = "expectation",
         learn_logvar_bounds: bool = False,
+        deterministic: bool = False,
     ):
-        super().__init__(in_size, out_size, ensemble_size, device, propagation_method)
+        super().__init__()
+        self.in_size = in_size
+        self.out_size = out_size
+        self.num_members = ensemble_size
+        self.device = torch.device(device)
+        self.deterministic = deterministic
+
         activation_func = nn.ReLU()
 
         hidden_layers = [
@@ -237,115 +123,95 @@ class EnsembleOfGaussian(EnsembleBase):
         self.apply(truncated_normal_init)
         self.to(self.device)
 
-    def _default_forward(
-        self, x: torch.Tensor, only_elite: bool = False, **_kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def default_forward(
+        self, x: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         x = self.hidden_layers(x)
         mean_and_logvar = self.mean_and_logvar(x)
         mean = mean_and_logvar[..., : self.out_size]
-        logvar = mean_and_logvar[..., self.out_size :]
+        logvar = mean_and_logvar[..., self.out_size:]
         logvar = self.max_logvar - F.softplus(self.max_logvar - logvar)
         logvar = self.min_logvar + F.softplus(logvar - self.min_logvar)
         return mean, logvar
 
-    def _forward_from_indices(
-        self, x: torch.Tensor, model_shuffle_indices: torch.Tensor
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
-        _, batch_size, _ = x.shape
-
-        num_models = (
-            len(self.elite_models) if self.elite_models is not None else len(self)
-        )
-        shuffled_x = x[:, model_shuffle_indices, ...].view(
-            num_models, batch_size // num_models, -1
-        )
-
-        mean, logvar = self._default_forward(shuffled_x, only_elite=True)
-        # note that mean and logvar are shuffled
-        mean = mean.view(batch_size, -1)
-        mean[model_shuffle_indices] = mean.clone()  # invert the shuffle
-
-        if logvar is not None:
-            logvar = logvar.view(batch_size, -1)
-            logvar[model_shuffle_indices] = logvar.clone()  # invert the shuffle
-
-        return mean, logvar
-
-    def _forward_ensemble(
-        self, x: torch.Tensor
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """
-        Valid propagation options are:
-            - "random_model": for each output in the batch a model will be chosen at random.
-              This corresponds to TS1 propagation in the PETS paper.
-            - "fixed_model": for output j-th in the batch, the model will be chosen according to
-              the model index in `propagation_indices[j]`. This can be used to implement TSinf
-              propagation, described in the PETS paper.
-            - "expectation": the output for each element in the batch will be the mean across
-              models.
-        """
-        if self.propagation_method is None:
-            mean, logvar = self._default_forward(x, only_elite=False)
-            if self.num_members == 1:
-                mean = mean[0]
-                logvar = logvar[0] if logvar is not None else None
-            return mean, logvar
-        assert x.ndim == 2
-        model_len = (
-            len(self.elite_models) if self.elite_models is not None else len(self)
-        )
-        if x.shape[0] % model_len != 0:
-            raise ValueError(
-                f"GaussianMLP ensemble requires batch size to be a multiple of the "
-                f"number of models. Current batch size is {x.shape[0]} for "
-                f"{model_len} models."
-            )
-        x = x.unsqueeze(0)
-        if self.propagation_method == "random_model":
-            # passing generator causes segmentation fault
-            # see https://github.com/pytorch/pytorch/issues/44714
-            model_indices = torch.randperm(x.shape[1], device=self.device)
-            return self._forward_from_indices(x, model_indices)
-        if self.propagation_method == "fixed_model":
-            if self.propagation_indices is None:
-                raise ValueError(
-                    "When using propagation='fixed_model', `propagation_indices` must be provided."
-                )
-            return self._forward_from_indices(x, self.propagation_indices)
-        if self.propagation_method == "expectation":
-            mean, logvar = self._default_forward(x, only_elite=True)
-            return mean.mean(dim=0), logvar.mean(dim=0)
-        raise ValueError(f"Invalid propagation method {self.propagation_method}.")
-
     def forward(
         self,
         x: torch.Tensor,
-        use_propagation: bool = True,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        if use_propagation and self.propagation_method is not None:
-            return self._forward_ensemble(x)
-        return self._default_forward(x)
+        """Computes mean and logvar predictions for the given input.
 
-    def _nll_loss(self, model_in: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """Computes Gaussian NLL loss."""
-        assert model_in.ndim == target.ndim
-        if model_in.ndim == 2:  # add ensemble dimension
-            model_in = model_in.unsqueeze(0)
-            target = target.unsqueeze(0)
-        pred_mean, pred_logvar = self.forward(model_in, use_propagation=False)
-        if target.shape[0] != self.num_members:
-            target = target.repeat(self.num_members, 1, 1)
-        nll = (
-            gaussian_nll(pred_mean, pred_logvar, target, reduce=False)
-            .mean((1, 2))  # average over batch and target dimension
-            .sum()  # sum over ensemble dimension
-        )
-        nll += self.logvar_loss_weight * (self.max_logvar.sum() - self.min_logvar.sum())
-        return nll
+            Arguments:
+                x (tensor): the input to the model.
+
+            Returns:
+                (tuple of two tensors): the predicted mean and log variance of the output.
+        """
+        assert x.ndim == 2
+        x = x.unsqueeze(0)
+        mean, logvar = self.default_forward(x)
+        return mean.mean(dim=0), logvar.mean(dim=0)
 
     def loss(
         self,
         model_in: torch.Tensor,
         target: Optional[torch.Tensor] = None,
     ) -> tuple[torch.Tensor, dict[str, any]]:
-        return self._nll_loss(model_in, target), {}
+        """Computes Gaussian NLL loss.
+
+            Arguments:
+                model_in (tensor): input tensor.
+                target (tensor): target tensor.
+
+            Returns:
+                (a tuple of tensor and dict): a loss tensor and a dict which includes
+                extra info.
+        """
+        assert model_in.ndim == target.ndim
+        if model_in.ndim == 2:  # add ensemble dimension
+            model_in = model_in.unsqueeze(0)
+            target = target.unsqueeze(0)
+        pred_mean, pred_logvar = self.default_forward(model_in)
+        if target.shape[0] != self.num_members:
+            target = target.repeat(self.num_members, 1, 1)
+
+        nll = (
+            gaussian_nll(pred_mean, pred_logvar, target, reduce=False)
+            .mean((1, 2))  # average over batch and target dimension
+            .sum()  # sum over ensemble dimension
+        )
+        nll += self.logvar_loss_weight * (self.max_logvar.sum() - self.min_logvar.sum())
+        return nll, {}
+
+    def sample(
+        self,
+        model_input: torch.Tensor,
+        rng: torch.Generator,
+    ) -> torch.Tensor:
+        """Samples next observation, reward and terminal from the model using the ensemble.
+
+        Args:
+            model_input (tensor): the observation and action.
+            rng (torch.Generator): a random number generator.
+
+        Returns:
+            (tuple): predicted observation, rewards, terminal indicator and model
+                state dictionary.
+        """
+        if self.deterministic:
+            return self.forward(model_input)[0]
+        means, logvars = self.forward(model_input)
+        variances = logvars.exp()
+        stds = torch.sqrt(variances)
+        return torch.normal(means, stds, generator=rng)
+
+    def save(self, save_dir: str):
+        """Saves the model to the given directory."""
+        model_dict = {
+            "state_dict": self.state_dict()
+        }
+        torch.save(model_dict, save_dir)
+
+    def load(self, load_dir: str):
+        """Loads the model from the given path."""
+        model_dict = torch.load(load_dir)
+        self.load_state_dict(model_dict["state_dict"])
