@@ -1,9 +1,12 @@
 import argparse
 import time
+
 from functools import partial
+
 import gymnasium as gym
 import numpy as np
 import torch
+
 from gymnasium.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
@@ -12,7 +15,7 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
-from emote.callbacks import TensorboardLogger, BackPropStepsTerminator, Callback
+from emote.callbacks import BackPropStepsTerminator, Callback, TensorboardLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
@@ -23,8 +26,8 @@ from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 def _make_env():
     """Making a Lunar Lander Gym environment
 
-        Returns:
-            (Gym.env): one Lunar Lander Gym environment
+    Returns:
+        (Gym.env): one Lunar Lander Gym environment
     """
 
     def _thunk():
@@ -84,23 +87,24 @@ class Policy(nn.Module):
 
 
 def create_memory(
-        env: DictGymWrapper,
-        memory_size: int,
-        len_rollout: int,
-        batch_size: int,
-        data_group: str,
-        device: torch.device):
+    env: DictGymWrapper,
+    memory_size: int,
+    len_rollout: int,
+    batch_size: int,
+    data_group: str,
+    device: torch.device,
+):
     """Creates memory and data_loader for the RL training
 
-        Arguments:
-            env (DictGymWrapper): the Gym-env wrapper
-            memory_size (int): the maximum length of memory
-            len_rollout (int): the rollout size for the NStepTable
-            batch_size (int): batch size
-            data_group (str): the data group for uploading the data
-            device (torch.device): the device to upload the data
-        Returns:
-            (tuple[TableMemoryProxy, MemoryLoader]): A proxy for the memory and a dataloader
+    Arguments:
+        env (DictGymWrapper): the Gym-env wrapper
+        memory_size (int): the maximum length of memory
+        len_rollout (int): the rollout size for the NStepTable
+        batch_size (int): batch size
+        data_group (str): the data group for uploading the data
+        device (torch.device): the device to upload the data
+    Returns:
+        (tuple[TableMemoryProxy, MemoryLoader]): A proxy for the memory and a dataloader
 
     """
     table = DictObsNStepTable(
@@ -109,10 +113,7 @@ def create_memory(
         maxlen=memory_size,
         device=device,
     )
-    memory_proxy = TableMemoryProxy(
-        table=table,
-        use_terminal=False
-    )
+    memory_proxy = TableMemoryProxy(table=table, use_terminal=False)
     data_loader = MemoryLoader(
         table=table,
         rollout_count=batch_size // len_rollout,
@@ -124,19 +125,19 @@ def create_memory(
 
 
 def create_actor_critic_agents(
-        args,
-        num_obs: int,
-        num_actions: int,
+    args,
+    num_obs: int,
+    num_actions: int,
 ):
     """The function to create the actor (policy) and the critics (two Q-functions)
 
-        Arguments:
-            args: the input arguments given by argparser
-            num_obs (int): the dimension of the state (observation) space
-            num_actions (int): the dimension of the action space
-        Returns:
-            (tuple[nn.Module, nn.Module, FeatureAgentProxy]): the two Q-functions and the policy
-            proxy which also contains the policy nn.Module.
+    Arguments:
+        args: the input arguments given by argparser
+        num_obs (int): the dimension of the state (observation) space
+        num_actions (int): the dimension of the action space
+    Returns:
+        (tuple[nn.Module, nn.Module, FeatureAgentProxy]): the two Q-functions and the policy
+        proxy which also contains the policy nn.Module.
     """
     device = args.device
     hidden_dims = [args.hidden_layer_size, args.hidden_layer_size]
@@ -151,26 +152,26 @@ def create_actor_critic_agents(
 
 
 def create_train_callbacks(
-        args,
-        q1: nn.Module,
-        q2: nn.Module,
-        policy_proxy: FeatureAgentProxy,
-        env: DictGymWrapper,
-        memory_proxy: TableMemoryProxy,
-        data_group: str,
+    args,
+    q1: nn.Module,
+    q2: nn.Module,
+    policy_proxy: FeatureAgentProxy,
+    env: DictGymWrapper,
+    memory_proxy: TableMemoryProxy,
+    data_group: str,
 ):
     """The function creates the callbacks required for model-free SAC training.
 
-        Arguments:
-            args: the input arguments given by argparser
-            q1 (nn.Module): the first Q-network (used for double Q-learning)
-            q2 (nn.Module): the second Q-network (used for double Q-learning)
-            policy_proxy (FeatureAgentProxy): the wrapper for the policy network
-            env (DictGymWrapper): the Gym wrapper
-            memory_proxy (TableMemoryProxy): the proxy for the memory
-            data_group (str): the data_group to receive data batches
-        Returns:
-            (list[Callback]): the callbacks for the SAC RL training
+    Arguments:
+        args: the input arguments given by argparser
+        q1 (nn.Module): the first Q-network (used for double Q-learning)
+        q2 (nn.Module): the second Q-network (used for double Q-learning)
+        policy_proxy (FeatureAgentProxy): the wrapper for the policy network
+        env (DictGymWrapper): the Gym wrapper
+        memory_proxy (TableMemoryProxy): the proxy for the memory
+        data_group (str): the data_group to receive data batches
+    Returns:
+        (list[Callback]): the callbacks for the SAC RL training
     """
     device = torch.device(args.device)
     batch_size = args.batch_size
@@ -233,8 +234,8 @@ def create_train_callbacks(
 
 
 def create_complementary_callbacks(
-        args,
-        train_cbs: list[Callback],
+    args,
+    train_cbs: list[Callback],
 ):
     """The function creates the supplementary callbacks for the training and adds them to the callback lists
     and returns the list.
@@ -252,7 +253,6 @@ def create_complementary_callbacks(
                 log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())
             ),
             100,
-
         ),
         BackPropStepsTerminator(
             bp_steps=args.bp_steps,
@@ -269,8 +269,12 @@ if __name__ == "__main__":
     parser.add_argument("--rollout-length", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=200)
     parser.add_argument("--hidden-layer-size", type=int, default=256)
-    parser.add_argument("--actor-lr", type=float, default=8e-3, help='The policy learning rate')
-    parser.add_argument("--critic-lr", type=float, default=8e-3, help='Q-function learning rate')
+    parser.add_argument(
+        "--actor-lr", type=float, default=8e-3, help="The policy learning rate"
+    )
+    parser.add_argument(
+        "--critic-lr", type=float, default=8e-3, help="Q-function learning rate"
+    )
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--data-group", type=str, default="default")
     parser.add_argument("--bp-steps", type=int, default=10000)
@@ -280,7 +284,9 @@ if __name__ == "__main__":
     training_device = torch.device(input_args.device)
 
     """Creating a vector of Gym environments """
-    gym_wrapper = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(input_args.num_envs)]))
+    gym_wrapper = DictGymWrapper(
+        AsyncVectorEnv([_make_env() for _ in range(input_args.num_envs)])
+    )
     number_of_actions = gym_wrapper.dict_space.actions.shape[0]
     number_of_obs = list(gym_wrapper.dict_space.state.spaces.values())[0].shape[0]
 
@@ -290,15 +296,13 @@ if __name__ == "__main__":
         memory_size=4_000_000,
         len_rollout=input_args.rollout_length,
         batch_size=input_args.batch_size,
-        data_group='default',
-        device=training_device
+        data_group="default",
+        device=training_device,
     )
 
     """Creating the actor (policy) and critics (the two Q-functions) agents """
     qnet1, qnet2, agent_proxy = create_actor_critic_agents(
-        args=input_args,
-        num_actions=number_of_actions,
-        num_obs=number_of_obs
+        args=input_args, num_actions=number_of_actions, num_obs=number_of_obs
     )
 
     """Creating the training callbacks """
@@ -309,13 +313,12 @@ if __name__ == "__main__":
         policy_proxy=agent_proxy,
         env=gym_wrapper,
         memory_proxy=gym_memory_proxy,
-        data_group='default',
+        data_group="default",
     )
 
     """Creating the supplementary callbacks and adding them to the training callbacks """
     all_callbacks = create_complementary_callbacks(
-        args=input_args,
-        train_cbs=train_callbacks
+        args=input_args, train_cbs=train_callbacks
     )
 
     """Training """
