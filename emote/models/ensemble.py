@@ -1,10 +1,13 @@
 # This file contains codes and texts that are copied from
 # https://github.com/facebookresearch/mbrl-lib
+from typing import Optional, Union
+
 import numpy as np
 import torch
+
 from torch import nn as nn
 from torch.nn import functional as F
-from typing import Optional, Union
+
 from emote.utils.math import gaussian_nll
 
 
@@ -52,15 +55,13 @@ def truncated_normal_init(m: nn.Module):
 class EnsembleLinearLayer(nn.Module):
     """Linear layer for ensemble models.
 
-        Arguments:
-            num_members (int): the ensemble size
-            in_size (int): the input size of the model
-            out_size (int): the output size of the model
+    Arguments:
+        num_members (int): the ensemble size
+        in_size (int): the input size of the model
+        out_size (int): the output size of the model
     """
 
-    def __init__(
-        self, num_members: int, in_size: int, out_size: int
-    ):
+    def __init__(self, num_members: int, in_size: int, out_size: int):
         super().__init__()
         self.num_members = num_members
         self.in_size = in_size
@@ -68,9 +69,7 @@ class EnsembleLinearLayer(nn.Module):
         self.weight = nn.Parameter(
             torch.rand(self.num_members, self.in_size, self.out_size)
         )
-        self.bias = nn.Parameter(
-            torch.rand(self.num_members, 1, self.out_size)
-        )
+        self.bias = nn.Parameter(torch.rand(self.num_members, 1, self.out_size))
 
     def forward(self, x):
         return x.matmul(self.weight) + self.bias
@@ -79,6 +78,7 @@ class EnsembleLinearLayer(nn.Module):
 class EnsembleOfGaussian(nn.Module):
     def __init__(
         self,
+        *,
         in_size: int,
         out_size: int,
         device: Union[str, torch.device],
@@ -123,13 +123,11 @@ class EnsembleOfGaussian(nn.Module):
         self.apply(truncated_normal_init)
         self.to(self.device)
 
-    def default_forward(
-        self, x: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def default_forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         x = self.hidden_layers(x)
         mean_and_logvar = self.mean_and_logvar(x)
         mean = mean_and_logvar[..., : self.out_size]
-        logvar = mean_and_logvar[..., self.out_size:]
+        logvar = mean_and_logvar[..., self.out_size :]
         logvar = self.max_logvar - F.softplus(self.max_logvar - logvar)
         logvar = self.min_logvar + F.softplus(logvar - self.min_logvar)
         return mean, logvar
@@ -140,11 +138,11 @@ class EnsembleOfGaussian(nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Computes mean and logvar predictions for the given input.
 
-            Arguments:
-                x (tensor): the input to the model.
+        Arguments:
+            x (tensor): the input to the model.
 
-            Returns:
-                (tuple of two tensors): the predicted mean and log variance of the output.
+        Returns:
+            (tuple of two tensors): the predicted mean and log variance of the output.
         """
         assert x.ndim == 2
         x = x.unsqueeze(0)
@@ -158,13 +156,13 @@ class EnsembleOfGaussian(nn.Module):
     ) -> tuple[torch.Tensor, dict[str, any]]:
         """Computes Gaussian NLL loss.
 
-            Arguments:
-                model_in (tensor): input tensor.
-                target (tensor): target tensor.
+        Arguments:
+            model_in (tensor): input tensor.
+            target (tensor): target tensor.
 
-            Returns:
-                (a tuple of tensor and dict): a loss tensor and a dict which includes
-                extra info.
+        Returns:
+            (a tuple of tensor and dict): a loss tensor and a dict which includes
+            extra info.
         """
         assert model_in.ndim == target.ndim
         if model_in.ndim == 2:  # add ensemble dimension
@@ -206,9 +204,7 @@ class EnsembleOfGaussian(nn.Module):
 
     def save(self, save_dir: str):
         """Saves the model to the given directory."""
-        model_dict = {
-            "state_dict": self.state_dict()
-        }
+        model_dict = {"state_dict": self.state_dict()}
         torch.save(model_dict, save_dir)
 
     def load(self, load_dir: str):

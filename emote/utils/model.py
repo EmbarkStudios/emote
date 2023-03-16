@@ -1,17 +1,14 @@
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-
 # This file contains codes/text mostly restructured from the following github repository
 # https://github.com/facebookresearch/mbrl-lib
 
 
+from typing import Union
+
 import numpy as np
 import torch
 
-from emote.typing import TensorType
 
-
-def to_tensor(x: TensorType):
+def to_tensor(x: Union[torch.Tensor, np.ndarray]):
     if isinstance(x, torch.Tensor):
         return x
     if isinstance(x, np.ndarray):
@@ -19,7 +16,7 @@ def to_tensor(x: TensorType):
     raise ValueError("Input must be torch.Tensor or np.ndarray.")
 
 
-def to_numpy(x: TensorType):
+def to_numpy(x: Union[torch.Tensor, np.ndarray]):
     if isinstance(x, torch.Tensor):
         return x.detach().to("cpu").numpy()
     if isinstance(x, np.ndarray):

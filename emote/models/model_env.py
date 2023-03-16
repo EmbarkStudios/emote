@@ -1,39 +1,42 @@
 # This file contains codes and texts that are copied from
 # https://github.com/facebookresearch/mbrl-lib
 
-import numpy as np
-import torch
-from torch import Tensor
 from itertools import count
 from typing import Optional, Union
+
+import numpy as np
+import torch
+
+from torch import Tensor
+
 from emote.models.model import DynamicModel
-from emote.utils.model import to_numpy, to_tensor
 from emote.typing import (
     AgentId,
     DictObservation,
     DictResponse,
     EpisodeState,
     RewardFnType,
-    TensorType,
     TermFnType,
 )
+from emote.utils.model import to_numpy, to_tensor
 
 
 class ModelEnv:
     """Wraps a dynamics model into a gym-like environment.
 
-        Arguments:
-            num_envs (int): the number of envs to simulate in parallel (batch_size).
-            model (DynamicModel): the dynamic model to wrap.
-            termination_fn (callable): a function that receives observations, and
-                returns a boolean flag indicating whether the episode should end or not.
-            reward_fn (callable, optional): a function that receives actions and observations
-                and returns the value of the resulting reward in the environment.
-            generator (torch.Generator, optional): a torch random number generator
+    Arguments:
+        num_envs (int): the number of envs to simulate in parallel (batch_size).
+        model (DynamicModel): the dynamic model to wrap.
+        termination_fn (callable): a function that receives observations, and
+            returns a boolean flag indicating whether the episode should end or not.
+        reward_fn (callable, optional): a function that receives actions and observations
+            and returns the value of the resulting reward in the environment.
+        generator (torch.Generator, optional): a torch random number generator
     """
 
     def __init__(
         self,
+        *,
         num_envs: int,
         model: DynamicModel,
         termination_fn: TermFnType,
@@ -60,14 +63,14 @@ class ModelEnv:
 
     def reset(
         self,
-        initial_obs_batch: TensorType,
+        initial_obs_batch: torch.Tensor,
         len_rollout: int,
     ):
         """Resets the model environment.
 
-            Arguments:
-                initial_obs_batch (TensorType): a batch of initial observations.
-                len_rollout (int): the max length of the model rollout
+        Arguments:
+            initial_obs_batch (torch.Tensor): a batch of initial observations.
+            len_rollout (int): the max length of the model rollout
         """
         self._timestep = 0
         self._len_rollout = len_rollout
@@ -82,16 +85,16 @@ class ModelEnv:
     ) -> tuple[Tensor, Tensor | None, Tensor, dict[str, Tensor]]:
         """Steps the model environment with the given batch of actions.
 
-            Arguments:
-                actions (np.ndarray): the actions for each "episode" to rollout.
-                    Shape must be batch_size x dim_actions. If a np.ndarray is given, it's
-                    converted to a torch.Tensor and sent to the model device.
+        Arguments:
+            actions (np.ndarray): the actions for each "episode" to rollout.
+                Shape must be batch_size x dim_actions. If a np.ndarray is given, it's
+                converted to a torch.Tensor and sent to the model device.
 
-            Returns:
-                (Union[tuple, dict]): contains the predicted next observation, reward, done flag.
-                The done flag and rewards are computed using the termination_fn and
-                reward_fn passed in the constructor. The rewards can also be predicted
-                by the model.
+        Returns:
+            (Union[tuple, dict]): contains the predicted next observation, reward, done flag.
+            The done flag and rewards are computed using the termination_fn and
+            reward_fn passed in the constructor. The rewards can also be predicted
+            by the model.
         """
         assert len(actions.shape) == 2  # batch, action_dim
         with torch.no_grad():
@@ -121,12 +124,12 @@ class ModelEnv:
     ) -> tuple[dict[AgentId, DictObservation], dict[str, float]]:
         """The function to step the Gym-like model with dict_action.
 
-            Arguments:
-                actions (dict[AgentId, DictResponse]): the dict actions.
+        Arguments:
+            actions (dict[AgentId, DictResponse]): the dict actions.
 
-            Returns:
-                (tuple[dict[AgentId, DictObservation], dict[str, float]]): the predicted next dict observation,
-                reward, and done flag.
+        Returns:
+            (tuple[dict[AgentId, DictObservation], dict[str, float]]): the predicted next dict observation,
+            reward, and done flag.
         """
         batched_actions = np.stack(
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
@@ -170,16 +173,17 @@ class ModelEnv:
 
     def dict_reset(
         self,
-        obs: TensorType,
+        obs: torch.Tensor,
         len_rollout: int,
     ) -> dict[AgentId, DictObservation]:
         """resets the model env.
-            Args:
-                obs (torch.Tensor or np.ndarray): the initial observations.
-                len_rollout (int): the max rollout length
 
-            Returns:
-                (dict): the formatted initial observation.
+        Arguments:
+            obs (torch.Tensor): the initial observations.
+            len_rollout (int): the max rollout length
+
+        Returns:
+            (dict): the formatted initial observation.
         """
         self.reset(obs, len_rollout)
         self._agent_ids = [next(self._next_agent) for _ in range(self.num_envs)]

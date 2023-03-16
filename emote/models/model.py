@@ -1,12 +1,14 @@
 # This file contains codes and texts that are copied from
 # https://github.com/facebookresearch/mbrl-lib
 
+from typing import Optional
+
 import torch
+
 from torch import nn, optim
 
 from emote.callbacks import LossCallback
 from emote.utils.model import to_tensor
-from typing import Optional
 
 
 class DynamicModel(nn.Module):
@@ -17,8 +19,6 @@ class DynamicModel(nn.Module):
 
     Arguments:
         model: the model to wrap.
-        target_is_delta (bool): if True, the predicted observations will represent
-            the difference respect to the input observations.
         learned_rewards (bool): if True, the wrapper considers the last output of the model
             to correspond to reward predictions.
         obs_process_fn (callable, optional): if provided, observations will be passed through
@@ -29,8 +29,8 @@ class DynamicModel(nn.Module):
 
     def __init__(
         self,
+        *,
         model: nn.Module,
-        target_is_delta: bool = True,
         learned_rewards: bool = True,
         obs_process_fn: Optional[nn.Module] = None,
         no_delta_list: Optional[list[int]] = None,
@@ -39,7 +39,6 @@ class DynamicModel(nn.Module):
         self.model = model
         self.device = self.model.device
         self.learned_rewards = learned_rewards
-        self.target_is_delta = target_is_delta
         self.no_delta_list = no_delta_list if no_delta_list else []
         self.obs_process_fn = obs_process_fn
 
@@ -63,14 +62,14 @@ class DynamicModel(nn.Module):
     ) -> tuple[torch.Tensor, dict[str, any]]:
         """Computes the model loss over a batch of transitions.
 
-            Arguments:
-                obs (tensor): current observations
-                next_obs (tensor): next observations
-                action (tensor): actions
-                reward (tensor): rewards
+        Arguments:
+            obs (tensor): current observations
+            next_obs (tensor): next observations
+            action (tensor): actions
+            reward (tensor): rewards
 
-            Returns:
-                (tensor and optional dict): the loss tensor and optional info
+        Returns:
+            (tensor and optional dict): the loss tensor and optional info
         """
         model_in, target = self.process_batch(
             obs=obs, next_obs=next_obs, action=action, reward=reward
@@ -85,13 +84,13 @@ class DynamicModel(nn.Module):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Samples a simulated transition from the dynamics model.
 
-            Arguments:
-                action (tensor): the action at.
-                observation (tensor): the observation/state st.
-                rng (torch.Generator): a random number generator.
+        Arguments:
+            action (tensor): the action at.
+            observation (tensor): the observation/state st.
+            rng (torch.Generator): a random number generator.
 
-            Returns:
-                (tuple): predicted observation and rewards.
+        Returns:
+            (tuple): predicted observation and rewards.
         """
         obs = to_tensor(observation).to(self.device)
         model_in = self.get_model_input(obs, action)
@@ -101,11 +100,11 @@ class DynamicModel(nn.Module):
             f"length_of_prediction. Have you forgotten to run propagation on the ensemble?"
         )
         next_observs = preds[:, :-1] if self.learned_rewards else preds
-        if self.target_is_delta:
-            tmp_ = next_observs + obs
-            for dim in self.no_delta_list:
-                tmp_[:, dim] = next_observs[:, dim]
-            next_observs = tmp_
+
+        tmp_ = next_observs + obs
+        for dim in self.no_delta_list:
+            tmp_[:, dim] = next_observs[:, dim]
+        next_observs = tmp_
         rewards = preds[:, -1:] if self.learned_rewards else None
 
         return next_observs, rewards
@@ -142,21 +141,20 @@ class DynamicModel(nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """The function processes the given batch and prepares it for the training.
 
-            Arguments:
-                obs (torch.Tensor): the observations tensor
-                next_obs (torch.Tensor): the next observation tensor
-                action (torch.Tensor): the actions tensor
-                reward (torch.Tensor): the rewards tensor
+        Arguments:
+            obs (torch.Tensor): the observations tensor
+            next_obs (torch.Tensor): the next observation tensor
+            action (torch.Tensor): the actions tensor
+            reward (torch.Tensor): the rewards tensor
 
-            Returns:
-                (tuple[torch.Tensor, torch.Tensor]): the training input and target tensors
+        Returns:
+            (tuple[torch.Tensor, torch.Tensor]): the training input and target tensors
         """
-        if self.target_is_delta:
-            target_obs = next_obs - obs
-            for dim in self.no_delta_list:
-                target_obs[..., dim] = next_obs[..., dim]
-        else:
-            target_obs = next_obs
+
+        target_obs = next_obs - obs
+        for dim in self.no_delta_list:
+            target_obs[..., dim] = next_obs[..., dim]
+
         target_obs = to_tensor(target_obs).to(self.device)
         model_in = self.get_model_input(obs, action)
         if self.learned_rewards:
@@ -169,16 +167,16 @@ class DynamicModel(nn.Module):
     def save(self, save_dir: str) -> None:
         """Saving the model
 
-            Arguments:
-                save_dir (str): the directory to save the model
+        Arguments:
+            save_dir (str): the directory to save the model
         """
         self.model.save(save_dir)
 
     def load(self, load_dir: str) -> None:
         """Loading the model
 
-            Arguments:
-                load_dir (str): the directory to load the model
+        Arguments:
+            load_dir (str): the directory to load the model
         """
         self.model.load(load_dir)
 
@@ -186,17 +184,18 @@ class DynamicModel(nn.Module):
 class ModelLoss(LossCallback):
     """Trains a dynamic model by minimizing the model loss
 
-        Arguments:
-            dynamic_model (DynamicModel): A dynamic model
-            opt (torch.optim.Optimizer): An optimizer.
-            lr_schedule (lr_scheduler, optional): A learning rate scheduler
-            max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
-            name (str): The name of the module. Used e.g. while logging.
-            data_group (str): The name of the data group from which this Loss takes its data.
+    Arguments:
+        dynamic_model (DynamicModel): A dynamic model
+        opt (torch.optim.Optimizer): An optimizer.
+        lr_schedule (lr_scheduler, optional): A learning rate scheduler
+        max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
+        name (str): The name of the module. Used e.g. while logging.
+        data_group (str): The name of the data group from which this Loss takes its data.
     """
 
     def __init__(
         self,
+        *,
         model: DynamicModel,
         opt: optim.Optimizer,
         lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,

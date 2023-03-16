@@ -1,19 +1,9 @@
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-
 # This file contains codes and texts that are copied from
 # https://github.com/facebookresearch/mbrl-lib
 
-import pickle
-
-from typing import Union
-
-import numpy as np
 import torch
 
 from torch.nn import functional as F
-
-from emote.typing import TensorType
 
 
 def truncated_linear(

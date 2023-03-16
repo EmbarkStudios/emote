@@ -8,8 +8,6 @@ import torch
 from numpy.typing import ArrayLike
 
 
-TensorType = Union[torch.Tensor, np.ndarray]
-
 RewardFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 TermFnType = Callable[[torch.Tensor], torch.Tensor]
 
