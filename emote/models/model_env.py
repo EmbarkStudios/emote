@@ -18,7 +18,7 @@ from emote.typing import (
     RewardFnType,
     TermFnType,
 )
-from emote.utils.model import to_numpy, to_tensor
+from emote.utils.model import to_numpy
 
 
 class ModelEnv:
@@ -76,7 +76,7 @@ class ModelEnv:
         self._len_rollout = len_rollout
 
         assert len(initial_obs_batch.shape) == 2  # batch, obs_dim
-        self._current_obs = to_tensor(initial_obs_batch).to(self.dynamic_model.device)
+        self._current_obs = torch.clone(initial_obs_batch)
         self._init_obs = torch.clone(self._current_obs)
 
     def step(

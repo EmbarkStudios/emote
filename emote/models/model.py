@@ -92,8 +92,7 @@ class DynamicModel(nn.Module):
         Returns:
             (tuple): predicted observation and rewards.
         """
-        obs = to_tensor(observation).to(self.device)
-        model_in = self.get_model_input(obs, action)
+        model_in = self.get_model_input(observation, action)
         preds = self.model.sample(model_in, rng)
         assert len(preds.shape) == 2, (
             f"Prediction shape is: {preds.shape} Predictions must be 'batch_size x "
@@ -101,7 +100,7 @@ class DynamicModel(nn.Module):
         )
         next_observs = preds[:, :-1] if self.learned_rewards else preds
 
-        tmp_ = next_observs + obs
+        tmp_ = next_observs + observation
         for dim in self.no_delta_list:
             tmp_[:, dim] = next_observs[:, dim]
         next_observs = tmp_
