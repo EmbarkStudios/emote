@@ -93,6 +93,7 @@ def _wrap_callback_function(obj, func, *, group: str = None, use_group: bool = T
 
     if not use_group:
         return _make_no_group(func, arg_names, complex_kwargs)
+
     return _make_group_unpack(func, group, arg_names, complex_kwargs)
 
 

@@ -39,8 +39,10 @@ class GymCollector(LoggingMixin, Callback):
             self._env.render()
         actions = self._agent(self._obs)
         next_obs, ep_info = self._env.dict_step(actions)
+
         self._memory.add(self._obs, actions)
         self._obs = next_obs
+
         if "reward" in ep_info:
             self.log_scalar("episode/reward", ep_info["reward"])
 
