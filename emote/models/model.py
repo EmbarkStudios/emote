@@ -8,7 +8,6 @@ import torch
 from torch import nn, optim
 
 from emote.callbacks import LossCallback
-from emote.utils.model import to_tensor
 
 
 class DynamicModel(nn.Module):
@@ -126,8 +125,6 @@ class DynamicModel(nn.Module):
         """
         if self.obs_process_fn:
             obs = self.obs_process_fn(obs)
-        obs = to_tensor(obs).to(self.device)
-        action = to_tensor(action).to(self.device)
         model_in = torch.cat([obs, action], dim=obs.ndim - 1)
         return model_in
 
@@ -154,10 +151,8 @@ class DynamicModel(nn.Module):
         for dim in self.no_delta_list:
             target_obs[..., dim] = next_obs[..., dim]
 
-        target_obs = to_tensor(target_obs).to(self.device)
         model_in = self.get_model_input(obs, action)
         if self.learned_rewards:
-            reward = to_tensor(reward).to(self.device)
             target = torch.cat([target_obs, reward], dim=obs.ndim - 1)
         else:
             target = target_obs
@@ -213,7 +208,7 @@ class ModelLoss(LossCallback):
         self.model = model
 
     def loss(self, observation, next_observation, actions, rewards):
-        loss, loss_info = self.model.loss(
+        loss, _ = self.model.loss(
             obs=observation["obs"],
             next_obs=next_observation["obs"],
             action=actions,

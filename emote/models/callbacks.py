@@ -5,11 +5,11 @@ import torch
 
 from emote.callback import Callback
 from emote.callbacks import LoggingMixin
+from emote.extra.schedules import BPStepScheduler
 from emote.memory import MemoryLoader
 from emote.models.model_env import ModelEnv
 from emote.proxies import AgentProxy, MemoryProxy
-from emote.typing import AgentId, BPStepScheduler, DictObservation
-from emote.utils.math import truncated_linear
+from emote.typing import AgentId, DictObservation
 
 
 class BatchCallback(LoggingMixin, Callback):
@@ -91,13 +91,7 @@ class BatchSampler(BatchCallback):
             (bool): True if model samples should be used, False otherwise.
         """
         self.bp_counter += 1
-        self.prob_of_sampling_model_data = truncated_linear(
-            min_x=self.scheduler.bp_step_begin,
-            max_x=self.scheduler.bp_step_end,
-            min_y=self.scheduler.value_min,
-            max_y=self.scheduler.value_max,
-            x=self.bp_counter,
-        )
+        self.prob_of_sampling_model_data = self.scheduler.evaluate_at(self.bp_counter)
         rnd = torch.rand(size=(1,), generator=self.rng)[0]
         return True if rnd < self.prob_of_sampling_model_data else False
 
@@ -156,15 +150,7 @@ class ModelBasedCollector(BatchCallback):
 
     def update_rollout_size(self):
         self.bp_counter += 1
-        len_rollout = int(
-            truncated_linear(
-                min_x=self.rollout_scheduler.bp_step_begin,
-                max_x=self.rollout_scheduler.bp_step_end,
-                min_y=self.rollout_scheduler.value_min,
-                max_y=self.rollout_scheduler.value_max,
-                x=self.bp_counter,
-            )
-        )
+        len_rollout = int(self.rollout_scheduler.evaluate_at(self.bp_counter))
         if self.len_rollout != len_rollout:
             self.len_rollout = len_rollout
             new_memory_size = (

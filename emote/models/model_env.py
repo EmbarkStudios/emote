@@ -111,10 +111,10 @@ class ModelEnv:
             )
             dones = self.termination_fn(next_observs)
 
-            info = {"terminated": torch.zeros(dones.shape)}
+            info = {"reached_max_len": torch.zeros(dones.shape)}
             self._timestep += 1
             if self._timestep >= self._len_rollout:
-                info["terminated"] += 1.0
+                info["reached_max_len"] += 1.0
             self._current_obs = torch.clone(next_observs)
             return next_observs, rewards, dones, info
 
@@ -137,10 +137,10 @@ class ModelEnv:
         next_obs, rewards, dones, info = self.step(batched_actions)
         new_agents = []
         results = {}
-        terminated = info["terminated"]
+        reached_max_len = info["reached_max_len"]
 
-        for env_id, (done, term) in enumerate(zip(dones, terminated)):
-            if done or term:
+        for env_id, (done, timed_out) in enumerate(zip(dones, reached_max_len)):
+            if done or timed_out:
                 episode_state = (
                     EpisodeState.TERMINAL if done else EpisodeState.INTERRUPTED
                 )

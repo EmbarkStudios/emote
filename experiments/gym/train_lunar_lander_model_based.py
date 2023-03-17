@@ -14,11 +14,11 @@ from tests.gym import DictGymWrapper
 from torch.optim import Adam
 
 from emote import Trainer
+from emote.extra.schedules import BPStepScheduler
 from emote.models.callbacks import BatchSampler, ModelBasedCollector
 from emote.models.ensemble import EnsembleOfGaussian
 from emote.models.model import DynamicModel, ModelLoss
 from emote.models.model_env import ModelEnv
-from emote.typing import BPStepScheduler
 
 
 def lunar_lander_term_func(
