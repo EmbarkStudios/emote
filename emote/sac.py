@@ -1,7 +1,8 @@
 import copy
+import random
 import time
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch
@@ -91,10 +92,8 @@ class QTarget(LoggingMixin, Callback):
         *,
         pi: nn.Module,
         ln_alpha: torch.tensor,
-        q1: nn.Module,
-        q2: nn.Module,
-        q1t: Optional[nn.Module] = None,
-        q2t: Optional[nn.Module] = None,
+        q: List[nn.Module],
+        qt: Optional[List[nn.Module]] = None,
         gamma: float = 0.99,
         reward_scale: float = 1.0,
         target_q_tau: float = 0.005,
@@ -104,11 +103,9 @@ class QTarget(LoggingMixin, Callback):
         super().__init__()
         self.data_group = data_group
         self.policy = pi
-        self.q1t = copy.deepcopy(q1) if q1t is None else q1t
-        self.q2t = copy.deepcopy(q2) if q2t is None else q2t
+        self.qt = copy.deepcopy(q) if qt is None else qt
         self.ln_alpha = ln_alpha
-        self.q1 = q1
-        self.q2 = q2
+        self.q = q
         self.reward_scale = reward_scale
         self.tau = target_q_tau
         self.gamma = torch.tensor(gamma)
@@ -119,8 +116,10 @@ class QTarget(LoggingMixin, Callback):
 
     def begin_batch(self, next_observation, rewards, masks):
         next_p_sample, next_logp_pi = self.policy(**next_observation)
-        next_q1t = self.q1t(next_p_sample, **next_observation)
-        next_q2t = self.q2t(next_p_sample, **next_observation)
+
+        sampled_indices = np.random.choice(len(self.q), 2, replace=False)
+        next_q1t = self.qt[sampled_indices[0]](next_p_sample, **next_observation)
+        next_q2t = self.qt[sampled_indices[1]](next_p_sample, **next_observation)
         min_next_qt = torch.min(next_q1t, next_q2t)
         bsz = rewards.shape[0]
 
@@ -143,8 +142,8 @@ class QTarget(LoggingMixin, Callback):
 
     def end_batch(self):
         super().end_batch()
-        soft_update_from_to(self.q1, self.q1t, self.tau)
-        soft_update_from_to(self.q2, self.q2t, self.tau)
+        for i in range(len(self.q)):
+            soft_update_from_to(self.q[i], self.qt[i], self.tau)
 
 
 class PolicyLoss(LossCallback):
@@ -175,13 +174,13 @@ class PolicyLoss(LossCallback):
         *,
         pi: nn.Module,
         ln_alpha: torch.tensor,
-        q: nn.Module,
+        q: Union[List[nn.Module], nn.Module],
         opt: optim.Optimizer,
         lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
-        q2: Optional[nn.Module] = None,
         max_grad_norm: float = 10.0,
         name: str = "policy",
         data_group: str = "default",
+        pessimistic: bool = False,
     ):
         super().__init__(
             name=name,
@@ -193,23 +192,28 @@ class PolicyLoss(LossCallback):
         )
         self.policy = pi
         self._ln_alpha = ln_alpha
-        self.q1 = q
-        self.q2 = q2
+        self.q = q
+        self.pessimistic = pessimistic
 
     def loss(self, observation):
         p_sample, logp_pi = self.policy(**observation)
-        if self.q2 is not None:
-            q_pi_min = torch.min(
-                self.q1(p_sample, **observation), self.q2(p_sample, **observation)
-            )
-        else:
-            # We don't actually need to be pessimistic in the policy update.
-            q_pi_min = self.q1(p_sample, **observation)
+
+        if isinstance(self.q, nn.Module):
+            q_pi = self.q(p_sample, **observation)
+        elif isinstance(self.q, List):
+            assert len(self.q) >= 2
+            q_pis = torch.cat([q(p_sample, **observation) for q in self.q], 1)
+
+            if self.pessimistic:
+                q_pi, _ = torch.min(q_pis, dim=1, keepdim=True)
+            else:
+                q_pi = torch.mean(q_pis, dim=1, keepdim=True)
+
         # using reparameterization trick
         alpha = torch.exp(self._ln_alpha).detach()
-        policy_loss = alpha * logp_pi - q_pi_min
+        policy_loss = alpha * logp_pi - q_pi
         policy_loss = torch.mean(policy_loss)
-        self.log_scalar("policy/q_pi_min", torch.mean(q_pi_min))
+        self.log_scalar("policy/q_pi", torch.mean(q_pi))
         self.log_scalar("policy/logp_pi", torch.mean(logp_pi))
         self.log_scalar("policy/alpha", torch.mean(alpha))
         assert policy_loss.dim() == 0

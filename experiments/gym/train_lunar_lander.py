@@ -15,7 +15,7 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
-from emote.callbacks import TensorboardLogger
+from emote.callbacks import BackPropStepsTerminator, TensorboardLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
@@ -107,36 +107,41 @@ def train_lunar_lander(args):
     num_actions = env.dict_space.actions.shape[0]
     num_obs = list(env.dict_space.state.spaces.values())[0].shape[0]
 
-    q1 = QNet(num_obs, num_actions, hidden_dims)
-    q2 = QNet(num_obs, num_actions, hidden_dims)
+    q = []
+    for _ in range(args.num_critics):
+        q.append(QNet(num_obs, num_actions, hidden_dims).to(device))
+
     policy = Policy(num_obs, num_actions, hidden_dims)
+    policy = policy.to(device)
 
     ln_alpha = torch.tensor(np.log(init_alpha), requires_grad=True, device=device)
     agent_proxy = FeatureAgentProxy(policy, device=device)
 
-    q1 = q1.to(device)
-    q2 = q2.to(device)
-    policy = policy.to(device)
+    logged_cbs = []
+    for i, qnet in enumerate(q):
+        name = f"q{i+1}"
+        logged_cbs.append(
+            QLoss(
+                name=name,
+                q=qnet,
+                opt=Adam(qnet.parameters(), lr=learning_rate),
+                max_grad_norm=max_grad_norm,
+            )
+        )
 
-    logged_cbs = [
-        QLoss(
-            name="q1",
-            q=q1,
-            opt=Adam(q1.parameters(), lr=learning_rate),
-            max_grad_norm=max_grad_norm,
-        ),
-        QLoss(
-            name="q2",
-            q=q2,
-            opt=Adam(q2.parameters(), lr=learning_rate),
-            max_grad_norm=max_grad_norm,
-        ),
+    if args.pessimistic_policy_update or args.num_critics > 2:
+        q_policy = q
+    else:
+        q_policy = q[0]
+
+    logged_cbs += [
         PolicyLoss(
             pi=policy,
             ln_alpha=ln_alpha,
-            q=q1,
+            q=q_policy,
             opt=Adam(policy.parameters(), lr=learning_rate),
             max_grad_norm=max_grad_norm,
+            pessimistic=args.pessimistic_policy_update,
         ),
         AlphaLoss(
             pi=policy,
@@ -149,8 +154,7 @@ def train_lunar_lander(args):
         QTarget(
             pi=policy,
             ln_alpha=ln_alpha,
-            q1=q1,
-            q2=q2,
+            q=q,
             roll_length=rollout_len,
             reward_scale=0.1,
         ),
@@ -171,6 +175,7 @@ def train_lunar_lander(args):
             ),
             100,
         ),
+        BackPropStepsTerminator(args.num_steps),
     ]
 
     trainer = Trainer(callbacks, dataloader)
@@ -182,6 +187,11 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, default="ll")
     parser.add_argument("--log-dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
     parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--num_steps", type=int, default=10000)
+    parser.add_argument("--pessimistic_policy_update", action="store_true")
+    parser.add_argument("--num_critics", type=int, default=2)
     args = parser.parse_args()
+
+    assert args.num_critics >= 2
 
     train_lunar_lander(args)
