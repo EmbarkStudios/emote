@@ -52,7 +52,7 @@ def test_htm():
         QLoss(name="q2", q=q2, opt=Adam(q2.parameters(), lr=8e-3)),
         PolicyLoss(pi=policy, ln_alpha=ln_alpha, q=q1, opt=Adam(policy.parameters())),
         AlphaLoss(pi=policy, ln_alpha=ln_alpha, opt=Adam([ln_alpha]), n_actions=1),
-        QTarget(pi=policy, ln_alpha=ln_alpha, q1=q1, q2=q2),
+        QTarget(pi=policy, ln_alpha=ln_alpha, q=[q1, q2]),
     ]
 
     callbacks = logged_cbs + [
@@ -95,7 +95,7 @@ def test_htm_onnx(tmpdir):
         QLoss(name="q2", q=q2, opt=Adam(q2.parameters(), lr=8e-3)),
         PolicyLoss(pi=policy, ln_alpha=ln_alpha, q=q1, opt=Adam(policy.parameters())),
         AlphaLoss(pi=policy, ln_alpha=ln_alpha, opt=Adam([ln_alpha]), n_actions=1),
-        QTarget(pi=policy, ln_alpha=ln_alpha, q1=q1, q2=q2),
+        QTarget(pi=policy, ln_alpha=ln_alpha, q=[q1, q2]),
     ]
 
     callbacks = logged_cbs + [
