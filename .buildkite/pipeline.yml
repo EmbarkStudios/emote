@@ -82,3 +82,17 @@ steps:
   - label: ":package: Validate packaging"
     command: bash .buildkite/run-package.sh
     << : *tiny
+
+  - label: ":packagecloud: Triggering Cloud-Training build"
+    trigger: erupt
+    if: 'build.pull_request.labels includes "trigger: cloud"'
+
+    env:
+      EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
+      EMOTE_COMMIT: "${BUILDKITE_COMMIT}"
+      EMOTE_BRANCH: "${BUILDKITE_BRANCH}"
+
+    metadata:
+      EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
+      EMOTE_COMMIT: "${BUILDKITE_COMMIT}"
+      EMOTE_BRANCH: "${BUILDKITE_BRANCH}"
