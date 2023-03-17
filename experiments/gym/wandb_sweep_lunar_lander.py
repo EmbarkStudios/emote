@@ -6,16 +6,16 @@ from functools import partial
 import gymnasium as gym
 import numpy as np
 import torch
+import wandb
 
 from gymnasium.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import nn
 from torch.optim import Adam
-from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
-from emote.callbacks import BackPropStepsTerminator, TensorboardLogger, WBLogger
+from emote.callbacks import BackPropStepsTerminator, WBLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
@@ -90,7 +90,17 @@ def train_lunar_lander(args):
 
     rollout_len = 20
     init_alpha = 1.0
-    learning_rate = 8e-3
+
+    # any additional hyperparameters/metadata that we want to log
+    config = {
+        "hidden_dims": hidden_dims,
+        "batch_size": batch_size,
+        "rollout_len": rollout_len,
+    }
+
+    # parameters to search defined from wandb.config which are set by the sweep agent
+    wandb.init(config=config)
+    learning_rate = wandb.config.learning_rate
 
     env = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(n_env)]))
     table = DictObsNStepTable(
@@ -163,29 +173,11 @@ def train_lunar_lander(args):
         ),
     ]
 
-    if args.use_wandb:
-        config = {
-            "wandb_project": args.name,
-            "wandb_run": args.wandb_run,
-            "hidden_dims": hidden_dims,
-            "batch_size": batch_size,
-            "learning_rate": learning_rate,
-            "rollout_len": rollout_len,
-        }
-
-        logger = WBLogger(
-            callbacks=logged_cbs,
-            config=config,
-            log_interval=100,
-        )
-    else:
-        logger = TensorboardLogger(
-            logged_cbs,
-            SummaryWriter(
-                log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())
-            ),
-            100,
-        )
+    logger = WBLogger(
+        callbacks=logged_cbs,
+        config=config,
+        log_interval=100,
+    )
 
     callbacks = logged_cbs + [logger, BackPropStepsTerminator(args.num_bp_steps)]
     trainer = Trainer(callbacks, dataloader)
@@ -198,7 +190,6 @@ if __name__ == "__main__":
     parser.add_argument("--log-dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--num_bp_steps", type=int, default=10000)
-    parser.add_argument("--use_wandb", action="store_true")
     parser.add_argument(
         "--wandb_run",
         type=str,
@@ -208,4 +199,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    train_lunar_lander(args)
+    # Configuration dictionary of the W&B sweep
+    sweep_config = {
+        "method": "grid",
+        "name": "sweep",
+        "parameters": {
+            "learning_rate": {"values": [8e-3, 1e-3]},
+        },
+    }
+    sweep_id = wandb.sweep(sweep_config, project=args.name)
+    wandb.agent(sweep_id, function=partial(train_lunar_lander, args))
