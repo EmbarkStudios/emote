@@ -9,7 +9,7 @@ pdm run black --check --diff emote tests experiments > diff.txt || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "black"
-:warning: Your code isn't formatted by \`black\`. Please fix the below diffs, or run \`pdm run black emote tests\` to automatically format it.
+:warning: Your code isn't formatted by \`black\`. Please fix the below diffs, or run \`pdm run black emote tests experiments\` to automatically format it.
 
 \`\`\`diff
 $(cat diff.txt)

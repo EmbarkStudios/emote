@@ -90,11 +90,11 @@ class DictGymWrapper(VectorEnvWrapper):
     def dict_reset(self) -> Dict[AgentId, DictObservation]:
         self._agent_ids = [next(self._next_agent) for i in range(self.num_envs)]
         self.reset_async()
-        obs = self.reset_wait()
+        obs, info = self.reset_wait()
         return {
             agent_id: DictObservation(
                 episode_state=EpisodeState.INITIAL,
-                array_data={"obs": obs[0][i]},
+                array_data={"obs": obs[i]},
                 rewards={"reward": None},
             )
             for i, agent_id in enumerate(self._agent_ids)
