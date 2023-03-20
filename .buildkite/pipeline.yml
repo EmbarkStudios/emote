@@ -87,12 +87,15 @@ steps:
     trigger: erupt
     if: 'build.pull_request.labels includes "trigger: cloud"'
 
-    env:
-      EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
-      EMOTE_COMMIT: "${BUILDKITE_COMMIT}"
-      EMOTE_BRANCH: "${BUILDKITE_BRANCH}"
 
-    metadata:
-      EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
-      EMOTE_COMMIT: "${BUILDKITE_COMMIT}"
-      EMOTE_BRANCH: "${BUILDKITE_BRANCH}"
+    build:
+      branch: ts/repo-trigger
+      env:
+        EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
+        EMOTE_COMMIT: "${BUILDKITE_COMMIT}"
+        EMOTE_BRANCH: "${BUILDKITE_BRANCH}"
+
+      meta_data:
+        EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
+        EMOTE_COMMIT: "${BUILDKITE_COMMIT}"
+        EMOTE_BRANCH: "${BUILDKITE_BRANCH}"
