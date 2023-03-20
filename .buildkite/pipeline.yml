@@ -91,13 +91,15 @@ steps:
     build:
       branch: ts/repo-trigger
       env:
-        EMOTE_BRANCH: "${BUILDKITE_BRANCH}"
-        EMOTE_COMMIT: "${BUILDKITE_COMMIT}"
+        EMOTE_AUTHOR:  "${BUILDKITE_BUILD_AUTHOR}"
+        EMOTE_BRANCH:  "${BUILDKITE_BRANCH}"
+        EMOTE_COMMIT:  "${BUILDKITE_COMMIT}"
         EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
-        EMOTE_TAG: "${BUILDKITE_TAG}"
+        EMOTE_TAG:     "${BUILDKITE_TAG}"
 
       meta_data:
-        EMOTE_BRANCH: "${BUILDKITE_BRANCH}"
-        EMOTE_COMMIT: "${BUILDKITE_COMMIT}"
+        EMOTE_AUTHOR:  "${BUILDKITE_BUILD_AUTHOR}"
+        EMOTE_BRANCH:  "${BUILDKITE_BRANCH}"
+        EMOTE_COMMIT:  "${BUILDKITE_COMMIT}"
         EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
-        EMOTE_TAG: "${BUILDKITE_TAG}"
+        EMOTE_TAG:     "${BUILDKITE_TAG}"
