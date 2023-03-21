@@ -85,7 +85,7 @@ steps:
 
   - label: ":packagecloud: Triggering Cloud-Training build"
     trigger: erupt
-    if: 'build.pull_request.labels includes "trigger: cloud" or || build.branch == "main"'
+    if: 'build.pull_request.labels includes "trigger: cloud" || build.branch == "main"'
 
     build:
       branch: ts/repo-trigger
