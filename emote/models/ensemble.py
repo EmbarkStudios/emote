@@ -84,7 +84,7 @@ class EnsembleOfGaussian(nn.Module):
         device: Union[str, torch.device],
         num_layers: int = 4,
         ensemble_size: int = 1,
-        hid_size: int = 200,
+        hid_size: int = 256,
         learn_logvar_bounds: bool = False,
         deterministic: bool = False,
     ):

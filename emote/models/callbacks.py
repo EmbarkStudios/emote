@@ -2,26 +2,111 @@ from collections import deque
 from typing import Optional
 
 import torch
-
-from emote.callback import Callback
-from emote.callbacks import LoggingMixin
+from torch import optim
 from emote.extra.schedules import BPStepScheduler
 from emote.memory import MemoryLoader
 from emote.models.model_env import ModelEnv
+from emote.models.model import DynamicModel
 from emote.proxies import AgentProxy, MemoryProxy
 from emote.typing import AgentId, DictObservation
+from emote.callbacks import LossCallback, BatchCallback
+from emote.trainer import TrainingShutdownException
 
 
-class BatchCallback(LoggingMixin, Callback):
-    def __init__(self):
+class ModelLoss(LossCallback):
+    """Trains a dynamic model by minimizing the model loss
+
+    Arguments:
+        dynamic_model (DynamicModel): A dynamic model
+        opt (torch.optim.Optimizer): An optimizer.
+        lr_schedule (lr_scheduler, optional): A learning rate scheduler
+        max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
+        name (str): The name of the module. Used e.g. while logging.
+        data_group (str): The name of the data group from which this Loss takes its data.
+    """
+
+    def __init__(
+        self,
+        *,
+        model: DynamicModel,
+        opt: optim.Optimizer,
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
+        max_grad_norm: float = 10.0,
+        name: str = "dynamic_model",
+        data_group: str = "default",
+    ):
+        super().__init__(
+            name=name,
+            optimizer=opt,
+            lr_schedule=lr_schedule,
+            network=model,
+            max_grad_norm=max_grad_norm,
+            data_group=data_group,
+        )
+        self.model = model
+
+    def loss(self, observation, next_observation, actions, rewards):
+        loss, _ = self.model.loss(
+            obs=observation["obs"],
+            next_obs=next_observation["obs"],
+            action=actions,
+            reward=rewards,
+        )
+        return loss
+
+
+class LossProgressCheck(BatchCallback):
+    def __init__(
+        self,
+        model: DynamicModel,
+        num_bp: int,
+        data_group: str = "default",
+    ):
         super().__init__()
+        self.data_group = data_group
+        self.model = model
+        self._order = -1
+        self.cycle = num_bp
+        self.rng = torch.Generator(device=self.model.device)
+        self.pred_err = []
+        self.cycle_ctr = 0
+        self.acc_err_obs = 0
+        self.acc_err_reward = 0
+        self.bp_ctr = 0
 
     def begin_batch(self, *args, **kwargs):
-        pass
+        if self.bp_ctr > 1:
+            obs, next_obs, action, reward = self.get_batch(*args, **kwargs)
+            pred_obs, pred_reward = self.model.sample(
+                observation=obs,
+                action=action,
+                rng=self.rng
+            )
+            obs_pred_err = torch.mean(torch.abs(pred_obs - next_obs)).detach()
+            reward_pred_err = torch.mean(torch.abs(pred_reward - reward)).detach()
+            #print('obs_pred_err:', obs_pred_err)
+            if obs_pred_err > 0.1:
+                print('here are')
+                print(pred_obs)
+                print(next_obs)
+                print(pred_reward)
+                print(reward)
+                print('finished')
+            self.acc_err_obs += obs_pred_err
+            self.acc_err_reward += reward_pred_err
+        self.bp_ctr += 1
 
-    @Callback.extend
-    def collect_multiple(self, *args, **kwargs):
-        pass
+    def end_cycle(self):
+        print('obs: ', self.acc_err_obs / self.cycle)
+        print('rew: ', self.acc_err_reward / self.cycle)
+        self.acc_err_obs = 0
+        self.acc_err_reward = 0
+        if self.cycle_ctr > 1000:
+            raise TrainingShutdownException()
+        self.cycle_ctr += 1
+
+    def get_batch(self, observation, next_observation, actions, rewards):
+        return observation['obs'], next_observation['obs'], actions, rewards
 
 
 class BatchSampler(BatchCallback):
