@@ -101,6 +101,7 @@ class QTarget(LoggingMixin, Callback):
         roll_length: int = 1,
     ):
         super().__init__()
+        self._order = 1  # this is to ensure that the data_group is prepared beforehand
         self.data_group = data_group
         self.policy = pi
         self.qt = copy.deepcopy(q) if qt is None else qt

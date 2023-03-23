@@ -70,6 +70,15 @@ class ArrayTable:
 
         self.clear()
 
+    def resize(self, new_size):
+        with self._lock:
+            if new_size < self._maxlen:
+                raise ValueError(
+                    f"The new memory size {new_size} is smaller than the current size of the memory "
+                    f"({self._maxlen}). Shrinking the memory is not supported"
+                )
+            self._maxlen = new_size
+
     def clear(self):
         """Clear and reset all data"""
         with self._lock:
