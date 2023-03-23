@@ -159,8 +159,7 @@ def train_lunar_lander(args):
         QTarget(
             pi=policy,
             ln_alpha=ln_alpha,
-            q1=q1,
-            q2=q2,
+            q=[q1, q2],
             roll_length=rollout_len,
             reward_scale=0.1,
         ),

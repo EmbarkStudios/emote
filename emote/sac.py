@@ -76,15 +76,15 @@ class QTarget(LoggingMixin, Callback):
         probability given a state.
     :param ln_alpha (torch.tensor): The current weight for the entropy part of the
         soft Q.
-    :param q1 (torch.nn.Module): A deep neural net that outputs the discounted loss
+    :param q (List[torch.nn.Module]): A list of deep neural nets that output the discounted loss
         given the current observations and a given action.
-    :param q2 (torch.nn.Module): A deep neural net that outputs the discounted loss
-        given the current observations and a given action.
+    :param qt (List[torch.nn.Module]): A list of target networks.
     :param gamma (float): Discount factor for the rewards in time.
     :param reward_scale (float): Scale factor for the rewards.
     :param target_q_tau (float): The weight given to the latest network in the
         exponential moving average. So NewTargetQ = OldTargetQ * (1-tau) + Q*tau.
     :param data_group (str): The name of the data group from which this Loss takes its data.
+    :param roll_length (int): Rollout length. (default 1)
     """
 
     def __init__(
@@ -156,18 +156,15 @@ class PolicyLoss(LossCallback):
         probability given a state.
     :param ln_alpha (torch.tensor): The current weight for the entropy part of the
         soft Q.
-    :param q (torch.nn.Module): A deep neural net that outputs the discounted loss
+    :param q (Union[List[torch.nn.Module], torch.nn.Module]): One or more deep neural nets that output the discounted loss
         given the current observations and a given action.
     :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning rate schedule
         for the optimizer of policy.
     :param opt (torch.optim.Optimizer): An optimizer for pi.
-    :param q2 (torch.nn.Module): A second deep neural net that outputs the discounted
-        loss given the current observations and a given action. This is not necessary
-        since it is fine if the policy isn't pessimistic, but can be nice for symmetry
-        with the Q-loss.
     :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
     :param name (str): The name of the module. Used e.g. while logging.
     :param data_group (str): The name of the data group from which this Loss takes its data.
+    :param pessimistic (bool): A flag indicating whether the policy updates should be pessimistic (take a minimum of multiple Q networks).
     """
 
     def __init__(
