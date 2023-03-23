@@ -88,7 +88,7 @@ steps:
     if: 'build.pull_request.labels includes "trigger: cloud" || build.branch == "main"'
 
     build:
-      branch: ts/repo-trigger
+      branch: main
       env:
         EMOTE_CREATOR: "${BUILDKITE_BUILD_CREATOR}"
         EMOTE_BRANCH:  "${BUILDKITE_BRANCH}"
