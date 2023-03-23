@@ -202,10 +202,7 @@ def create_train_callbacks(
             )
         )
 
-    if args.pessimistic_policy_update or args.num_critics > 2:
-        q_policy = q
-    else:
-        q_policy = q[0]
+    q_policy = q if args.pessimistic_policy_update or args.num_critics > 2 else q[0]
 
     training_cbs += [
         PolicyLoss(
@@ -314,7 +311,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_critics", type=int, default=2)
 
     input_args = parser.parse_args()
-    assert input_args.num_critics >= 2
 
     training_device = torch.device(input_args.device)
 

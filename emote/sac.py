@@ -118,10 +118,14 @@ class QTarget(LoggingMixin, Callback):
     def begin_batch(self, next_observation, rewards, masks):
         next_p_sample, next_logp_pi = self.policy(**next_observation)
 
-        sampled_indices = np.random.choice(len(self.q), 2, replace=False)
-        next_q1t = self.qt[sampled_indices[0]](next_p_sample, **next_observation)
-        next_q2t = self.qt[sampled_indices[1]](next_p_sample, **next_observation)
-        min_next_qt = torch.min(next_q1t, next_q2t)
+        if len(self.q) == 1:
+            min_next_qt = self.qt[0](next_p_sample, **next_observation)
+        elif len(self.q) >= 2:
+            sampled_indices = np.random.choice(len(self.q), 2, replace=False)
+            next_q1t = self.qt[sampled_indices[0]](next_p_sample, **next_observation)
+            next_q2t = self.qt[sampled_indices[1]](next_p_sample, **next_observation)
+            min_next_qt = torch.min(next_q1t, next_q2t)
+
         bsz = rewards.shape[0]
 
         alpha = torch.exp(self.ln_alpha)
