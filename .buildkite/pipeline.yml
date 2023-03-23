@@ -90,7 +90,7 @@ steps:
     build:
       branch: ts/repo-trigger
       env:
-        EMOTE_AUTHOR:  "${BUILDKITE_BUILD_AUTHOR}"
+        EMOTE_CREATOR: "${BUILDKITE_BUILD_CREATOR}"
         EMOTE_BRANCH:  "${BUILDKITE_BRANCH}"
         EMOTE_COMMIT:  "${BUILDKITE_COMMIT}"
         EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
