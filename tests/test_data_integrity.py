@@ -3,7 +3,7 @@ from torch import nn
 from gymnasium.vector import AsyncVectorEnv
 from emote import Trainer
 from emote.memory import MemoryLoader, TableMemoryProxy
-from emote.memory.builder import DictObsTable, DictObsNStepTable
+from emote.memory.builder import DictObsTable
 from emote.sac import FeatureAgentProxy
 from tests.gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
 from emote.trainer import TrainingShutdownException
@@ -40,13 +40,12 @@ class HitTheMiddleDataInspector(BatchCallback):
         for i in range(batch_size):
             obs_err = torch.mean(torch.abs(sim_next_obs[i] - next_obs[i])).detach()
             reward_err = torch.mean(torch.abs(sim_reward[i] - reward[i])).detach()
-            if obs_err > 0.1 or reward_err > 0.1:
+            if obs_err > 0.001 or reward_err > 0.001:
                 print(f"obs_err: {obs_err}, reward_err: {reward_err}")
                 print(f"obs: {obs[i]}, action: {action[i]}")
                 print(f"reward: {reward[i]}\nsim_reward: {sim_reward[i]}")
                 print(f"next_obs: {next_obs[i]}\nsim_next_obs: {sim_next_obs[i]}")
                 raise ValueError("Loaded values for obs/reward does not match the calculated ones")
-
 
     def simulate_hit_the_middle(self, action, obs):
         batch_size = action.shape[0]
@@ -75,12 +74,12 @@ class HitTheMiddleDataInspector(BatchCallback):
         return observation['obs'], next_observation['obs'], actions, rewards
 
 
-def test_hit_the_middle_data():
+def test_hit_the_middle_data_integrity():
     device = torch.device("cpu")
     batch_size = 5
     rollout_length = 1
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-    table = DictObsNStepTable(
+    table = DictObsTable(
         spaces=env.dict_space,
         use_terminal_column=False,
         maxlen=1000000,
@@ -105,4 +104,4 @@ def test_hit_the_middle_data():
 
 
 if __name__ == "__main__":
-    test_hit_the_middle_data()
+    test_hit_the_middle_data_integrity()

@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 from torch.optim import Adam
 from emote.models.model import DynamicModel, DeterministicModel
 from emote.models.ensemble import EnsembleOfGaussian
@@ -11,7 +12,6 @@ from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable, DictObsNStepTable
 from emote.sac import FeatureAgentProxy
 from tests.gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
-import torch.nn.functional as F
 
 
 def term_func(
