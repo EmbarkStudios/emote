@@ -172,6 +172,35 @@ class TensorboardLogger(Callback):
         )
 
 
+class TerminalLogger(Callback):
+    """Logs the provided loggable callbacks to the python logger."""
+
+    def __init__(
+        self,
+        callbacks: List[LoggingMixin],
+        log_interval: int,
+    ):
+        super().__init__(cycle=log_interval)
+        self._logs = callbacks
+
+    def log_scalars(self, step, suffix=None):
+        """Logs scalar logs adding optional suffix on the first level.
+
+        **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
+        'training_bp_step/loss'.
+        """
+        for log in self._logs:
+            for k, v in log.scalar_logs.items():
+                if suffix:
+                    k_split = k.split("/")
+                    k_split[0] = k_split[0] + "_" + suffix
+                    k = "/".join(k_split)
+                logging.info("%s@%s:\t%.4f", k, step, v)
+
+    def end_cycle(self, bp_step):
+        self.log_scalars(bp_step)
+
+
 class WBLogger(Callback):
     """Logs the provided loggable callbacks to Weights&Biases."""
 
@@ -262,32 +291,3 @@ class WBLogger(Callback):
 
         wandb.finish()
         return super().end_training()
-
-
-class TerminalLogger(Callback):
-    """Logs the provided loggable callbacks to the python logger."""
-
-    def __init__(
-        self,
-        callbacks: List[LoggingMixin],
-        log_interval: int,
-    ):
-        super().__init__(cycle=log_interval)
-        self._logs = callbacks
-
-    def log_scalars(self, step, suffix=None):
-        """Logs scalar logs adding optional suffix on the first level.
-
-        **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
-        'training_bp_step/loss'.
-        """
-        for log in self._logs:
-            for k, v in log.scalar_logs.items():
-                if suffix:
-                    k_split = k.split("/")
-                    k_split[0] = k_split[0] + "_" + suffix
-                    k = "/".join(k_split)
-                logging.info("%s@%s:\t%.4f", k, step, v)
-
-    def end_cycle(self, bp_step):
-        self.log_scalars(bp_step)
