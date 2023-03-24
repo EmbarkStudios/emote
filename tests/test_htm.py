@@ -5,7 +5,8 @@ from torch import nn
 from torch.optim import Adam
 
 from emote import Trainer
-from emote.callbacks import FinalRewardTestCheck, TerminalLogger
+from emote.callbacks.logging import TerminalLogger
+from emote.callbacks.testing import FinalRewardTestCheck
 from emote.extra.onnx_exporter import OnnxExporter
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable

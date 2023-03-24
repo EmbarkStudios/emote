@@ -1,19 +1,15 @@
 import logging
-import os
 import time
 
 from collections import deque
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
 
-from torch import Tensor, nn, optim
-from torch.optim import lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 
-from .callback import Callback
-from .trainer import TrainingShutdownException
+from emote.callback import Callback
 
 
 class LoggingMixin:
@@ -107,66 +103,6 @@ class LoggingMixin:
         super().load_state_dict(state_dict)
 
 
-class LossCallback(LoggingMixin, Callback):
-    """Losses are callbacks that implement a *loss function*."""
-
-    def __init__(
-        self,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
-        *,
-        name: str,
-        network: Optional[nn.Module],
-        optimizer: Optional[optim.Optimizer],
-        max_grad_norm: float,
-        data_group: str,
-    ):
-        super().__init__()
-        self.data_group = data_group
-        self.name = name
-        self.network = network
-        self.optimizer = optimizer
-        if lr_schedule is None:
-            lr_schedule = lr_scheduler.ConstantLR(optimizer, factor=1.0)
-        self.lr_schedule = lr_schedule
-        self.parameters = [
-            p for param_group in optimizer.param_groups for p in param_group["params"]
-        ]
-        self._max_grad_norm = max_grad_norm
-
-    def backward(self, *args, **kwargs):
-        self.optimizer.zero_grad()
-        loss = self.loss(*args, **kwargs)
-        loss.backward()
-        grad_norm = nn.utils.clip_grad_norm_(self.parameters, self._max_grad_norm)
-        self.optimizer.step()
-        self.lr_schedule.step()
-        self.log_scalar(f"loss/{self.name}_lr", self.lr_schedule.get_last_lr()[0])
-        self.log_scalar(f"loss/{self.name}_loss", loss)
-        self.log_scalar(f"loss/{self.name}_gradient_norm", grad_norm)
-
-    def state_dict(self):
-        state = super().state_dict()
-        if self.optimizer:
-            state["optimizer_state_dict"] = self.optimizer.state_dict()
-        if self.network:
-            state["network_state_dict"] = self.network.state_dict()
-        return state
-
-    def load_state_dict(self, state_dict: Dict[str, Any]):
-        if self.optimizer:
-            self.optimizer.load_state_dict(state_dict.pop("optimizer_state_dict"))
-        if self.network:
-            self.network.load_state_dict(state_dict.pop("network_state_dict"))
-        super().load_state_dict(state_dict)
-
-    @Callback.extend
-    def loss(self, *args, **kwargs) -> Tensor:
-        """The loss method needs to be overwritten to implement a loss.
-
-        :return: A PyTorch tensor of shape (batch,)."""
-        raise NotImplementedError
-
-
 class TensorboardLogger(Callback):
     """Logs the provided loggable callbacks to tensorboard."""
 
@@ -247,7 +183,12 @@ class WBLogger(Callback):
     ):
         super().__init__(cycle=log_interval)
 
-        import wandb
+        try:
+            import wandb
+        except ImportError as root:
+            raise ImportError(
+                "enable the optional `wandb` future to use the WBLogger"
+            ) from root
 
         self._cbs = callbacks
         self._config = config
@@ -350,187 +291,3 @@ class TerminalLogger(Callback):
 
     def end_cycle(self, bp_step):
         self.log_scalars(bp_step)
-
-
-class Checkpointer(Callback):
-    """Checkpointer writes out a checkpoint every n steps.
-
-    Exactly what is written to the checkpoint is determined by the networks and
-    callbacks supplied in the constructor.
-
-    :param callbacks (List[Callback]): A list of callbacks the should be saved.
-    :param run_root (str): The root path to where the run artifacts should be stored.
-    :param checkpoint_interval (int): Number of backprops between checkpoints.
-    :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
-        to save. Usually optimizers are handled by their respective callbacks but
-        if you give them to this list they will be handled explicitly.
-    :param networks (Optional[List[nn.Module]]): An optional list of networks that
-        should be saved. Usually networks and optimizers are both restored by the
-        callbacks which handles their parameters.
-    :param storage_subdirectory (str): The subdirectory where the checkpoints are
-        stored.
-    """
-
-    def __init__(
-        self,
-        *,
-        callbacks: List[Callback],
-        run_root: str,
-        checkpoint_interval: int,
-        checkpoint_index: int = 0,
-        optimizers: Optional[List[optim.Optimizer]] = None,
-        networks: Optional[List[nn.Module]] = None,
-        storage_subdirectory: str = "checkpoints",
-    ):
-        super().__init__(cycle=checkpoint_interval)
-        self._cbs = callbacks
-        self._run_root = run_root
-        self._checkpoint_index = checkpoint_index
-        self._opts: List[optim.Optimizer] = optimizers if optimizers else []
-        self._nets: List[nn.Module] = networks if networks else []
-        self._folder_path = os.path.join(run_root, storage_subdirectory)
-
-    def begin_training(self):
-        os.makedirs(self._folder_path, exist_ok=True)
-
-    def end_cycle(self):
-        state_dict = {}
-        state_dict["callback_state_dicts"] = [cb.state_dict() for cb in self._cbs]
-        state_dict["network_state_dicts"] = [net.state_dict() for net in self._nets]
-        state_dict["optim_state_dicts"] = [opt.state_dict() for opt in self._opts]
-        state_dict["training_state"] = {
-            "checkpoint_index": self._checkpoint_index,
-        }
-        name = f"checkpoint_{self._checkpoint_index}.tar"
-        final_path = os.path.join(self._folder_path, name)
-        torch.save(state_dict, final_path)
-        self._checkpoint_index += 1
-
-
-class CheckpointLoader(Callback):
-    """CheckpointLoader loads a checkpoint like the one created by Checkpointer.
-
-    This is intended for resuming training given a specific checkpoint index. If you
-    want to do something more specific, like only restore a specific network, it is
-    probably easier to just do it explicitly when the network is constructed.
-
-    :param callbacks (List[Callback]): A list of callbacks the should be restored.
-    :param run_root (str): The root path to where the run artifacts should be stored.
-    :param checkpoint_index (int): Which checkpoint to load.
-    :param reset_training_steps (bool): If False, start training at bp_steps=0 etc.
-        Otherwise start the training at whatever step and state the checkpoint has
-        saved.
-    :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
-        to restore. Usually optimizers are handled by their respective callbacks but
-        if you give them to this list they will be handled explicitly.
-    :param networks (Optional[List[nn.Module]]): An optional list of networks that
-        should be restored. Usually networks and optimizers are both restored by the
-        callbacks which handles their parameters.
-    :param storage_subdirectory (str): The subdirectory where the checkpoints are
-        stored.
-    """
-
-    def __init__(
-        self,
-        *,
-        callbacks: List[Callback],
-        run_root: str,
-        checkpoint_index: int,
-        reset_training_steps: bool = False,
-        optimizers: Optional[List[optim.Optimizer]] = None,
-        networks: Optional[List[nn.Module]] = None,
-        storage_subdirectory: str = "checkpoints",
-    ):
-        super().__init__()
-        self._cbs = callbacks
-        self._run_root = run_root
-        self._checkpoint_index = checkpoint_index
-        self._reset_training_steps = reset_training_steps
-        self._opts: List[optim.Optimizer] = optimizers if optimizers else []
-        self._nets: List[nn.Module] = networks if networks else []
-        self._folder_path = os.path.join(run_root, storage_subdirectory)
-
-    def begin_training(self):
-        if not os.path.exists(self._folder_path):
-            raise InvalidCheckpointLocation(
-                f"Checkpoint folder {self._folder_path} was specified but does not exist."
-            )
-        name = f"checkpoint_{self._checkpoint_index}.tar"
-        final_path = os.path.join(self._folder_path, name)
-        state_dict: dict = torch.load(final_path)
-        for cb, state in zip(self._cbs, state_dict["callback_state_dicts"]):
-            cb.load_state_dict(state)
-        for net, state in zip(self._nets, state_dict["network_state_dicts"]):
-            net.load_state_dict(state)
-        for opt, state in zip(self._opts, state_dict["optim_state_dicts"]):
-            opt.load_state_dict(state)
-        if self._reset_training_steps:
-            return {}
-        return state_dict.get("training_state", {})
-
-
-class BackPropStepsTerminator(Callback):
-    """Terminates training after a given number of backprops.
-
-    :param bp_steps (int): The total number of backprops that the trainer should run
-        for.
-    """
-
-    def __init__(self, bp_steps: int):
-        assert bp_steps > 0, "Training steps must be above 0."
-        super().__init__(cycle=bp_steps)
-
-    def end_cycle(self):
-        raise TrainingShutdownException()
-
-
-class FinalLossTestCheck(Callback):
-    """Logs the provided loggable callbacks to the python logger."""
-
-    def __init__(
-        self,
-        callbacks: List[LossCallback],
-        cutoffs: List[float],
-        test_length: int,
-    ):
-        super().__init__(cycle=test_length)
-        self._cbs = callbacks
-        self._cutoffs = cutoffs
-
-    def end_cycle(self):
-        for cb, cutoff in zip(self._cbs, self._cutoffs):
-            loss = cb.scalar_logs[f"loss/{cb.name}_loss"]
-            if loss > cutoff:
-                raise Exception(f"Loss for {cb.name} too high: {loss}")
-        raise TrainingShutdownException()
-
-
-class FinalRewardTestCheck(Callback):
-    def __init__(
-        self,
-        callback: LoggingMixin,
-        cutoff: float,
-        test_length: int,
-    ):
-        super().__init__(cycle=test_length)
-        self._cb = callback
-        self._cutoff = cutoff
-
-    def end_cycle(self):
-        reward = self._cb.scalar_logs["training/scaled_reward"]
-        if reward < self._cutoff:
-            raise Exception(f"Reward too low: {reward}")
-        raise TrainingShutdownException()
-
-
-class BatchCallback(LoggingMixin, Callback):
-    def __init__(self):
-        super().__init__()
-
-    @Callback.extend
-    def get_batch(self, *args, **kwargs):
-        pass
-
-
-class InvalidCheckpointLocation(ValueError):
-    pass

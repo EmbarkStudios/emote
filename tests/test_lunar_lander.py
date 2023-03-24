@@ -11,7 +11,8 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
-from emote.callbacks import FinalLossTestCheck, TensorboardLogger
+from emote.callbacks.logging import TensorboardLogger
+from emote.callbacks.testing import FinalLossTestCheck
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn.gaussian_policy import GaussianPolicyHead

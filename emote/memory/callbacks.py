@@ -1,9 +1,8 @@
 import logging
 import os
 
-from emote import Callback
-
-from .table import Table
+from emote.callback import Callback
+from emote.memory.table import Table
 
 
 class MemoryImporterCallback(Callback):

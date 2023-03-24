@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
 from emote.callback import Callback
-from emote.callbacks import LoggingMixin, TensorboardLogger
+from emote.callbacks.logging import LoggingMixin, TensorboardLogger
 from emote.env.box2d import make_vision_box2d_env
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable

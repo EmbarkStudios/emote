@@ -18,14 +18,11 @@ by a Trainer.
 
 from . import nn, sac, utils
 from .callback import Callback
-from .callbacks import LoggingMixin, LossCallback
 from .trainer import Trainer, WeakReference
 
 
 __all__ = [
     "Callback",
-    "LossCallback",
-    "LoggingMixin",
     "Trainer",
     "WeakReference",
     "sac",

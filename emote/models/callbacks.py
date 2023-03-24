@@ -6,7 +6,8 @@ import torch
 
 from torch import optim
 
-from emote.callbacks import BatchCallback, LossCallback
+from emote.callback import BatchCallback
+from emote.callbacks.loss import LossCallback
 from emote.extra.schedules import BPStepScheduler
 from emote.memory import MemoryLoader
 from emote.models.model import DynamicModel
@@ -222,9 +223,9 @@ class ModelBasedCollector(BatchCallback):
         input_key: str = "obs",
     ):
         super().__init__()
-        """ The data group is used to receive correct observation when collect_multiple is 
-            called. The data group must be set such that real Gym samples (not model data) 
-            are given to the function. 
+        """ The data group is used to receive correct observation when collect_multiple is
+            called. The data group must be set such that real Gym samples (not model data)
+            are given to the function.
         """
         self.data_group = data_group
         self._input_key = input_key

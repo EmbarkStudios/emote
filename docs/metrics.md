@@ -6,8 +6,8 @@ adds logging functionality to anything. However, it doesn't do any actual loggin
 
 On the training side, the second part of the puzzle is a LogWriter, for example
 [`TensorboardLogger`](emote.callbacks.TensorboardLogger). We also provide a built-in
-[`TerminalLogger`](emote.callbacks.TerminalLogger). These accept a list of objects derived from
-[`LoggingMixin`](emote.callbacks.LoggingMixin), and will execute the actual writing of values from
+[`TerminalLogger`](emote.callbacks.logging.TerminalLogger). These accept a list of objects derived from
+[`LoggingMixin`](emote.callbacks.logging.LoggingMixin), and will execute the actual writing of values from
 the previously of values. This makes implementing log-data-providers easier, as they do not have to
 care about *when to write*, only how often they can record data.
 

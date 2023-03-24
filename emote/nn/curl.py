@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 from torch.optim.lr_scheduler import LinearLR
 
-from emote.callbacks import LossCallback
+from emote.callbacks.loss import LossCallback
 from emote.nn.layers import Conv2dEncoder
 
 

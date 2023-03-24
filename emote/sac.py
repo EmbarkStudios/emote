@@ -1,5 +1,4 @@
 import copy
-import time
 
 from typing import Any, Dict, Optional
 
@@ -7,14 +6,13 @@ import numpy as np
 import torch
 
 from torch import nn, optim
-from torch.utils.tensorboard import SummaryWriter
 
+from emote.callback import Callback
+from emote.callbacks.logging import LoggingMixin
+from emote.callbacks.loss import LossCallback
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
-
-from .callback import Callback
-from .callbacks import LoggingMixin, LossCallback
 
 
 def soft_update_from_to(source, target, tau):  # From rlkit

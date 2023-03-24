@@ -7,7 +7,7 @@ import os
 import psutil
 
 from emote.callback import Callback
-from emote.callbacks import LoggingMixin
+from emote.callbacks.logging import LoggingMixin
 
 
 class SystemLogger(LoggingMixin, Callback):
