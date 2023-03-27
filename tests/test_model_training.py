@@ -1,5 +1,4 @@
 import torch
-from torch import nn
 from torch.optim import Adam
 from emote.models.model import DynamicModel
 from emote.models.ensemble import EnsembleOfGaussian
@@ -10,36 +9,19 @@ from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
 from emote.sac import FeatureAgentProxy
 from tests.gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
+from tests.utils import RandomPolicy
 
 
-def term_func(
-        states: torch.Tensor,
-):
-    return torch.zeros(states.shape[0])
-
-
-class RandomPolicy(nn.Module):
-    def __init__(self, action_dim: int):
-        super().__init__()
-        self.action_dim = action_dim
-
-    def forward(self, obs: torch.Tensor):
-        batch_size = obs.shape[0]
-        rand_actions = 2 * (torch.rand(batch_size, self.action_dim) - 0.5)
-        return rand_actions, 0
-
-
-def test_ensemble_trainer():
+def test_ensemble_training():
+    """ The function tests ensemble training. The test will pass if the loss goes down.
+    """
     device = torch.device("cpu")
-    batch_size = 5
+    batch_size = 200
     rollout_length = 1
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
     num_obs = 2
     num_actions = 1
-    table = DictObsTable(
-        spaces=env.dict_space,
-        maxlen=10000,
-        device=device)
+    table = DictObsTable(spaces=env.dict_space, maxlen=10000, device=device)
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(table=table, rollout_count=batch_size // rollout_length,
                               rollout_length=rollout_length, size_key="batch_size")
@@ -72,4 +54,4 @@ def test_ensemble_trainer():
 
 
 if __name__ == "__main__":
-    test_ensemble_trainer()
+    test_ensemble_training()

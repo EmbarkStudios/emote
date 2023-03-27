@@ -1,6 +1,7 @@
 from collections import deque
 from typing import Optional
 
+import numpy as np
 import torch
 from torch import optim
 from emote.extra.schedules import BPStepScheduler
@@ -26,14 +27,14 @@ class ModelLoss(LossCallback):
     """
 
     def __init__(
-        self,
-        *,
-        model: DynamicModel,
-        opt: optim.Optimizer,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
-        max_grad_norm: float = 10.0,
-        name: str = "dynamic_model",
-        data_group: str = "default",
+            self,
+            *,
+            model: DynamicModel,
+            opt: optim.Optimizer,
+            lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
+            max_grad_norm: float = 10.0,
+            name: str = "dynamic_model",
+            data_group: str = "default",
     ):
         super().__init__(
             name=name,
@@ -57,42 +58,53 @@ class ModelLoss(LossCallback):
 
 class LossProgressCheck(BatchCallback):
     def __init__(
-        self,
-        model: DynamicModel,
-        num_bp: int,
-        data_group: str = "default",
+            self,
+            model: DynamicModel,
+            num_bp: int,
+            data_group: str = "default",
     ):
         super().__init__()
         self.data_group = data_group
         self.model = model
-        #self._order = -1
         self.cycle = num_bp
         self.rng = torch.Generator(device=self.model.device)
-        self.cycle_ctr = 0
-        self.acc_err_obs = 0
-        self.acc_err_reward = 0
-        self.bp_ctr = 0
+        self.prediction_err = []
+        self.prediction_average_err = []
+        self.len_averaging_window = num_bp // 10
 
     def begin_batch(self, *args, **kwargs):
-        #if self.bp_ctr > 1:
         obs, next_obs, action, reward = self.get_batch(*args, **kwargs)
-        pred_obs, pred_reward = self.model.sample(
+        predicted_obs, predicted_reward = self.model.sample(
             observation=obs,
             action=action,
             rng=self.rng
         )
-        obs_pred_err = torch.mean(torch.abs(pred_obs - next_obs)).detach()
-        reward_pred_err = torch.mean(torch.abs(pred_reward - reward)).detach()
-        self.acc_err_obs += obs_pred_err
-        self.acc_err_reward += reward_pred_err
-        self.bp_ctr += 1
+        obs_prediction_err = (predicted_obs - next_obs).detach().to('cpu').numpy()
+        obs_reward_err = (predicted_reward - reward).detach().to('cpu').numpy()
+        self.prediction_err.append(
+            [
+                np.mean(np.abs(obs_prediction_err)),
+                np.mean(np.abs(obs_reward_err))
+            ]
+        )
+
+        if len(self.prediction_err) >= self.len_averaging_window:
+            self.prediction_average_err.append(
+                np.mean(
+                    np.array(self.prediction_err),
+                    axis=0
+                )
+            )
+            self.prediction_err = []
 
     def end_cycle(self):
-        print('obs: ', self.acc_err_obs / self.cycle)
-        print('rew: ', self.acc_err_reward / self.cycle)
-
+        for i in range(len(self.prediction_average_err) - 3):
+            for j in range(2):
+                if self.prediction_average_err[i+3][j] > self.prediction_average_err[i][j]:
+                    raise Exception(f"The loss is not decreasing: \n"
+                                    f"Loss at {i}: {self.prediction_average_err[i]}"
+                                    f"Loss at {i+3}: {self.prediction_average_err[i+3]}")
         raise TrainingShutdownException()
-
 
     def get_batch(self, observation, next_observation, actions, rewards):
         return observation['obs'], next_observation['obs'], actions, rewards
@@ -103,6 +115,7 @@ class BatchSampler(BatchCallback):
     In every BP step, it samples one batch from either the gym buffer or the model buffer
     based on a Bernoulli probability distribution. It outputs the batch to a separate
     data-group which will be used by other RL training callbacks.
+
         Arguments:
             dataloader (MemoryLoader): the dataloader to load data from the model buffer
             prob_scheduler (BPStepScheduler): the scheduler to update the prob of data
@@ -113,12 +126,12 @@ class BatchSampler(BatchCallback):
     """
 
     def __init__(
-        self,
-        dataloader: MemoryLoader,
-        prob_scheduler: BPStepScheduler,
-        data_group: str = "default",
-        rl_data_group: str = "rl_buffer",
-        generator: Optional[torch.Generator] = None,
+            self,
+            dataloader: MemoryLoader,
+            prob_scheduler: BPStepScheduler,
+            data_group: str = "default",
+            rl_data_group: str = "rl_buffer",
+            generator: Optional[torch.Generator] = None,
     ):
         super().__init__()
         self.dataloader = dataloader
@@ -171,18 +184,31 @@ class BatchSampler(BatchCallback):
 
 
 class ModelBasedCollector(BatchCallback):
+    """ModelBasedCollector class is used to sample rollouts from the trained dynamic model.
+    The rollouts are stored in a replay buffer memory.
+
+        Arguments:
+            model_env: The Gym-like dynamic model
+            agent: The policy used to sample actions
+            memory: The memory to store the new synthetic samples
+            rollout_scheduler: A scheduler used to set the rollout-length when unrolling the dynamic model
+            num_bp_to_retain_buffer: The number of BP steps to keep samples. Samples will be over-written (first in
+            first out) for bp steps larger than this.
+            data_group: The data group to receive data from. This must be set to get real (Gym) samples
+
+    """
     def __init__(
-        self,
-        model_env: ModelEnv,
-        agent: AgentProxy,
-        memory: MemoryProxy,
-        rollout_scheduler: BPStepScheduler,
-        num_bp_to_retain_buffer=1000000,
-        data_group: str = "default",
+            self,
+            model_env: ModelEnv,
+            agent: AgentProxy,
+            memory: MemoryProxy,
+            rollout_scheduler: BPStepScheduler,
+            num_bp_to_retain_buffer=1000000,
+            data_group: str = "default",
     ):
         super().__init__()
         """The data group is used to receive correct observation when collect_multiple is 
-        called. The data group must be chosen such that real Gym samples (not model data) 
+        called. The data group must be set such that real Gym samples (not model data) 
         are given to the function. """
         self.data_group = data_group
 
@@ -228,8 +254,8 @@ class ModelBasedCollector(BatchCallback):
         if self.len_rollout != len_rollout:
             self.len_rollout = len_rollout
             new_memory_size = (
-                self.len_rollout
-                * self.model_env.num_envs
-                * self.num_bp_to_retain_buffer
+                    self.len_rollout
+                    * self.model_env.num_envs
+                    * self.num_bp_to_retain_buffer
             )
             self.memory.resize(new_memory_size)

@@ -74,7 +74,6 @@ class ModelEnv:
         """
         self._timestep = 0
         self._len_rollout = len_rollout
-
         assert len(initial_obs_batch.shape) == 2  # batch, obs_dim
         self._current_obs = torch.clone(initial_obs_batch)
         self._init_obs = torch.clone(self._current_obs)

@@ -17,7 +17,8 @@ from emote import Trainer
 from emote.extra.schedules import BPStepScheduler
 from emote.models.callbacks import BatchSampler, ModelBasedCollector
 from emote.models.ensemble import EnsembleOfGaussian
-from emote.models.model import DynamicModel, ModelLoss
+from emote.models.model import DynamicModel
+from emote.models.callbacks import ModelLoss
 from emote.models.model_env import ModelEnv
 
 

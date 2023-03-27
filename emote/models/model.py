@@ -81,7 +81,9 @@ class DynamicModel(nn.Module):
             observation: torch.Tensor,
             rng: torch.Generator,
     ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Samples a simulated transition from the dynamics model.
+        """Samples a simulated transition from the dynamics model. The function first
+        normalizes the inputs to the model, and then denormalize the model output as the
+        final output.
 
         Arguments:
             action (tensor): the action at.
@@ -92,9 +94,9 @@ class DynamicModel(nn.Module):
             (tuple): predicted observation and rewards.
         """
         model_in = self.get_model_input(observation, action)
-        #model_in = self.input_normalizer.normalize(model_in)
+        model_in = self.input_normalizer.normalize(model_in)
         preds = self.model.sample(model_in, rng)
-        #preds = self.target_normalizer.denormalize(preds)
+        preds = self.target_normalizer.denormalize(preds)
 
         assert len(preds.shape) == 2, (
             f"Prediction shape is: {preds.shape} Predictions must be 'batch_size x "
@@ -138,7 +140,8 @@ class DynamicModel(nn.Module):
             action: torch.Tensor,
             reward: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """The function processes the given batch and prepares it for the training.
+        """The function processes the given batch, normalizes inputs and targets,
+         and prepares them for the training.
 
         Arguments:
             obs (torch.Tensor): the observations tensor
@@ -160,10 +163,8 @@ class DynamicModel(nn.Module):
         else:
             target = target_obs
 
-        model_in_normalized= model_in.float()
-        target_normalized = target.float()
-        #model_in_normalized = self.input_normalizer.normalize(model_in.float(), True)
-        #target_normalized = self.target_normalizer.normalize(target.float(), True)
+        model_in_normalized = self.input_normalizer.normalize(model_in.float(), True)
+        target_normalized = self.target_normalizer.normalize(target.float(), True)
         return model_in_normalized, target_normalized
 
     def save(self, save_dir: str) -> None:
@@ -307,6 +308,8 @@ class Normalizer:
         """
         if update_state:
             self.update_stats(val)
+        if self.mean is None:
+            return val
         return (val - self.mean) / self.std
 
     def denormalize(self, val: torch.Tensor) -> torch.Tensor:
@@ -318,4 +321,6 @@ class Normalizer:
         Returns:
             (torch.Tensor): The de-normalized value.
         """
+        if self.mean is None:
+            return val
         return self.std * val + self.mean
