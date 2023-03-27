@@ -65,45 +65,34 @@ class LossProgressCheck(BatchCallback):
         super().__init__()
         self.data_group = data_group
         self.model = model
-        self._order = -1
+        #self._order = -1
         self.cycle = num_bp
         self.rng = torch.Generator(device=self.model.device)
-        self.pred_err = []
         self.cycle_ctr = 0
         self.acc_err_obs = 0
         self.acc_err_reward = 0
         self.bp_ctr = 0
 
     def begin_batch(self, *args, **kwargs):
-        if self.bp_ctr > 1:
-            obs, next_obs, action, reward = self.get_batch(*args, **kwargs)
-            pred_obs, pred_reward = self.model.sample(
-                observation=obs,
-                action=action,
-                rng=self.rng
-            )
-            obs_pred_err = torch.mean(torch.abs(pred_obs - next_obs)).detach()
-            reward_pred_err = torch.mean(torch.abs(pred_reward - reward)).detach()
-            #print('obs_pred_err:', obs_pred_err)
-            if obs_pred_err > 0.1:
-                print('here are')
-                print(pred_obs)
-                print(next_obs)
-                print(pred_reward)
-                print(reward)
-                print('finished')
-            self.acc_err_obs += obs_pred_err
-            self.acc_err_reward += reward_pred_err
+        #if self.bp_ctr > 1:
+        obs, next_obs, action, reward = self.get_batch(*args, **kwargs)
+        pred_obs, pred_reward = self.model.sample(
+            observation=obs,
+            action=action,
+            rng=self.rng
+        )
+        obs_pred_err = torch.mean(torch.abs(pred_obs - next_obs)).detach()
+        reward_pred_err = torch.mean(torch.abs(pred_reward - reward)).detach()
+        self.acc_err_obs += obs_pred_err
+        self.acc_err_reward += reward_pred_err
         self.bp_ctr += 1
 
     def end_cycle(self):
         print('obs: ', self.acc_err_obs / self.cycle)
         print('rew: ', self.acc_err_reward / self.cycle)
-        self.acc_err_obs = 0
-        self.acc_err_reward = 0
-        if self.cycle_ctr > 1000:
-            raise TrainingShutdownException()
-        self.cycle_ctr += 1
+
+        raise TrainingShutdownException()
+
 
     def get_batch(self, observation, next_observation, actions, rewards):
         return observation['obs'], next_observation['obs'], actions, rewards
