@@ -39,7 +39,6 @@ class DynamicModel(nn.Module):
         self.learned_rewards = learned_rewards
         self.no_delta_list = no_delta_list if no_delta_list else []
         self.obs_process_fn = obs_process_fn
-
         self.input_normalizer = Normalizer()
         self.target_normalizer = Normalizer()
 
@@ -96,6 +95,7 @@ class DynamicModel(nn.Module):
             (tuple): predicted observation and rewards.
         """
         model_in = self.get_model_input(observation, action)
+
         model_in = self.input_normalizer.normalize(model_in)
         preds = self.model.sample(model_in, rng)
         preds = self.target_normalizer.denormalize(preds)
@@ -142,6 +142,7 @@ class DynamicModel(nn.Module):
         action: torch.Tensor,
         reward: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
+
         """The function processes the given batch, normalizes inputs and targets,
          and prepares them for the training.
 

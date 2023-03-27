@@ -81,7 +81,7 @@ class ModelEnv:
     def step(
         self,
         actions: np.ndarray,
-    ) -> tuple[Tensor, Tensor, Tensor, dict[str, Tensor]]:
+    ) -> tuple[Tensor, Tensor | None, Tensor, dict[str, Tensor]]:
         """Steps the model environment with the given batch of actions.
 
         Arguments:

@@ -9,7 +9,7 @@ pdm run bandit --r emote experiments tests -ll > diff.txt || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "bandit"
-:warning: \`bandit\` found issues with your code. Please fix the below, and update your PR.
+:warning: \`bandit\` found issues with your code. Please fix the below issues, and update your PR.
 
 \`\`\`diff
 $(cat diff.txt)
@@ -17,7 +17,7 @@ $(cat diff.txt)
 
 EOF
 else
-	buildkite-agent annotate "✅ \`bandit\` found no code issues." --style "success" --context "eslint"
+	buildkite-agent annotate "✅ \`bandit\` found no code issues." --style "success" --context "bandit"
 fi
 
 exit $EXIT_CODE

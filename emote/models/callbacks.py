@@ -92,16 +92,16 @@ class LossProgressCheck(BatchCallback):
             self.prediction_err = []
 
     def end_cycle(self):
-        for i in range(len(self.prediction_average_err) - 3):
+        for i in range(len(self.prediction_average_err) - 4):
             for j in range(2):
                 if (
-                    self.prediction_average_err[i + 3][j]
+                    self.prediction_average_err[i + 4][j]
                     > self.prediction_average_err[i][j]
                 ):
                     raise Exception(
                         f"The loss is not decreasing: \n"
                         f"Loss at {i}: {self.prediction_average_err[i]}"
-                        f"Loss at {i+3}: {self.prediction_average_err[i+3]}"
+                        f"Loss at {i+4}: {self.prediction_average_err[i+4]}"
                     )
         raise TrainingShutdownException()
 
@@ -207,9 +207,10 @@ class ModelBasedCollector(BatchCallback):
         data_group: str = "default",
     ):
         super().__init__()
-        """The data group is used to receive correct observation when collect_multiple is 
-        called. The data group must be set such that real Gym samples (not model data) 
-        are given to the function. """
+        """ The data group is used to receive correct observation when collect_multiple is 
+            called. The data group must be set such that real Gym samples (not model data) 
+            are given to the function. 
+        """
         self.data_group = data_group
 
         self.agent = agent
