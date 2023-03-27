@@ -2,9 +2,11 @@
 # https://github.com/facebookresearch/mbrl-lib
 
 from typing import Optional
+
 import torch
-from torch import nn
 import torch.nn.functional as F
+
+from torch import nn
 
 
 class DynamicModel(nn.Module):
@@ -24,12 +26,12 @@ class DynamicModel(nn.Module):
     """
 
     def __init__(
-            self,
-            *,
-            model: nn.Module,
-            learned_rewards: bool = True,
-            obs_process_fn: Optional[nn.Module] = None,
-            no_delta_list: Optional[list[int]] = None,
+        self,
+        *,
+        model: nn.Module,
+        learned_rewards: bool = True,
+        obs_process_fn: Optional[nn.Module] = None,
+        no_delta_list: Optional[list[int]] = None,
     ):
         super().__init__()
         self.model = model
@@ -53,11 +55,11 @@ class DynamicModel(nn.Module):
         return self.model.forward(x)
 
     def loss(
-            self,
-            obs: torch.Tensor,
-            next_obs: torch.Tensor,
-            action: torch.Tensor,
-            reward: torch.Tensor,
+        self,
+        obs: torch.Tensor,
+        next_obs: torch.Tensor,
+        action: torch.Tensor,
+        reward: torch.Tensor,
     ) -> tuple[torch.Tensor, dict[str, any]]:
         """Computes the model loss over a batch of transitions.
 
@@ -76,10 +78,10 @@ class DynamicModel(nn.Module):
         return self.model.loss(model_in, target=target)
 
     def sample(
-            self,
-            action: torch.Tensor,
-            observation: torch.Tensor,
-            rng: torch.Generator,
+        self,
+        action: torch.Tensor,
+        observation: torch.Tensor,
+        rng: torch.Generator,
     ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Samples a simulated transition from the dynamics model. The function first
         normalizes the inputs to the model, and then denormalize the model output as the
@@ -113,9 +115,9 @@ class DynamicModel(nn.Module):
         return next_observs, rewards
 
     def get_model_input(
-            self,
-            obs: torch.Tensor,
-            action: torch.Tensor,
+        self,
+        obs: torch.Tensor,
+        action: torch.Tensor,
     ) -> torch.Tensor:
         """The function prepares the input to the neural network model by concatenating
         observations and actions. In case, obs_process_fn is given, the observations are
@@ -134,11 +136,11 @@ class DynamicModel(nn.Module):
         return model_in
 
     def process_batch(
-            self,
-            obs: torch.Tensor,
-            next_obs: torch.Tensor,
-            action: torch.Tensor,
-            reward: torch.Tensor,
+        self,
+        obs: torch.Tensor,
+        next_obs: torch.Tensor,
+        action: torch.Tensor,
+        reward: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """The function processes the given batch, normalizes inputs and targets,
          and prepares them for the training.
@@ -213,11 +215,7 @@ class DeterministicModel(nn.Module):
                     nn.ReLU(),
                 )
             )
-        network.append(
-            nn.Sequential(
-                nn.Linear(hidden_size, out_size)
-            )
-        )
+        network.append(nn.Sequential(nn.Linear(hidden_size, out_size)))
         self.network = nn.Sequential(*network).to(self.device)
         self.init_param()
 
@@ -236,19 +234,19 @@ class DeterministicModel(nn.Module):
                     torch.nn.init.constant_(m.bias, 0)
 
     def forward(
-            self,
-            x: torch.Tensor,
+        self,
+        x: torch.Tensor,
     ) -> torch.Tensor:
         return self.network(x)
 
     def loss(
-            self,
-            model_in: torch.Tensor,
-            target: torch.Tensor,
+        self,
+        model_in: torch.Tensor,
+        target: torch.Tensor,
     ) -> tuple[torch.Tensor, dict[str, any]]:
         prediction = self.forward(model_in)
         loss = F.mse_loss(prediction, target)
-        return loss, {'loss_info': None}
+        return loss, {"loss_info": None}
 
     def sample(
         self,
@@ -289,8 +287,12 @@ class Normalizer:
             self.mean = data.mean(0, keepdim=True)
             self.std = data.std(0, keepdim=True)
         else:
-            self.mean = (1.0 - self.update_rate) * self.mean + self.update_rate * data.mean(0, keepdim=True)
-            self.std = (1.0 - self.update_rate) * self.std + self.update_rate * data.std(0, keepdim=True)
+            self.mean = (
+                1.0 - self.update_rate
+            ) * self.mean + self.update_rate * data.mean(0, keepdim=True)
+            self.std = (
+                1.0 - self.update_rate
+            ) * self.std + self.update_rate * data.std(0, keepdim=True)
         self.std[self.std < self.eps] = self.eps
         self.update_rate -= 0.01
         if self.update_rate < 0.01:

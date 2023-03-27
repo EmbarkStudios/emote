@@ -1,6 +1,6 @@
-from .callbacks import BatchSampler, ModelBasedCollector, ModelLoss, LossProgressCheck
+from .callbacks import BatchSampler, LossProgressCheck, ModelBasedCollector, ModelLoss
 from .ensemble import EnsembleOfGaussian
-from .model import DynamicModel, DeterministicModel
+from .model import DeterministicModel, DynamicModel
 from .model_env import ModelEnv
 
 

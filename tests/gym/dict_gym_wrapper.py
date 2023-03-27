@@ -53,7 +53,7 @@ class DictGymWrapper(VectorEnvWrapper):
             if done:
                 results[self._agent_ids[env_id]] = DictObservation(
                     episode_state=EpisodeState.TERMINAL,
-                    array_data={"obs": info['final_observation'][env_id]},
+                    array_data={"obs": info["final_observation"][env_id]},
                     rewards={"reward": rewards[env_id]},
                 )
                 new_agent = next(self._next_agent)

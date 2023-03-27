@@ -15,10 +15,9 @@ from torch.optim import Adam
 
 from emote import Trainer
 from emote.extra.schedules import BPStepScheduler
-from emote.models.callbacks import BatchSampler, ModelBasedCollector
+from emote.models.callbacks import BatchSampler, ModelBasedCollector, ModelLoss
 from emote.models.ensemble import EnsembleOfGaussian
 from emote.models.model import DynamicModel
-from emote.models.callbacks import ModelLoss
 from emote.models.model_env import ModelEnv
 
 

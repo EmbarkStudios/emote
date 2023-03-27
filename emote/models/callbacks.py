@@ -3,15 +3,17 @@ from typing import Optional
 
 import numpy as np
 import torch
+
 from torch import optim
+
+from emote.callbacks import BatchCallback, LossCallback
 from emote.extra.schedules import BPStepScheduler
 from emote.memory import MemoryLoader
-from emote.models.model_env import ModelEnv
 from emote.models.model import DynamicModel
+from emote.models.model_env import ModelEnv
 from emote.proxies import AgentProxy, MemoryProxy
-from emote.typing import AgentId, DictObservation
-from emote.callbacks import LossCallback, BatchCallback
 from emote.trainer import TrainingShutdownException
+from emote.typing import AgentId, DictObservation
 
 
 class ModelLoss(LossCallback):
@@ -27,14 +29,14 @@ class ModelLoss(LossCallback):
     """
 
     def __init__(
-            self,
-            *,
-            model: DynamicModel,
-            opt: optim.Optimizer,
-            lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
-            max_grad_norm: float = 10.0,
-            name: str = "dynamic_model",
-            data_group: str = "default",
+        self,
+        *,
+        model: DynamicModel,
+        opt: optim.Optimizer,
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
+        max_grad_norm: float = 10.0,
+        name: str = "dynamic_model",
+        data_group: str = "default",
     ):
         super().__init__(
             name=name,
@@ -58,10 +60,10 @@ class ModelLoss(LossCallback):
 
 class LossProgressCheck(BatchCallback):
     def __init__(
-            self,
-            model: DynamicModel,
-            num_bp: int,
-            data_group: str = "default",
+        self,
+        model: DynamicModel,
+        num_bp: int,
+        data_group: str = "default",
     ):
         super().__init__()
         self.data_group = data_group
@@ -75,39 +77,36 @@ class LossProgressCheck(BatchCallback):
     def begin_batch(self, *args, **kwargs):
         obs, next_obs, action, reward = self.get_batch(*args, **kwargs)
         predicted_obs, predicted_reward = self.model.sample(
-            observation=obs,
-            action=action,
-            rng=self.rng
+            observation=obs, action=action, rng=self.rng
         )
-        obs_prediction_err = (predicted_obs - next_obs).detach().to('cpu').numpy()
-        obs_reward_err = (predicted_reward - reward).detach().to('cpu').numpy()
+        obs_prediction_err = (predicted_obs - next_obs).detach().to("cpu").numpy()
+        obs_reward_err = (predicted_reward - reward).detach().to("cpu").numpy()
         self.prediction_err.append(
-            [
-                np.mean(np.abs(obs_prediction_err)),
-                np.mean(np.abs(obs_reward_err))
-            ]
+            [np.mean(np.abs(obs_prediction_err)), np.mean(np.abs(obs_reward_err))]
         )
 
         if len(self.prediction_err) >= self.len_averaging_window:
             self.prediction_average_err.append(
-                np.mean(
-                    np.array(self.prediction_err),
-                    axis=0
-                )
+                np.mean(np.array(self.prediction_err), axis=0)
             )
             self.prediction_err = []
 
     def end_cycle(self):
         for i in range(len(self.prediction_average_err) - 3):
             for j in range(2):
-                if self.prediction_average_err[i+3][j] > self.prediction_average_err[i][j]:
-                    raise Exception(f"The loss is not decreasing: \n"
-                                    f"Loss at {i}: {self.prediction_average_err[i]}"
-                                    f"Loss at {i+3}: {self.prediction_average_err[i+3]}")
+                if (
+                    self.prediction_average_err[i + 3][j]
+                    > self.prediction_average_err[i][j]
+                ):
+                    raise Exception(
+                        f"The loss is not decreasing: \n"
+                        f"Loss at {i}: {self.prediction_average_err[i]}"
+                        f"Loss at {i+3}: {self.prediction_average_err[i+3]}"
+                    )
         raise TrainingShutdownException()
 
     def get_batch(self, observation, next_observation, actions, rewards):
-        return observation['obs'], next_observation['obs'], actions, rewards
+        return observation["obs"], next_observation["obs"], actions, rewards
 
 
 class BatchSampler(BatchCallback):
@@ -126,12 +125,12 @@ class BatchSampler(BatchCallback):
     """
 
     def __init__(
-            self,
-            dataloader: MemoryLoader,
-            prob_scheduler: BPStepScheduler,
-            data_group: str = "default",
-            rl_data_group: str = "rl_buffer",
-            generator: Optional[torch.Generator] = None,
+        self,
+        dataloader: MemoryLoader,
+        prob_scheduler: BPStepScheduler,
+        data_group: str = "default",
+        rl_data_group: str = "rl_buffer",
+        generator: Optional[torch.Generator] = None,
     ):
         super().__init__()
         self.dataloader = dataloader
@@ -197,14 +196,15 @@ class ModelBasedCollector(BatchCallback):
             data_group: The data group to receive data from. This must be set to get real (Gym) samples
 
     """
+
     def __init__(
-            self,
-            model_env: ModelEnv,
-            agent: AgentProxy,
-            memory: MemoryProxy,
-            rollout_scheduler: BPStepScheduler,
-            num_bp_to_retain_buffer=1000000,
-            data_group: str = "default",
+        self,
+        model_env: ModelEnv,
+        agent: AgentProxy,
+        memory: MemoryProxy,
+        rollout_scheduler: BPStepScheduler,
+        num_bp_to_retain_buffer=1000000,
+        data_group: str = "default",
     ):
         super().__init__()
         """The data group is used to receive correct observation when collect_multiple is 
@@ -254,8 +254,8 @@ class ModelBasedCollector(BatchCallback):
         if self.len_rollout != len_rollout:
             self.len_rollout = len_rollout
             new_memory_size = (
-                    self.len_rollout
-                    * self.model_env.num_envs
-                    * self.num_bp_to_retain_buffer
+                self.len_rollout
+                * self.model_env.num_envs
+                * self.num_bp_to_retain_buffer
             )
             self.memory.resize(new_memory_size)

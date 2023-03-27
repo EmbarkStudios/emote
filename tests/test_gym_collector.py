@@ -1,13 +1,15 @@
 import torch
-from torch import nn
+
 from gymnasium.vector import AsyncVectorEnv
+from tests.gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
+from torch import nn
+
 from emote import Trainer
+from emote.callbacks import BatchCallback
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
 from emote.sac import FeatureAgentProxy
-from tests.gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
 from emote.trainer import TrainingShutdownException
-from emote.callbacks import BatchCallback
 
 
 class RandomPolicy(nn.Module):
@@ -45,7 +47,9 @@ class HitTheMiddleDataInspector(BatchCallback):
                 print(f"obs: {obs[i]}, action: {action[i]}")
                 print(f"reward: {reward[i]}\nsim_reward: {sim_reward[i]}")
                 print(f"next_obs: {next_obs[i]}\nsim_next_obs: {sim_next_obs[i]}")
-                raise ValueError("Loaded values for obs/reward does not match the calculated ones")
+                raise ValueError(
+                    "Loaded values for obs/reward does not match the calculated ones"
+                )
 
     def simulate_hit_the_middle(self, action, obs):
         batch_size = action.shape[0]
@@ -62,7 +66,7 @@ class HitTheMiddleDataInspector(BatchCallback):
             elif pos < -10.0:
                 pos = -10.0
                 vel *= -1.0
-            next_reward[i] = -(pos ** 2)
+            next_reward[i] = -(pos**2)
             next_obs[i, :] = torch.Tensor([pos, vel])
 
         return next_obs.to(self.device), next_reward.to(self.device)
@@ -71,10 +75,10 @@ class HitTheMiddleDataInspector(BatchCallback):
         raise TrainingShutdownException()
 
     def get_batch(self, observation, next_observation, actions, rewards):
-        return observation['obs'], next_observation['obs'], actions, rewards
+        return observation["obs"], next_observation["obs"], actions, rewards
 
 
-def test_hit_the_middle_data_integrity():
+def test_gym_collector():
     device = torch.device("cpu")
     batch_size = 5
     rollout_length = 1
@@ -86,22 +90,20 @@ def test_hit_the_middle_data_integrity():
         device=device,
     )
     memory_proxy = TableMemoryProxy(table)
-    dataloader = MemoryLoader(table=table, rollout_count=batch_size // rollout_length,
-                              rollout_length=rollout_length, size_key="batch_size")
+    dataloader = MemoryLoader(
+        table=table,
+        rollout_count=batch_size // rollout_length,
+        rollout_length=rollout_length,
+        size_key="batch_size",
+    )
 
     policy = RandomPolicy(action_dim=1)
     agent_proxy = FeatureAgentProxy(policy, device)
     callbacks = [
-        HitTheMiddleDataInspector(
-            500, device
-        ),
+        HitTheMiddleDataInspector(500, device),
         SimpleGymCollector(
             env, agent_proxy, memory_proxy, warmup_steps=500, render=False
         ),
     ]
     trainer = Trainer(callbacks, dataloader)
     trainer.train()
-
-
-if __name__ == "__main__":
-    test_hit_the_middle_data_integrity()
