@@ -80,10 +80,15 @@ class LossProgressCheck(BatchCallback):
             observation=obs, action=action, rng=self.rng
         )
         obs_prediction_err = (predicted_obs - next_obs).detach().to("cpu").numpy()
-        obs_reward_err = (predicted_reward - reward).detach().to("cpu").numpy()
-        self.prediction_err.append(
-            [np.mean(np.abs(obs_prediction_err)), np.mean(np.abs(obs_reward_err))]
-        )
+        reward_prediction_err = (predicted_reward - reward).detach().to("cpu").numpy()
+
+        obs_prediction_err = np.mean(np.abs(obs_prediction_err))
+        reward_prediction_err = np.mean(np.abs(reward_prediction_err))
+
+        self.log_scalar("mbrl/obs_pred_err", obs_prediction_err)
+        self.log_scalar("mbrl/rew_pred_err", reward_prediction_err)
+
+        self.prediction_err.append([obs_prediction_err, reward_prediction_err])
 
         if len(self.prediction_err) >= self.len_averaging_window:
             self.prediction_average_err.append(
