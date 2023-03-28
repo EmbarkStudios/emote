@@ -6,9 +6,7 @@ import numpy as np
 import torch
 
 from torch import nn as nn
-from torch.nn import functional as F
-
-from emote.utils.math import gaussian_nll
+from torch.nn import GaussianNLLLoss, functional as F
 
 
 def truncated_normal_(
@@ -94,6 +92,7 @@ class EnsembleOfGaussian(nn.Module):
         self.num_members = ensemble_size
         self.device = torch.device(device)
         self.deterministic = deterministic
+        self.nll_loss = GaussianNLLLoss(reduction="none")
 
         activation_func = nn.ReLU()
 
@@ -171,12 +170,12 @@ class EnsembleOfGaussian(nn.Module):
         pred_mean, pred_logvar = self.default_forward(model_in)
         if target.shape[0] != self.num_members:
             target = target.repeat(self.num_members, 1, 1)
-
         nll = (
-            gaussian_nll(pred_mean, pred_logvar, target, reduce=False)
+            self.nll_loss(pred_mean, target, torch.exp(pred_logvar))
             .mean((1, 2))  # average over batch and target dimension
             .sum()  # sum over ensemble dimension
         )
+
         nll += self.logvar_loss_weight * (self.max_logvar.sum() - self.min_logvar.sum())
         return nll, {}
 

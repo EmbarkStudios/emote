@@ -24,29 +24,3 @@ def truncated_linear(
         dx = min(dx, 1.0)
         y = dx * (max_y - min_y) + min_y
     return y
-
-
-def gaussian_nll(
-    pred_mean: torch.Tensor,
-    pred_logvar: torch.Tensor,
-    target: torch.Tensor,
-    reduce: bool = True,
-) -> torch.Tensor:
-    """Negative log-likelihood for Gaussian distribution
-
-    Args:
-        pred_mean (tensor): the predicted mean.
-        pred_logvar (tensor): the predicted log variance.
-        target (tensor): the target value.
-        reduce (bool): if ``False`` the loss is returned w/o reducing.
-            Defaults to ``True``.
-
-    Returns:
-        (tensor): the negative log-likelihood.
-    """
-    l2 = F.mse_loss(pred_mean, target, reduction="none")
-    inv_var = (-pred_logvar).exp()
-    losses = l2 * inv_var + pred_logvar
-    if reduce:
-        return losses.sum(dim=1).mean()
-    return losses
