@@ -1,20 +1,25 @@
-import torch
 import os
+
+import torch
+
 from gymnasium.vector import AsyncVectorEnv
+from tests.gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
+
 from emote import Trainer
+from emote.callbacks import BackPropStepsTerminator
 from emote.memory import MemoryLoader, TableMemoryProxy
-from emote.memory.callbacks import MemoryExporterCallback, MemoryImporterCallback
 from emote.memory.builder import DictObsTable
+from emote.memory.callbacks import MemoryExporterCallback, MemoryImporterCallback
+from emote.memory.storage import BaseStorage
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
 from emote.sac import FeatureAgentProxy
-from tests.gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
-from emote.callbacks import BackPropStepsTerminator
+
 
 N_HIDDEN = 10
 
 
 def test_htm():
-    experiment_load_dir = '/home/ali/codes/emote/logs/replay_buffer'
+    experiment_load_dir = "C:/Users/simona.petravic/Code/emote_memory_logs"
 
     device = torch.device("cpu")
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
@@ -26,7 +31,7 @@ def test_htm():
 
     exporter = MemoryExporterCallback(
         memory=table,
-        target_memory_name='memory',
+        target_memory_name="memory",
         inf_steps_per_memory_export=201,
         experiment_root_path=experiment_load_dir,
     )
@@ -36,34 +41,30 @@ def test_htm():
             env, agent_proxy, memory_proxy, warmup_steps=500, render=False
         ),
         exporter,
-        BackPropStepsTerminator(500)
+        BackPropStepsTerminator(500),
     ]
 
     trainer = Trainer(callbacks, dataloader)
     trainer.train()
 
-    print(exporter.memory.size())
-
-
     importer = MemoryImporterCallback(
         memory=DictObsTable(spaces=env.dict_space, maxlen=10000, device=device),
-        target_memory_name='memory',
+        target_memory_name="memory",
         experiment_load_dir=experiment_load_dir,
     )
-    print(importer.memory.size())
+
     importer.memory.restore(os.path.join(experiment_load_dir, "memory_export"))
-    print(importer.memory.size())
 
     for column in importer.memory._columns.values():
-        print('*********************')
-        print(importer.memory._columns)
-        print(f"data column: {column.name}")
-        print("importer keys\n", importer.memory._data[column.name].keys())
-        print("\n\n\nexporter keys\n", exporter.memory._data[column.name].keys())
-        # print(exporter.memory._data[column.name].values())
-        break
-        # print(importer.memory._data[column.name] - exporter.memory._data[column.name])
-
+        if isinstance(importer.memory._data[column.name], BaseStorage):
+            for key in importer.memory._data[column.name]:
+                reverted_key = -(key + 1)
+                assert (
+                    importer.memory._data[column.name][key].all()
+                    == exporter.memory._data[column.name][reverted_key].all()
+                )
+        else:
+            print(f"data column: {column.name}")
 
     env.close()
 
