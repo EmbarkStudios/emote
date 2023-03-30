@@ -292,6 +292,9 @@ class ArrayTable:
                     self._data[column.name] = column.mapper(
                         self._data[column.target_name], column.shape, column.dtype
                     )
+                #print('*********************')
+                #print(f"data column: {column.name}")
+                #print(self._data[column.name])
 
         self._lengths = {-abs(k) - 1: v for (k, v) in self._lengths.items() if k >= 0}
         self._total_length = sum(self._lengths.values())

@@ -36,7 +36,7 @@ class UniformStrategyBase(Strategy):
         self._prios = np.array(tuple(self._identities.values())) / sum(
             self._identities.values()
         )
-        self._ids = np.array(tuple(self._identities.keys()), dtype=np.uint64)
+        self._ids = np.array(tuple(self._identities.keys()), dtype=np.int64)
 
     def post_import(self):
         original_ids = self._identities.copy()
