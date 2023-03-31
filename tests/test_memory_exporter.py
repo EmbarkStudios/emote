@@ -63,8 +63,6 @@ def test_htm():
                     importer.memory._data[column.name][key].all()
                     == exporter.memory._data[column.name][reverted_key].all()
                 )
-        else:
-            print(f"data column: {column.name}")
 
     env.close()
 
