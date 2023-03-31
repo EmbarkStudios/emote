@@ -1,5 +1,7 @@
 import os
 
+from tempfile import mkdtemp
+
 import torch
 
 from gymnasium.vector import AsyncVectorEnv
@@ -18,8 +20,8 @@ from emote.sac import FeatureAgentProxy
 N_HIDDEN = 10
 
 
-def test_htm():
-    experiment_load_dir = "C:/Users/simona.petravic/Code/emote_memory_logs"
+def test_htm_memory_export():
+    experiment_load_dir = mkdtemp()
 
     device = torch.device("cpu")
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
@@ -65,7 +67,3 @@ def test_htm():
                 )
 
     env.close()
-
-
-if __name__ == "__main__":
-    test_htm()
