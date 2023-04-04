@@ -20,7 +20,7 @@ from emote.sac import FeatureAgentProxy
 N_HIDDEN = 10
 
 
-def test_htm_memory_export():
+def test_memory_export():
     experiment_load_dir = mkdtemp()
 
     device = torch.device("cpu")

@@ -1,6 +1,6 @@
 import logging
 import os
-import time
+import warnings
 
 from emote import Callback
 from emote.callbacks import LoggingMixin
@@ -20,7 +20,9 @@ class MemoryImporterCallback(Callback):
         load_fname_override=None,
     ):
         super().__init__()
-        self._order = -1
+        self._order = (
+            -1
+        )  # this is to ensure that this callback is called before the others
         self.memory = memory
         self._target_memory_name = target_memory_name
         self._load_fname_override = load_fname_override
@@ -35,7 +37,6 @@ class MemoryImporterCallback(Callback):
             )
 
         if not os.path.exists(restore_path + ".zip"):
-            return
             raise FileNotFoundError(
                 f"Failed to load memory dump: {restore_path} does not exist."
             )
@@ -54,9 +55,16 @@ class MemoryExporterCallback(LoggingMixin, Callback):
         inf_steps_per_memory_export,
         experiment_root_path: str,
     ):
-        assert (
-            inf_steps_per_memory_export > 100
-        ), "exporting a memory is a slow operation and shouldn't be done too often"
+        rec_min_inf_steps = 10_000
+        if inf_steps_per_memory_export < rec_min_inf_steps:
+            warnings.warn(
+                f"Exporting a memory is a slow operation "
+                f"and should not be done too often. "
+                f"Current inf_step is {inf_steps_per_memory_export}, "
+                f"while the recommended minimum is {rec_min_inf_steps}.",
+                UserWarning,
+            )
+
         super().__init__(cycle=inf_steps_per_memory_export)
         self.memory = memory
         self.experiment_root_path = experiment_root_path
@@ -70,7 +78,6 @@ class MemoryExporterCallback(LoggingMixin, Callback):
         )
         with self._scopes.scope("export"):
             self.memory.store(export_path)
-
 
         for name, (mean, var) in self._scopes.stats().items():
             self.log_scalar(
