@@ -7,7 +7,9 @@ them into episodes before submission into the memory.
 """
 
 import logging
+import os
 import time
+import warnings
 
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -19,7 +21,7 @@ from emote.callback import Callback
 from emote.callbacks import LoggingMixin
 
 from ..typing import AgentId, DictObservation, DictResponse, EpisodeState
-from ..utils import TimedBlock
+from ..utils import BlockTimers, TimedBlock
 from .core_types import Matrix
 from .table import Table
 
@@ -76,8 +78,11 @@ class TableMemoryProxy:
     def size(self):
         return self._table.size()
 
-    def resize(self, new_size):
+    def resize(self, new_size: int):
         self._table.resize(new_size)
+
+    def store(self, path: str):
+        return self._table.store(path)
 
     def is_initial(self, identity: int):
         """Returns true if identity is not already used in a partial sequence. Does not
@@ -252,6 +257,74 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
 
         self._cycle_start_infs = self.completed_inferences
         self._cycle_start_time = now_time
+
+
+class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
+    """Export the memory at regular intervals"""
+
+    def __init__(
+        self,
+        memory: TableMemoryProxy,
+        target_memory_name,
+        inf_steps_per_memory_export,
+        experiment_root_path: str,
+        min_time_per_export: int = 600,
+    ):
+        super().__init__(inner=memory)
+
+        recommended_min_inf_steps = 10_000
+        if inf_steps_per_memory_export < recommended_min_inf_steps:
+            warnings.warn(
+                f"Exporting a memory is a slow operation "
+                f"and should not be done too often. "
+                f"Current inf_step is {inf_steps_per_memory_export}, "
+                f"while the recommended minimum is {recommended_min_inf_steps}.",
+                UserWarning,
+            )
+
+        self._inf_step = 0
+        self.memory = memory
+        self.experiment_root_path = experiment_root_path
+        self._target_memory_name = target_memory_name
+        self._inf_steps_per_memory_export = inf_steps_per_memory_export
+        self._min_time_per_export = min_time_per_export
+
+        self._next_export = inf_steps_per_memory_export
+        self._next_export_time = time.monotonic() + min_time_per_export
+        self._scopes = BlockTimers()
+
+    def add(
+        self,
+        observations: Dict[AgentId, DictObservation],
+        responses: Dict[AgentId, DictResponse],
+    ):
+        """First add the new batch to the memory"""
+        self._inner.add(observations, responses)
+
+        """Save the replay buffer if it has enough data and enough time"""
+        has_enough_data = self._inf_step > self._next_export
+        time_now = time.monotonic()
+        has_enough_time = time_now > self._next_export_time
+
+        self._inf_step += 1
+
+        if has_enough_data and has_enough_time:
+            self._next_export = self._inf_step + self._inf_steps_per_memory_export
+            self._next_export_time = time_now + self._min_time_per_export
+
+            export_path = os.path.join(
+                self.experiment_root_path, f"{self._target_memory_name}_export"
+            )
+            with self._scopes.scope("export"):
+                self.memory.store(export_path)
+
+            for name, (mean, var) in self._scopes.stats().items():
+                self.log_scalar(
+                    f"memory/{self._target_memory_name}/{name}/timing/mean", mean
+                )
+                self.log_scalar(
+                    f"memory/{self._target_memory_name}/{name}/timing/var", var
+                )
 
 
 class MemoryLoader:
