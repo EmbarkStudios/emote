@@ -62,7 +62,7 @@ def test_memory_export():
                 reverted_key = -(key + 1)
                 assert (
                     importer.memory._data[column.name][key].all()
-                    == memory_proxy.memory._table._data[column.name][reverted_key].all()
+                    == memory_proxy._inner._table._data[column.name][reverted_key].all()
                 )
 
     env.close()

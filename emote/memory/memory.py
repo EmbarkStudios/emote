@@ -13,7 +13,7 @@ import warnings
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Mapping, Optional, Tuple
+from typing import Dict, List, Mapping, Optional, Tuple, Union
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -155,6 +155,9 @@ class TableMemoryProxyWrapper:
         super().__init__(**kwargs)
         self._inner = inner
 
+    def store(self, path: str):
+        return self._inner.store(path)
+
 
 class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
     def __init__(
@@ -264,7 +267,7 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
 
     def __init__(
         self,
-        memory: TableMemoryProxy,
+        memory: Union[TableMemoryProxy, TableMemoryProxyWrapper],
         target_memory_name,
         inf_steps_per_memory_export,
         experiment_root_path: str,
@@ -283,7 +286,6 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
             )
 
         self._inf_step = 0
-        self.memory = memory
         self.experiment_root_path = experiment_root_path
         self._target_memory_name = target_memory_name
         self._inf_steps_per_memory_export = inf_steps_per_memory_export
@@ -316,7 +318,7 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 self.experiment_root_path, f"{self._target_memory_name}_export"
             )
             with self._scopes.scope("export"):
-                self.memory.store(export_path)
+                self._inner.store(export_path)
 
             for name, (mean, var) in self._scopes.stats().items():
                 self.log_scalar(
