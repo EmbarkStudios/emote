@@ -293,6 +293,7 @@ class AlphaLoss(LossCallback):
     def state_dict(self):
         state = super().state_dict()
         state["network_state_dict"] = self.ln_alpha
+        return state
 
     def load_state_dict(self, state_dict: Dict[str, Any]):
         self.ln_alpha = state_dict.pop("network_state_dict")

@@ -384,15 +384,13 @@ class Checkpointer(Callback):
         self._opts: List[optim.Optimizer] = optimizers if optimizers else []
         self._nets: List[nn.Module] = networks if networks else []
 
-    def end_cycle(self, inf_step, bp_step):
+    def end_cycle(self):
         state_dict = {}
         state_dict["callback_state_dicts"] = [cb.state_dict() for cb in self._cbs]
         state_dict["network_state_dicts"] = [net.state_dict() for net in self._nets]
         state_dict["optim_state_dicts"] = [opt.state_dict() for opt in self._opts]
         state_dict["training_state"] = {
             "checkpoint_index": self._checkpoint_index,
-            "inf_step": inf_step,
-            "bp_step": bp_step,
         }
         torch.save(state_dict, f"{self._path}.{self._checkpoint_index}.tar")
         self._checkpoint_index += 1

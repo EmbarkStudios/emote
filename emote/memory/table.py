@@ -1,6 +1,5 @@
 """Example implementation for how a more modular memory pattern might look"""
 
-
 from threading import Lock
 from typing import List, Optional, Protocol, Sequence, Tuple
 
