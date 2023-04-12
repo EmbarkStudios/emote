@@ -83,7 +83,7 @@ class HitTheMiddleDataInspector(BatchCallback):
 def test_gym_collector():
     device = torch.device("cpu")
     batch_size = 5
-    rollout_length = 1
+    rollout_length = 1  # The test only works for rollout_length = 1
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
     table = DictObsTable(
         spaces=env.dict_space,
