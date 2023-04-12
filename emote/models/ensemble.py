@@ -6,35 +6,9 @@ import numpy as np
 import torch
 
 from torch import nn as nn
-from torch.nn import functional as F
+from torch.nn import GaussianNLLLoss, functional as F
 
-from emote.utils.math import gaussian_nll
-
-
-def truncated_normal_(
-    tensor: torch.Tensor, mean: float = 0, std: float = 1
-) -> torch.Tensor:
-    """Samples from a truncated normal distribution in-place.
-
-    Arguments:
-        tensor (tensor): the tensor in which sampled values will be stored.
-        mean (float): the desired mean (default = 0).
-        std (float): the desired standard deviation (default = 1).
-
-    Returns:
-        (tensor): the tensor with the stored values. Note that this modifies the input tensor
-            in place, so this is just a pointer to the same object.
-    """
-    torch.nn.init.normal_(tensor, mean=mean, std=std)
-    while True:
-        cond = torch.logical_or(tensor < mean - 2 * std, tensor > mean + 2 * std)
-        bound_violations = torch.sum(cond).item()
-        if bound_violations == 0:
-            break
-        tensor[cond] = torch.normal(
-            mean, std, size=(bound_violations,), device=tensor.device
-        )
-    return tensor
+from emote.utils.math import truncated_normal_
 
 
 def truncated_normal_init(m: nn.Module):
@@ -84,7 +58,7 @@ class EnsembleOfGaussian(nn.Module):
         device: Union[str, torch.device],
         num_layers: int = 4,
         ensemble_size: int = 1,
-        hid_size: int = 200,
+        hidden_size: int = 256,
         learn_logvar_bounds: bool = False,
         deterministic: bool = False,
     ):
@@ -94,24 +68,26 @@ class EnsembleOfGaussian(nn.Module):
         self.num_members = ensemble_size
         self.device = torch.device(device)
         self.deterministic = deterministic
+        self.nll_loss = GaussianNLLLoss(reduction="none")
 
         activation_func = nn.ReLU()
 
         hidden_layers = [
             nn.Sequential(
-                EnsembleLinearLayer(ensemble_size, in_size, hid_size), activation_func
+                EnsembleLinearLayer(ensemble_size, in_size, hidden_size),
+                activation_func,
             )
         ]
         for i in range(num_layers - 1):
             hidden_layers.append(
                 nn.Sequential(
-                    EnsembleLinearLayer(ensemble_size, hid_size, hid_size),
+                    EnsembleLinearLayer(ensemble_size, hidden_size, hidden_size),
                     activation_func,
                 )
             )
         self.hidden_layers = nn.Sequential(*hidden_layers)
         self.mean_and_logvar = EnsembleLinearLayer(
-            ensemble_size, hid_size, 2 * out_size
+            ensemble_size, hidden_size, 2 * out_size
         )
         self.min_logvar = nn.Parameter(
             -10 * torch.ones(1, out_size), requires_grad=learn_logvar_bounds
@@ -120,6 +96,7 @@ class EnsembleOfGaussian(nn.Module):
             0.5 * torch.ones(1, out_size), requires_grad=learn_logvar_bounds
         )
         self.logvar_loss_weight = 0.01
+
         self.apply(truncated_normal_init)
         self.to(self.device)
 
@@ -171,12 +148,12 @@ class EnsembleOfGaussian(nn.Module):
         pred_mean, pred_logvar = self.default_forward(model_in)
         if target.shape[0] != self.num_members:
             target = target.repeat(self.num_members, 1, 1)
-
         nll = (
-            gaussian_nll(pred_mean, pred_logvar, target, reduce=False)
+            self.nll_loss(pred_mean, target, torch.exp(pred_logvar))
             .mean((1, 2))  # average over batch and target dimension
             .sum()  # sum over ensemble dimension
         )
+
         nll += self.logvar_loss_weight * (self.max_logvar.sum() - self.min_logvar.sum())
         return nll, {}
 

@@ -4,10 +4,11 @@
 from typing import Optional
 
 import torch
+import torch.nn.functional as F
 
-from torch import nn, optim
+from torch import nn
 
-from emote.callbacks import LossCallback
+from emote.utils.model import normal_init
 
 
 class DynamicModel(nn.Module):
@@ -40,6 +41,8 @@ class DynamicModel(nn.Module):
         self.learned_rewards = learned_rewards
         self.no_delta_list = no_delta_list if no_delta_list else []
         self.obs_process_fn = obs_process_fn
+        self.input_normalizer = Normalizer()
+        self.target_normalizer = Normalizer()
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Computes the output of the dynamics model.
@@ -81,7 +84,9 @@ class DynamicModel(nn.Module):
         observation: torch.Tensor,
         rng: torch.Generator,
     ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Samples a simulated transition from the dynamics model.
+        """Samples a simulated transition from the dynamics model. The function first
+        normalizes the inputs to the model, and then denormalize the model output as the
+        final output.
 
         Arguments:
             action (tensor): the action at.
@@ -92,7 +97,11 @@ class DynamicModel(nn.Module):
             (tuple): predicted observation and rewards.
         """
         model_in = self.get_model_input(observation, action)
+
+        model_in = self.input_normalizer.normalize(model_in)
         preds = self.model.sample(model_in, rng)
+        preds = self.target_normalizer.denormalize(preds)
+
         assert len(preds.shape) == 2, (
             f"Prediction shape is: {preds.shape} Predictions must be 'batch_size x "
             f"length_of_prediction. Have you forgotten to run propagation on the ensemble?"
@@ -135,7 +144,9 @@ class DynamicModel(nn.Module):
         action: torch.Tensor,
         reward: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """The function processes the given batch and prepares it for the training.
+
+        """The function processes the given batch, normalizes inputs and targets,
+         and prepares them for the training.
 
         Arguments:
             obs (torch.Tensor): the observations tensor
@@ -156,7 +167,10 @@ class DynamicModel(nn.Module):
             target = torch.cat([target_obs, reward], dim=obs.ndim - 1)
         else:
             target = target_obs
-        return model_in.float(), target.float()
+
+        model_in_normalized = self.input_normalizer.normalize(model_in.float(), True)
+        target_normalized = self.target_normalizer.normalize(target.float(), True)
+        return model_in_normalized, target_normalized
 
     def save(self, save_dir: str) -> None:
         """Saving the model
@@ -175,43 +189,129 @@ class DynamicModel(nn.Module):
         self.model.load(load_dir)
 
 
-class ModelLoss(LossCallback):
-    """Trains a dynamic model by minimizing the model loss
-
-    Arguments:
-        dynamic_model (DynamicModel): A dynamic model
-        opt (torch.optim.Optimizer): An optimizer.
-        lr_schedule (lr_scheduler, optional): A learning rate scheduler
-        max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
-        name (str): The name of the module. Used e.g. while logging.
-        data_group (str): The name of the data group from which this Loss takes its data.
-    """
-
+class DeterministicModel(nn.Module):
     def __init__(
         self,
-        *,
-        model: DynamicModel,
-        opt: optim.Optimizer,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
-        max_grad_norm: float = 10.0,
-        name: str = "dynamic_model",
-        data_group: str = "default",
+        in_size: int,
+        out_size: int,
+        device: torch.device,
+        hidden_size: int = 256,
+        num_hidden_layers: int = 4,
     ):
-        super().__init__(
-            name=name,
-            optimizer=opt,
-            lr_schedule=lr_schedule,
-            network=model,
-            max_grad_norm=max_grad_norm,
-            data_group=data_group,
-        )
-        self.model = model
+        super().__init__()
+        self.in_size = in_size
+        self.out_size = out_size
+        self.device = torch.device(device)
 
-    def loss(self, observation, next_observation, actions, rewards):
-        loss, _ = self.model.loss(
-            obs=observation["obs"],
-            next_obs=next_observation["obs"],
-            action=actions,
-            reward=rewards,
-        )
-        return loss
+        network = [
+            nn.Sequential(
+                nn.Linear(in_size, hidden_size),
+                nn.BatchNorm1d(hidden_size),
+                nn.ReLU(),
+            )
+        ]
+        for _ in range(num_hidden_layers - 1):
+            network.append(
+                nn.Sequential(
+                    nn.Linear(hidden_size, hidden_size),
+                    nn.BatchNorm1d(hidden_size),
+                    nn.ReLU(),
+                )
+            )
+        network.append(nn.Sequential(nn.Linear(hidden_size, out_size)))
+        self.network = nn.Sequential(*network).to(self.device)
+        self.network.apply(normal_init)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+    ) -> torch.Tensor:
+        return self.network(x)
+
+    def loss(
+        self,
+        model_in: torch.Tensor,
+        target: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict[str, any]]:
+        prediction = self.forward(model_in)
+        loss = F.mse_loss(prediction, target)
+        return loss, {"loss_info": None}
+
+    def sample(
+        self,
+        model_input: torch.Tensor,
+        rng: torch.Generator = None,
+    ) -> torch.Tensor:
+        """Samples next observation, reward and terminal from the model
+
+        Args:
+            model_input (tensor): the observation and action.
+            rng (torch.Generator): a random number generator.
+
+        Returns:
+            (tuple): predicted observation, rewards, terminal indicator and model
+                state dictionary.
+        """
+        return self.forward(model_input)
+
+
+class Normalizer:
+    """Class that keeps a running mean and variance and normalizes data accordingly."""
+
+    def __init__(self):
+        self.mean = None
+        self.std = None
+        self.eps = 1e-5
+        self.update_rate = 0.5
+        self.bp_step = 0
+
+    def update_stats(self, data: torch.Tensor):
+        """Updates the stored statistics using the given data.
+
+        Arguments:
+            data (torch.Tensor): The data used to compute the statistics.
+
+        """
+        if self.mean is None:
+            self.mean = data.mean(0, keepdim=True)
+            self.std = data.std(0, keepdim=True)
+        else:
+            self.mean = (
+                1.0 - self.update_rate
+            ) * self.mean + self.update_rate * data.mean(0, keepdim=True)
+            self.std = (
+                1.0 - self.update_rate
+            ) * self.std + self.update_rate * data.std(0, keepdim=True)
+        self.std[self.std < self.eps] = self.eps
+        self.update_rate -= 0.01
+        if self.update_rate < 0.01:
+            self.update_rate = 0.01
+
+    def normalize(self, val: torch.Tensor, update_state: bool = False) -> torch.Tensor:
+        """Normalizes the value according to the stored statistics.
+
+        Arguments:
+            val (torch.Tensor): The value to normalize.
+            update_state (bool): Update state?
+
+        Returns:
+            (torch.Tensor): The normalized value.
+        """
+        if update_state:
+            self.update_stats(val)
+        if self.mean is None:
+            return val
+        return (val - self.mean) / self.std
+
+    def denormalize(self, val: torch.Tensor) -> torch.Tensor:
+        """De-normalizes the value according to the stored statistics.
+
+        Arguments:
+            val (torch.Tensor): The value to de-normalize.
+
+        Returns:
+            (torch.Tensor): The de-normalized value.
+        """
+        if self.mean is None:
+            return val
+        return self.std * val + self.mean

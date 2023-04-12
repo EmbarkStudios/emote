@@ -1,27 +1,117 @@
 from collections import deque
 from typing import Optional
 
+import numpy as np
 import torch
 
-from emote.callback import Callback
-from emote.callbacks import LoggingMixin
+from torch import optim
+
+from emote.callbacks import BatchCallback, LossCallback
 from emote.extra.schedules import BPStepScheduler
 from emote.memory import MemoryLoader
+from emote.models.model import DynamicModel
 from emote.models.model_env import ModelEnv
 from emote.proxies import AgentProxy, MemoryProxy
+from emote.trainer import TrainingShutdownException
 from emote.typing import AgentId, DictObservation
 
 
-class BatchCallback(LoggingMixin, Callback):
-    def __init__(self):
+class ModelLoss(LossCallback):
+    """Trains a dynamic model by minimizing the model loss
+
+    Arguments:
+        dynamic_model (DynamicModel): A dynamic model
+        opt (torch.optim.Optimizer): An optimizer.
+        lr_schedule (lr_scheduler, optional): A learning rate scheduler
+        max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
+        name (str): The name of the module. Used e.g. while logging.
+        data_group (str): The name of the data group from which this Loss takes its data.
+    """
+
+    def __init__(
+        self,
+        *,
+        model: DynamicModel,
+        opt: optim.Optimizer,
+        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
+        max_grad_norm: float = 10.0,
+        name: str = "dynamic_model",
+        data_group: str = "default",
+    ):
+        super().__init__(
+            name=name,
+            optimizer=opt,
+            lr_schedule=lr_schedule,
+            network=model,
+            max_grad_norm=max_grad_norm,
+            data_group=data_group,
+        )
+        self.model = model
+
+    def loss(self, observation, next_observation, actions, rewards):
+        loss, _ = self.model.loss(
+            obs=observation["obs"],
+            next_obs=next_observation["obs"],
+            action=actions,
+            reward=rewards,
+        )
+        return loss
+
+
+class LossProgressCheck(BatchCallback):
+    def __init__(
+        self,
+        model: DynamicModel,
+        num_bp: int,
+        data_group: str = "default",
+    ):
         super().__init__()
+        self.data_group = data_group
+        self.model = model
+        self.cycle = num_bp
+        self.rng = torch.Generator(device=self.model.device)
+        self.prediction_err = []
+        self.prediction_average_err = []
+        self.len_averaging_window = num_bp // 10
 
     def begin_batch(self, *args, **kwargs):
-        pass
+        obs, next_obs, action, reward = self.get_batch(*args, **kwargs)
+        predicted_obs, predicted_reward = self.model.sample(
+            observation=obs, action=action, rng=self.rng
+        )
+        obs_prediction_err = (predicted_obs - next_obs).detach().to("cpu").numpy()
+        reward_prediction_err = (predicted_reward - reward).detach().to("cpu").numpy()
 
-    @Callback.extend
-    def collect_multiple(self, *args, **kwargs):
-        pass
+        obs_prediction_err = np.mean(np.abs(obs_prediction_err))
+        reward_prediction_err = np.mean(np.abs(reward_prediction_err))
+
+        self.log_scalar("mbrl/obs_pred_err", obs_prediction_err)
+        self.log_scalar("mbrl/rew_pred_err", reward_prediction_err)
+
+        self.prediction_err.append([obs_prediction_err, reward_prediction_err])
+
+        if len(self.prediction_err) >= self.len_averaging_window:
+            self.prediction_average_err.append(
+                np.mean(np.array(self.prediction_err), axis=0)
+            )
+            self.prediction_err = []
+
+    def end_cycle(self):
+        for i in range(len(self.prediction_average_err) - 4):
+            for j in range(2):
+                if (
+                    self.prediction_average_err[i + 4][j]
+                    > self.prediction_average_err[i][j]
+                ):
+                    raise Exception(
+                        f"The loss is not decreasing: \n"
+                        f"Loss at {i}: {self.prediction_average_err[i]}"
+                        f"Loss at {i+4}: {self.prediction_average_err[i+4]}"
+                    )
+        raise TrainingShutdownException()
+
+    def get_batch(self, observation, next_observation, actions, rewards):
+        return observation["obs"], next_observation["obs"], actions, rewards
 
 
 class BatchSampler(BatchCallback):
@@ -29,6 +119,7 @@ class BatchSampler(BatchCallback):
     In every BP step, it samples one batch from either the gym buffer or the model buffer
     based on a Bernoulli probability distribution. It outputs the batch to a separate
     data-group which will be used by other RL training callbacks.
+
         Arguments:
             dataloader (MemoryLoader): the dataloader to load data from the model buffer
             prob_scheduler (BPStepScheduler): the scheduler to update the prob of data
@@ -97,6 +188,20 @@ class BatchSampler(BatchCallback):
 
 
 class ModelBasedCollector(BatchCallback):
+    """ModelBasedCollector class is used to sample rollouts from the trained dynamic model.
+    The rollouts are stored in a replay buffer memory.
+
+        Arguments:
+            model_env: The Gym-like dynamic model
+            agent: The policy used to sample actions
+            memory: The memory to store the new synthetic samples
+            rollout_scheduler: A scheduler used to set the rollout-length when unrolling the dynamic model
+            num_bp_to_retain_buffer: The number of BP steps to keep samples. Samples will be over-written (first in
+            first out) for bp steps larger than this.
+            data_group: The data group to receive data from. This must be set to get real (Gym) samples
+
+    """
+
     def __init__(
         self,
         model_env: ModelEnv,
@@ -107,9 +212,10 @@ class ModelBasedCollector(BatchCallback):
         data_group: str = "default",
     ):
         super().__init__()
-        """The data group is used to receive correct observation when collect_multiple is 
-        called. The data group must be chosen such that real Gym samples (not model data) 
-        are given to the function. """
+        """ The data group is used to receive correct observation when collect_multiple is 
+            called. The data group must be set such that real Gym samples (not model data) 
+            are given to the function. 
+        """
         self.data_group = data_group
 
         self.agent = agent
@@ -127,15 +233,14 @@ class ModelBasedCollector(BatchCallback):
     def begin_batch(self, *args, **kwargs):
         self.update_rollout_size()
         self.log_scalar("training/model_rollout_length", self.len_rollout)
-        self.collect_multiple(*args, **kwargs)
+        observation = self.get_batch(*args, **kwargs)
 
-    def collect_multiple(self, observation):
-        """Collect multiple rollouts
-        :param observation: initial observations
-        """
-        self.obs = self.model_env.dict_reset(observation["obs"], self.len_rollout)
+        self.obs = self.model_env.dict_reset(observation, self.len_rollout)
         for _ in range(self.len_rollout + 1):
             self.collect_sample()
+
+    def get_batch(self, observation):
+        return observation["obs"]
 
     def collect_sample(self):
         """Collect a single rollout"""

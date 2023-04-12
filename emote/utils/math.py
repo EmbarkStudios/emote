@@ -3,8 +3,6 @@
 
 import torch
 
-from torch.nn import functional as F
-
 
 def truncated_linear(
     min_x: float, max_x: float, min_y: float, max_y: float, x: float
@@ -26,27 +24,27 @@ def truncated_linear(
     return y
 
 
-def gaussian_nll(
-    pred_mean: torch.Tensor,
-    pred_logvar: torch.Tensor,
-    target: torch.Tensor,
-    reduce: bool = True,
+def truncated_normal_(
+    tensor: torch.Tensor, mean: float = 0, std: float = 1
 ) -> torch.Tensor:
-    """Negative log-likelihood for Gaussian distribution
+    """Samples from a truncated normal distribution in-place.
 
-    Args:
-        pred_mean (tensor): the predicted mean.
-        pred_logvar (tensor): the predicted log variance.
-        target (tensor): the target value.
-        reduce (bool): if ``False`` the loss is returned w/o reducing.
-            Defaults to ``True``.
+    Arguments:
+        tensor (tensor): the tensor in which sampled values will be stored.
+        mean (float): the desired mean (default = 0).
+        std (float): the desired standard deviation (default = 1).
 
     Returns:
-        (tensor): the negative log-likelihood.
+        (tensor): the tensor with the stored values. Note that this modifies the input tensor
+            in place, so this is just a pointer to the same object.
     """
-    l2 = F.mse_loss(pred_mean, target, reduction="none")
-    inv_var = (-pred_logvar).exp()
-    losses = l2 * inv_var + pred_logvar
-    if reduce:
-        return losses.sum(dim=1).mean()
-    return losses
+    torch.nn.init.normal_(tensor, mean=mean, std=std)
+    while True:
+        cond = torch.logical_or(tensor < mean - 2 * std, tensor > mean + 2 * std)
+        bound_violations = torch.sum(cond).item()
+        if bound_violations == 0:
+            break
+        tensor[cond] = torch.normal(
+            mean, std, size=(bound_violations,), device=tensor.device
+        )
+    return tensor

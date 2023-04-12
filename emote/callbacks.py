@@ -500,3 +500,12 @@ class FinalRewardTestCheck(Callback):
         if reward < self._cutoff:
             raise Exception(f"Reward too low: {reward}")
         raise TrainingShutdownException()
+
+
+class BatchCallback(LoggingMixin, Callback):
+    def __init__(self):
+        super().__init__()
+
+    @Callback.extend
+    def get_batch(self, *args, **kwargs):
+        pass
