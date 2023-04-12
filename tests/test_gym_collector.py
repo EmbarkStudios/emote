@@ -43,12 +43,14 @@ class HitTheMiddleDataInspector(BatchCallback):
             obs_err = torch.mean(torch.abs(sim_next_obs[i] - next_obs[i])).detach()
             reward_err = torch.mean(torch.abs(sim_reward[i] - reward[i])).detach()
             if obs_err > 0.001 or reward_err > 0.001:
-                print(f"obs_err: {obs_err}, reward_err: {reward_err}")
-                print(f"obs: {obs[i]}, action: {action[i]}")
-                print(f"reward: {reward[i]}\nsim_reward: {sim_reward[i]}")
-                print(f"next_obs: {next_obs[i]}\nsim_next_obs: {sim_next_obs[i]}")
+                message = f"""
+                    obs_err: {obs_err}, reward_err: {reward_err}
+                    obs: {obs[i]}, action: {action[i]}
+                    reward: {reward[i]}, sim_reward: {sim_reward[i]}
+                    next_obs: {next_obs[i]}, sim_next_obs: {sim_next_obs[i]}
+                """
                 raise ValueError(
-                    "Loaded values for obs/reward does not match the calculated ones"
+                    f"Loaded values for obs/reward does not match the calculated ones {message}"
                 )
 
     def simulate_hit_the_middle(self, action, obs):

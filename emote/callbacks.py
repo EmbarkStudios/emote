@@ -506,13 +506,6 @@ class BatchCallback(LoggingMixin, Callback):
     def __init__(self):
         super().__init__()
 
-    def begin_batch(self, *args, **kwargs):
-        pass
-
-    @Callback.extend
-    def collect_multiple(self, *args, **kwargs):
-        pass
-
     @Callback.extend
     def get_batch(self, *args, **kwargs):
         pass

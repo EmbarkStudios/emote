@@ -233,15 +233,14 @@ class ModelBasedCollector(BatchCallback):
     def begin_batch(self, *args, **kwargs):
         self.update_rollout_size()
         self.log_scalar("training/model_rollout_length", self.len_rollout)
-        self.collect_multiple(*args, **kwargs)
+        observation = self.get_batch(*args, **kwargs)
 
-    def collect_multiple(self, observation):
-        """Collect multiple rollouts
-        :param observation: initial observations
-        """
-        self.obs = self.model_env.dict_reset(observation["obs"], self.len_rollout)
+        self.obs = self.model_env.dict_reset(observation, self.len_rollout)
         for _ in range(self.len_rollout + 1):
             self.collect_sample()
+
+    def get_batch(self, observation):
+        return observation["obs"]
 
     def collect_sample(self):
         """Collect a single rollout"""

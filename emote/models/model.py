@@ -8,6 +8,8 @@ import torch.nn.functional as F
 
 from torch import nn
 
+from emote.utils.model import normal_init
+
 
 class DynamicModel(nn.Module):
     """Wrapper class for model.
@@ -218,21 +220,7 @@ class DeterministicModel(nn.Module):
             )
         network.append(nn.Sequential(nn.Linear(hidden_size, out_size)))
         self.network = nn.Sequential(*network).to(self.device)
-        self.init_param()
-
-    def init_param(self):
-        for m in self.network:
-            if isinstance(m, nn.Conv1d):
-                torch.nn.init.normal_(m.weight, std=0.01)
-                if m.bias is not None:
-                    torch.nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm1d):
-                torch.nn.init.constant_(m.weight, 1)
-                torch.nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                torch.nn.init.normal_(m.weight, std=1e-3)
-                if m.bias is not None:
-                    torch.nn.init.constant_(m.bias, 0)
+        self.network.apply(normal_init)
 
     def forward(
         self,
