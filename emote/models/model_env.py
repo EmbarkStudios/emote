@@ -42,11 +42,13 @@ class ModelEnv:
         termination_fn: TermFnType,
         reward_fn: Optional[RewardFnType] = None,
         generator: Optional[torch.Generator] = None,
+        input_key: str = "obs",
     ):
         self.dynamic_model = model
         self.termination_fn = termination_fn
         self.reward_fn = reward_fn
         self.device = model.device
+        self._input_key = input_key
         self.num_envs = num_envs
         self._current_obs: torch.Tensor = None
         self._init_obs: torch.Tensor = None
@@ -145,13 +147,13 @@ class ModelEnv:
                 )
                 results[self._agent_ids[env_id]] = DictObservation(
                     episode_state=episode_state,
-                    array_data={"obs": to_numpy(next_obs[env_id])},
+                    array_data={self._input_key: to_numpy(next_obs[env_id])},
                     rewards={"reward": to_numpy(rewards[env_id])},
                 )
                 new_agent = next(self._next_agent)
                 results[new_agent] = DictObservation(
                     episode_state=EpisodeState.INITIAL,
-                    array_data={"obs": to_numpy(self._init_obs[env_id])},
+                    array_data={self._input_key: to_numpy(self._init_obs[env_id])},
                     rewards={"reward": None},
                 )
                 new_agents.append(new_agent)
@@ -160,7 +162,7 @@ class ModelEnv:
             {
                 agent_id: DictObservation(
                     episode_state=EpisodeState.RUNNING,
-                    array_data={"obs": to_numpy(next_obs[env_id])},
+                    array_data={self._input_key: to_numpy(next_obs[env_id])},
                     rewards={"reward": to_numpy(rewards[env_id])},
                 )
                 for env_id, agent_id in enumerate(self._agent_ids)
@@ -189,7 +191,7 @@ class ModelEnv:
         return {
             agent_id: DictObservation(
                 episode_state=EpisodeState.INITIAL,
-                array_data={"obs": to_numpy(obs[i])},
+                array_data={self._input_key: to_numpy(obs[i])},
                 rewards={"reward": None},
             )
             for i, agent_id in enumerate(self._agent_ids)
