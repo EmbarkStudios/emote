@@ -37,6 +37,7 @@ class ModelLoss(LossCallback):
         max_grad_norm: float = 10.0,
         name: str = "dynamic_model",
         data_group: str = "default",
+        input_key: str = "obs",
     ):
         super().__init__(
             name=name,
@@ -47,11 +48,12 @@ class ModelLoss(LossCallback):
             data_group=data_group,
         )
         self.model = model
+        self._input_key = input_key
 
     def loss(self, observation, next_observation, actions, rewards):
         loss, _ = self.model.loss(
-            obs=observation["obs"],
-            next_obs=next_observation["obs"],
+            obs=observation[self._input_key],
+            next_obs=next_observation[self._input_key],
             action=actions,
             reward=rewards,
         )
@@ -64,6 +66,7 @@ class LossProgressCheck(BatchCallback):
         model: DynamicModel,
         num_bp: int,
         data_group: str = "default",
+        input_key: str = "obs",
     ):
         super().__init__()
         self.data_group = data_group
@@ -73,6 +76,7 @@ class LossProgressCheck(BatchCallback):
         self.prediction_err = []
         self.prediction_average_err = []
         self.len_averaging_window = num_bp // 10
+        self._input_key = input_key
 
     def begin_batch(self, *args, **kwargs):
         obs, next_obs, action, reward = self.get_batch(*args, **kwargs)
@@ -111,7 +115,12 @@ class LossProgressCheck(BatchCallback):
         raise TrainingShutdownException()
 
     def get_batch(self, observation, next_observation, actions, rewards):
-        return observation["obs"], next_observation["obs"], actions, rewards
+        return (
+            observation[self._input_key],
+            next_observation[self._input_key],
+            actions,
+            rewards,
+        )
 
 
 class BatchSampler(BatchCallback):
@@ -210,6 +219,7 @@ class ModelBasedCollector(BatchCallback):
         rollout_scheduler: BPStepScheduler,
         num_bp_to_retain_buffer=1000000,
         data_group: str = "default",
+        input_key: str = "obs",
     ):
         super().__init__()
         """ The data group is used to receive correct observation when collect_multiple is 
@@ -217,7 +227,7 @@ class ModelBasedCollector(BatchCallback):
             are given to the function. 
         """
         self.data_group = data_group
-
+        self._input_key = input_key
         self.agent = agent
         self.memory = memory
         self.model_env = model_env
@@ -240,7 +250,7 @@ class ModelBasedCollector(BatchCallback):
             self.collect_sample()
 
     def get_batch(self, observation):
-        return observation["obs"]
+        return observation[self._input_key]
 
     def collect_sample(self):
         """Collect a single rollout"""
