@@ -21,8 +21,12 @@ RUN pip install \
 	--no-cache-dir \
 	pipx && \
 	pipx install pdm~=2.4.0 && \
+	pipx install pdm~=2.3.0 --suffix 23 && \
+	pipx install pdm~=2.4.0 --suffix 24 && \
 	pipx install pdm~=2.5.0 --suffix 25 && \
-	pdm --version && \
-	pdm25 --version
+	pdm23 --version && \
+	pdm24 --version && \
+	pdm25 --version && \
+	pdm --version
 
 ENTRYPOINT bash

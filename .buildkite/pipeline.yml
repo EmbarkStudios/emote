@@ -1,6 +1,6 @@
 plugin_base: &plugin_base
     service-account-name: monorepo-ci
-    image: gcr.io/embark-shared/ml/ci-runner@sha256:822b18b2678250a80b22036227152c6c5785a92ccf66a56e867352bca560e317
+    image: gcr.io/embark-shared/ml/ci-runner@sha256:59f978e2fa6f12a6e9714b59947028f89ad263f333a785531d58df8042af292a
     default-secret-name: buildkite-k8s-plugin
     always-pull: false
     use-agent-node-affinity: true
