@@ -20,7 +20,7 @@ jobs:
       with:
         python-version: 3.9
         architecture: x64
-        version: 2.3.4
+        version: 2.4.9
         prerelease: true
         enable-pep582: true
         cache: true
