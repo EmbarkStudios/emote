@@ -230,6 +230,8 @@ class ArrayTable:
 
     def store(self, path: str) -> bool:
         """Persist the whole table and all metadata into the designated name"""
+        import os
+        import stat
         import zipfile
 
         import cloudpickle
@@ -258,6 +260,10 @@ class ArrayTable:
 
                         with zip_.open(f"{key}.npy", "w", force_zip64=True) as npz:
                             np.save(npz, data)
+
+            os.chmod(
+                f"{path}.zip", stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+            )
 
     def restore(self, path: str) -> bool:
         """Restore the data table from the provided path. This currently implies a "clear" of the data stores."""
