@@ -1,5 +1,6 @@
 import logging
 import time
+import warnings
 
 from collections import deque
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -357,40 +358,44 @@ class Checkpointer(Callback):
     Exactly what is written to the checkpoint is determined by the networks and
     callbacks supplied in the constructor.
 
-    :param callbacks (List[Callback]): A list of callbacks the should be saved.
+    :param callbacks (Optional[List[Callback]]): A list of callbacks that should be saved.
+        This is usually useful when the full state of the training must be saved.
+    :param networks (Optional[dict[str, nn.Module]]): An optional list of networks that
+        should be saved. Networks are handled by their respective callbacks but
+        if you give them to this list they will be saved explicitly.
+    :param optimizers (Optional[dict[str, optim.Optimizer]]): Optional list of optimizers
+        to save. Optimizers are handled by their respective callbacks but
+        if you give them to this list they will be saved explicitly.
     :param path (str): The path to where the checkpoint should be stored.
     :param checkpoint_interval (int): Number of backprops between checkpoints.
-    :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
-        to save. Usually optimizers are handled by their respective callbacks but
-        if you give them to this list they will be handled explicitly.
-    :param networks (Optional[List[nn.Module]]): An optional list of networks that
-        should be saved. Usually networks and optimizers are both restored by the
-        callbacks which handles their parameters.
     """
 
     def __init__(
         self,
         *,
-        callbacks: List[Callback],
+        callbacks: Optional[List[Callback]] = None,
+        networks: Optional[dict[str, nn.Module]] = None,
+        optimizers: Optional[dict[str, optim.Optimizer]] = None,
         path: str,
         checkpoint_interval: int,
-        optimizers: Optional[List[optim.Optimizer]] = None,
-        networks: Optional[List[nn.Module]] = None,
     ):
         super().__init__(cycle=checkpoint_interval)
-        self._cbs = callbacks
+        self._cbs: List[Callback] = callbacks if callbacks else []
+        self._nets: dict[str, nn.Module] = networks if networks else {}
+        self._opts: dict[str, optim.Optimizer] = optimizers if optimizers else {}
         self._path = path
         self._checkpoint_index = 0
-        self._opts: List[optim.Optimizer] = optimizers if optimizers else []
-        self._nets: List[nn.Module] = networks if networks else []
 
     def end_cycle(self):
-        state_dict = {}
-        state_dict["callback_state_dicts"] = [cb.state_dict() for cb in self._cbs]
-        state_dict["network_state_dicts"] = [net.state_dict() for net in self._nets]
-        state_dict["optim_state_dicts"] = [opt.state_dict() for opt in self._opts]
-        state_dict["training_state"] = {
-            "checkpoint_index": self._checkpoint_index,
+        state_dict = {
+            "callback_state_dicts": [cb.state_dict() for cb in self._cbs],
+            "network_state_dicts": {
+                name: net.state_dict() for name, net in self._nets.items()
+            },
+            "optim_state_dicts": {
+                name: opt.state_dict() for name, opt in self._opts.items()
+            },
+            "training_state": {"checkpoint_index": self._checkpoint_index},
         }
         torch.save(state_dict, f"{self._path}.{self._checkpoint_index}.tar")
         self._checkpoint_index += 1
@@ -399,50 +404,67 @@ class Checkpointer(Callback):
 class CheckpointLoader(Callback):
     """CheckpointLoader loads a checkpoint like the one created by Checkpointer.
 
-    This is intended for resuming training given a specific checkpoint index. If you
-    want to do something more specific, like only restore a specific network, it is
-    probably easier to just do it explicitly when the network is constructed.
+    This is intended for both resuming the whole training or only restoring a specific
+    network given a specific checkpoint index. For the former, pass the callbacks
+    param
+    to restore the callbacks, and for the latter, only pass the network param.
 
-    :param callbacks (List[Callback]): A list of callbacks the should be restored.
+    :param callbacks (Optional[List[Callback]]): A list of callbacks that should be
+        restored.
+    :param networks (Optional[dict[str, nn.Module]]): An optional list of networks
+        that should be restored.
+    :param optimizers (Optional[dict[str, optim.Optimizer]]): Optional list of
+        optimizers to restore.
     :param path (str): The path to where the checkpoint should be stored.
     :param checkpoint_index (int): Which checkpoint to load.
     :param reset_training_steps (bool): If False, start training at bp_steps=0 etc.
-        Otherwise start the training at whatever step and state the checkpoint has
+        Otherwise, start the training at whatever step and state the checkpoint has
         saved.
-    :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
-        to restore. Usually optimizers are handled by their respective callbacks but
-        if you give them to this list they will be handled explicitly.
-    :param networks (Optional[List[nn.Module]]): An optional list of networks that
-        should be restored. Usually networks and optimizers are both restored by the
-        callbacks which handles their parameters.
     """
 
     def __init__(
         self,
         *,
-        callbacks: List[Callback],
+        callbacks: Optional[List[Callback]] = None,
+        networks: Optional[dict[str, nn.Module]] = None,
+        optimizers: Optional[dict[str, optim.Optimizer]] = None,
         path: str,
         checkpoint_index: int,
         reset_training_steps: bool = False,
-        optimizers: Optional[List[optim.Optimizer]] = None,
-        networks: Optional[List[nn.Module]] = None,
     ):
         super().__init__()
-        self._cbs = callbacks
+        self._cbs: List[Callback] = callbacks if callbacks else []
+        self._nets: dict[str, nn.Module] = networks if networks else {}
+        self._opts: dict[str, optim.Optimizer] = optimizers if optimizers else {}
         self._path = path
         self._checkpoint_index = checkpoint_index
         self._reset_training_steps = reset_training_steps
-        self._opts: List[optim.Optimizer] = optimizers if optimizers else []
-        self._nets: List[nn.Module] = networks if networks else []
 
     def begin_training(self):
         state_dict: dict = torch.load(f"{self._path}.{self._checkpoint_index}.tar")
         for cb, state in zip(self._cbs, state_dict["callback_state_dicts"]):
             cb.load_state_dict(state)
-        for net, state in zip(self._nets, state_dict["network_state_dicts"]):
-            net.load_state_dict(state)
-        for opt, state in zip(self._opts, state_dict["optim_state_dicts"]):
-            opt.load_state_dict(state)
+        for name, net in self._nets.items():
+            if name in state_dict["network_state_dicts"].keys():
+                state = state_dict["network_state_dicts"][name]
+                net.load_state_dict(state)
+            else:
+                warnings.warn(
+                    f"state_dict for {name} does not exists. "
+                    f"the model is not loaded from the checkpoint",
+                    UserWarning,
+                )
+        for name, opt in self._opts.items():
+            if name in state_dict["optim_state_dicts"].keys():
+                state = state_dict["optim_state_dicts"][name]
+                opt.load_state_dict(state)
+            else:
+                warnings.warn(
+                    f"state_dict for {name} does not exists. "
+                    f"the optimizer is not loaded from the checkpoint",
+                    UserWarning,
+                )
+
         if self._reset_training_steps:
             return {}
         return state_dict.get("training_state", {})

@@ -46,7 +46,11 @@ def test_networks_checkpoint():
     chkpt_dir = mkdtemp()
     path = join(chkpt_dir, "chkpt")
     n1 = nn.Linear(1, 1)
-    c1 = [Checkpointer(networks=[n1], callbacks=[], path=path, checkpoint_interval=1)]
+    c1 = [
+        Checkpointer(
+            networks={"nn_linear": n1}, callbacks=[], path=path, checkpoint_interval=1
+        )
+    ]
 
     t1 = Trainer(c1, onestep_dataloader())
     t1.state["inf_step"] = 0
@@ -58,7 +62,9 @@ def test_networks_checkpoint():
     assert not torch.allclose(n1(test_data), n2(test_data))
 
     c2 = [
-        CheckpointLoader(networks=[n2], callbacks=[], path=path, checkpoint_index=0),
+        CheckpointLoader(
+            networks={"nn_linear": n2}, callbacks=[], path=path, checkpoint_index=0
+        ),
         BackPropStepsTerminator(1),
     ]
     t2 = Trainer(c2, nostep_dataloader())
