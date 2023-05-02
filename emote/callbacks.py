@@ -358,44 +358,47 @@ class Checkpointer(Callback):
     Exactly what is written to the checkpoint is determined by the networks and
     callbacks supplied in the constructor.
 
-    :param callbacks (Optional[List[Callback]]): A list of callbacks that should be saved.
+    :param callbacks (List[Callback]): A list of callbacks that should be saved.
         This is usually useful when the full state of the training must be saved.
-    :param networks (Optional[dict[str, nn.Module]]): An optional list of networks that
-        should be saved. Networks are handled by their respective callbacks but
-        if you give them to this list they will be saved explicitly.
-    :param optimizers (Optional[dict[str, optim.Optimizer]]): Optional list of optimizers
-        to save. Optimizers are handled by their respective callbacks but
-        if you give them to this list they will be saved explicitly.
     :param path (str): The path to where the checkpoint should be stored.
     :param checkpoint_interval (int): Number of backprops between checkpoints.
+    :param callbacks_name(Optional[List[str]]): A list of names for the callbacks.
+    The names will be used by the CheckpointLoader to ensure the callback is loaded
+    with the correct dict_state.
     """
 
     def __init__(
         self,
         *,
-        callbacks: Optional[List[Callback]] = None,
-        networks: Optional[dict[str, nn.Module]] = None,
-        optimizers: Optional[dict[str, optim.Optimizer]] = None,
+        callbacks: List[Callback],
         path: str,
         checkpoint_interval: int,
+        callbacks_name: Optional[List[str]] = None,
     ):
         super().__init__(cycle=checkpoint_interval)
-        self._cbs: List[Callback] = callbacks if callbacks else []
-        self._nets: dict[str, nn.Module] = networks if networks else {}
-        self._opts: dict[str, optim.Optimizer] = optimizers if optimizers else {}
+        self._cbs = callbacks
         self._path = path
         self._checkpoint_index = 0
+
+        if callbacks_name:
+            self._cbs_name = callbacks_name
+            assert len(self._cbs_name) == len(self._cbs)
+        else:
+            ctr = 0
+            self._cbs_name = []
+            for cb in self._cbs:
+                (name, ctr) = (
+                    (cb.name, ctr) if hasattr(cb, "name") else (f"cb_{ctr}", ctr + 1)
+                )
+                self._cbs_name.append(name)
 
     def end_cycle(self):
         state_dict = {
             "callback_state_dicts": [cb.state_dict() for cb in self._cbs],
-            "network_state_dicts": {
-                name: net.state_dict() for name, net in self._nets.items()
+            "callback_names": self._cbs_name,
+            "training_state": {
+                "checkpoint_index": self._checkpoint_index,
             },
-            "optim_state_dicts": {
-                name: opt.state_dict() for name, opt in self._opts.items()
-            },
-            "training_state": {"checkpoint_index": self._checkpoint_index},
         }
         torch.save(state_dict, f"{self._path}.{self._checkpoint_index}.tar")
         self._checkpoint_index += 1
@@ -409,60 +412,64 @@ class CheckpointLoader(Callback):
     param
     to restore the callbacks, and for the latter, only pass the network param.
 
-    :param callbacks (Optional[List[Callback]]): A list of callbacks that should be
+    :param callbacks (List[Callback]): A list of callbacks that should be
         restored.
-    :param networks (Optional[dict[str, nn.Module]]): An optional list of networks
-        that should be restored.
-    :param optimizers (Optional[dict[str, optim.Optimizer]]): Optional list of
-        optimizers to restore.
     :param path (str): The path to where the checkpoint should be stored.
     :param checkpoint_index (int): Which checkpoint to load.
     :param reset_training_steps (bool): If False, start training at bp_steps=0 etc.
         Otherwise, start the training at whatever step and state the checkpoint has
         saved.
+    :param only_load_nets (bool): If True, only neural network params are restored.
+    :param callbacks_name(Optional[List[str]]): A list of names for the callbacks.
+    The names will be used to ensure that each callback is loaded with the correct
+    dict_state.
     """
 
     def __init__(
         self,
         *,
-        callbacks: Optional[List[Callback]] = None,
-        networks: Optional[dict[str, nn.Module]] = None,
-        optimizers: Optional[dict[str, optim.Optimizer]] = None,
+        callbacks: List[Callback],
         path: str,
         checkpoint_index: int,
         reset_training_steps: bool = False,
+        only_load_nets: bool = False,
+        callbacks_name: Optional[List[str]] = None,
     ):
         super().__init__()
-        self._cbs: List[Callback] = callbacks if callbacks else []
-        self._nets: dict[str, nn.Module] = networks if networks else {}
-        self._opts: dict[str, optim.Optimizer] = optimizers if optimizers else {}
+        self._cbs: List[Callback] = callbacks
         self._path = path
         self._checkpoint_index = checkpoint_index
         self._reset_training_steps = reset_training_steps
+        self._only_load_nets = only_load_nets
+
+        if callbacks_name:
+            self._cbs_name = callbacks_name
+            assert len(self._cbs_name) == len(self._cbs)
+        else:
+            ctr = 0
+            self._cbs_name = []
+            for cb in self._cbs:
+                (name, ctr) = (
+                    (cb.name, ctr) if hasattr(cb, "name") else (f"cb_{ctr}", ctr + 1)
+                )
+                self._cbs_name.append(name)
 
     def begin_training(self):
         state_dict: dict = torch.load(f"{self._path}.{self._checkpoint_index}.tar")
-        for cb, state in zip(self._cbs, state_dict["callback_state_dicts"]):
-            cb.load_state_dict(state)
-        for name, net in self._nets.items():
-            if name in state_dict["network_state_dicts"].keys():
-                state = state_dict["network_state_dicts"][name]
-                net.load_state_dict(state)
+
+        for cb, cb_name in zip(self._cbs, self._cbs_name):
+            if cb_name in state_dict["callback_names"]:
+                index = state_dict["callback_names"].index(cb_name)
+                state = state_dict["callback_state_dicts"][index]
+                if self._only_load_nets and hasattr(cb, "network"):
+                    cb.network.load_state_dict(state.pop("network_state_dict"))
+                else:
+                    cb.load_state_dict(state)
+
             else:
-                warnings.warn(
-                    f"state_dict for {name} does not exists. "
-                    f"the model is not loaded from the checkpoint",
-                    UserWarning,
-                )
-        for name, opt in self._opts.items():
-            if name in state_dict["optim_state_dicts"].keys():
-                state = state_dict["optim_state_dicts"][name]
-                opt.load_state_dict(state)
-            else:
-                warnings.warn(
-                    f"state_dict for {name} does not exists. "
-                    f"the optimizer is not loaded from the checkpoint",
-                    UserWarning,
+                raise KeyError(
+                    f"state_dict for {cb_name} does not exists. "
+                    f"the callback is not loaded from the checkpoint"
                 )
 
         if self._reset_training_steps:

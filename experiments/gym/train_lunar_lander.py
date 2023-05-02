@@ -280,11 +280,7 @@ def create_complementary_callbacks(
 
     """Only checkpointing the neural network parameters"""
     checkpointer = Checkpointer(
-        networks={
-            cb.name: cb.network
-            for cb in logged_cbs
-            if hasattr(cb, "network") and cb.network and hasattr(cb, "name")
-        },
+        callbacks=logged_cbs,
         path=args.checkpoint_path,
         checkpoint_interval=args.checkpoint_interval,
     )
@@ -292,11 +288,7 @@ def create_complementary_callbacks(
     """Only reloading neural network parameters"""
     if args.load_checkpoint:
         checkpoint_loader = CheckpointLoader(
-            networks={
-                cb.name: cb.network
-                for cb in logged_cbs
-                if (hasattr(cb, "network") and cb.network and hasattr(cb, "name"))
-            },
+            callbacks=logged_cbs,
             path=args.checkpoint_path,
             checkpoint_index=args.checkpoint_index,
             reset_training_steps=False,

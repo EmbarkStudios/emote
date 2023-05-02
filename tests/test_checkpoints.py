@@ -8,7 +8,12 @@ from torch import nn
 from torch.optim import Adam
 
 from emote import Trainer
-from emote.callbacks import BackPropStepsTerminator, Checkpointer, CheckpointLoader
+from emote.callbacks import (
+    BackPropStepsTerminator,
+    Checkpointer,
+    CheckpointLoader,
+    LossCallback,
+)
 from emote.sac import QLoss
 from emote.trainer import TrainingShutdownException
 
@@ -46,11 +51,14 @@ def test_networks_checkpoint():
     chkpt_dir = mkdtemp()
     path = join(chkpt_dir, "chkpt")
     n1 = nn.Linear(1, 1)
-    c1 = [
-        Checkpointer(
-            networks={"nn_linear": n1}, callbacks=[], path=path, checkpoint_interval=1
-        )
-    ]
+    loss_cb = LossCallback(
+        name="linear",
+        optimizer=Adam(n1.parameters(), lr=0.01),
+        network=n1,
+        max_grad_norm=0,
+        data_group="",
+    )
+    c1 = [Checkpointer(callbacks=[loss_cb], path=path, checkpoint_interval=1)]
 
     t1 = Trainer(c1, onestep_dataloader())
     t1.state["inf_step"] = 0
@@ -62,13 +70,12 @@ def test_networks_checkpoint():
     assert not torch.allclose(n1(test_data), n2(test_data))
 
     c2 = [
-        CheckpointLoader(
-            networks={"nn_linear": n2}, callbacks=[], path=path, checkpoint_index=0
-        ),
+        CheckpointLoader(callbacks=[loss_cb], path=path, checkpoint_index=0),
         BackPropStepsTerminator(1),
     ]
     t2 = Trainer(c2, nostep_dataloader())
     t2.train()
+    n2 = loss_cb.network
     assert torch.allclose(n1(test_data), n2(test_data))
 
 
@@ -90,7 +97,7 @@ def test_qloss_checkpoints():
     ql1 = QLoss(name="q", q=q1, opt=Adam(q1.parameters()))
     c1 = [
         ql1,
-        Checkpointer(networks=[], callbacks=[ql1], path=path, checkpoint_interval=1),
+        Checkpointer(callbacks=[ql1], path=path, checkpoint_interval=1),
     ]
 
     t1 = Trainer(c1, random_onestep_dataloader())
@@ -106,7 +113,7 @@ def test_qloss_checkpoints():
     ql2 = QLoss(name="q", q=q2, opt=Adam(q1.parameters()))
     c2 = [
         ql2,
-        CheckpointLoader(networks=[], callbacks=[ql2], path=path, checkpoint_index=0),
+        CheckpointLoader(callbacks=[ql2], path=path, checkpoint_index=0),
     ]
     t2 = Trainer(c2, nostep_dataloader())
     t2.train()
