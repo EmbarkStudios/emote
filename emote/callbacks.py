@@ -355,6 +355,7 @@ class TerminalLogger(Callback):
 class Checkpointer(Callback):
     """Checkpointer writes out a checkpoint every n steps.
 
+    The callback must contain the 'name' field. Otherwise, it will be ignored.
     Exactly what is written to the checkpoint is determined by the networks and
     callbacks supplied in the constructor.
 
@@ -362,9 +363,6 @@ class Checkpointer(Callback):
         This is usually useful when the full state of the training must be saved.
     :param path (str): The path to where the checkpoint should be stored.
     :param checkpoint_interval (int): Number of backprops between checkpoints.
-    :param callbacks_name(Optional[List[str]]): A list of names for the callbacks.
-    The names will be used by the CheckpointLoader to ensure the callback is loaded
-    with the correct dict_state.
     """
 
     def __init__(
@@ -373,29 +371,34 @@ class Checkpointer(Callback):
         callbacks: List[Callback],
         path: str,
         checkpoint_interval: int,
-        callbacks_name: Optional[List[str]] = None,
     ):
         super().__init__(cycle=checkpoint_interval)
-        self._cbs = callbacks
+
         self._path = path
         self._checkpoint_index = 0
 
-        if callbacks_name:
-            self._cbs_name = callbacks_name
-            assert len(self._cbs_name) == len(self._cbs)
-        else:
-            ctr = 0
-            self._cbs_name = []
-            for cb in self._cbs:
-                (name, ctr) = (
-                    (cb.name, ctr) if hasattr(cb, "name") else (f"cb_{ctr}", ctr + 1)
+        self._cbs = []
+        names = []
+        for cb in callbacks:
+            if hasattr(cb, "name"):
+                self._cbs.append(cb)
+                names.append(cb.name)
+            else:
+                warnings.warn(
+                    f"Checkpointer ignored {cb} because of not "
+                    f"having the 'name' field.",
+                    UserWarning,
                 )
-                self._cbs_name.append(name)
+
+        if len(names) != len(set(names)):
+            raise ValueError(
+                "Checkpointer is given a list of callbacks with at least"
+                "two callbacks with identical names"
+            )
 
     def end_cycle(self):
         state_dict = {
-            "callback_state_dicts": [cb.state_dict() for cb in self._cbs],
-            "callback_names": self._cbs_name,
+            "callback_state_dicts": {cb.name: cb.state_dict() for cb in self._cbs},
             "training_state": {
                 "checkpoint_index": self._checkpoint_index,
             },
@@ -407,10 +410,9 @@ class Checkpointer(Callback):
 class CheckpointLoader(Callback):
     """CheckpointLoader loads a checkpoint like the one created by Checkpointer.
 
-    This is intended for both resuming the whole training or only restoring a specific
-    network given a specific checkpoint index. For the former, pass the callbacks
-    param
-    to restore the callbacks, and for the latter, only pass the network param.
+    This is intended for both resuming the whole training (default) or only restoring
+    a specific network given a specific checkpoint index. For the latter, set the
+    only_load_nets to True.
 
     :param callbacks (List[Callback]): A list of callbacks that should be
         restored.
@@ -420,9 +422,6 @@ class CheckpointLoader(Callback):
         Otherwise, start the training at whatever step and state the checkpoint has
         saved.
     :param only_load_nets (bool): If True, only neural network params are restored.
-    :param callbacks_name(Optional[List[str]]): A list of names for the callbacks.
-    The names will be used to ensure that each callback is loaded with the correct
-    dict_state.
     """
 
     def __init__(
@@ -433,44 +432,41 @@ class CheckpointLoader(Callback):
         checkpoint_index: int,
         reset_training_steps: bool = False,
         only_load_nets: bool = False,
-        callbacks_name: Optional[List[str]] = None,
     ):
         super().__init__()
-        self._cbs: List[Callback] = callbacks
         self._path = path
         self._checkpoint_index = checkpoint_index
         self._reset_training_steps = reset_training_steps
         self._only_load_nets = only_load_nets
 
-        if callbacks_name:
-            self._cbs_name = callbacks_name
-            assert len(self._cbs_name) == len(self._cbs)
-        else:
-            ctr = 0
-            self._cbs_name = []
-            for cb in self._cbs:
-                (name, ctr) = (
-                    (cb.name, ctr) if hasattr(cb, "name") else (f"cb_{ctr}", ctr + 1)
+        self._cbs = []
+        names = []
+        for cb in callbacks:
+            if hasattr(cb, "name"):
+                self._cbs.append(cb)
+                names.append(cb.name)
+            else:
+                warnings.warn(
+                    f"CheckpointLoader ignored {cb} because of not "
+                    f"having the 'name' field.",
+                    UserWarning,
                 )
-                self._cbs_name.append(name)
+
+        if len(names) != len(set(names)):
+            raise ValueError(
+                "CheckpointLoader is given a list of callbacks with at least"
+                "two callbacks with identical names"
+            )
 
     def begin_training(self):
         state_dict: dict = torch.load(f"{self._path}.{self._checkpoint_index}.tar")
 
-        for cb, cb_name in zip(self._cbs, self._cbs_name):
-            if cb_name in state_dict["callback_names"]:
-                index = state_dict["callback_names"].index(cb_name)
-                state = state_dict["callback_state_dicts"][index]
-                if self._only_load_nets and hasattr(cb, "network"):
-                    cb.network.load_state_dict(state.pop("network_state_dict"))
-                else:
-                    cb.load_state_dict(state)
-
+        for cb in self._cbs:
+            state = state_dict["callback_state_dicts"][cb.name]
+            if self._only_load_nets and hasattr(cb, "network"):
+                cb.network.load_state_dict(state.pop("network_state_dict"))
             else:
-                raise KeyError(
-                    f"state_dict for {cb_name} does not exists. "
-                    f"the callback is not loaded from the checkpoint"
-                )
+                cb.load_state_dict(state)
 
         if self._reset_training_steps:
             return {}
