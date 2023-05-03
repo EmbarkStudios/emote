@@ -70,7 +70,9 @@ def test_networks_checkpoint():
     assert not torch.allclose(n1(test_data), n2(test_data))
 
     c2 = [
-        CheckpointLoader(callbacks=[loss_cb], path=path, checkpoint_index=0),
+        CheckpointLoader(
+            callbacks=[loss_cb], path=path, checkpoint_index=0, only_load_nets=True
+        ),
         BackPropStepsTerminator(1),
     ]
     t2 = Trainer(c2, nostep_dataloader())
