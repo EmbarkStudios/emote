@@ -67,7 +67,7 @@ class GaussianPolicyHead(nn.Module):
         if self.training:
             dist = dists.TransformedDistribution(
                 dists.Independent(dists.Normal(mean, std), 1),
-                RobustTanhTransform(),
+                transforms.TanhTransform(cache_size=1),
             )
             sample = dist.rsample()
 
