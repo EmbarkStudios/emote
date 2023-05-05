@@ -13,13 +13,6 @@ from torch import Tensor
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 
 
-class RobustTanhTransform(transforms.TanhTransform):
-    def _inverse(self, y):
-        eps = torch.finfo(y.dtype).eps
-        input_val = y.clamp(min=-1.0 + eps, max=1.0 - eps)
-        return torch.atanh(input_val)
-
-
 class BasePolicy(nn.Module):
     def __init__(self):
         super().__init__()
@@ -67,7 +60,7 @@ class GaussianPolicyHead(nn.Module):
         if self.training:
             dist = dists.TransformedDistribution(
                 dists.Independent(dists.Normal(mean, std), 1),
-                RobustTanhTransform(),
+                transforms.TanhTransform(cache_size=1),
             )
             sample = dist.rsample()
 
