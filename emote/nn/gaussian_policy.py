@@ -13,13 +13,6 @@ from torch import Tensor
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 
 
-class RobustTanhTransform(transforms.TanhTransform):
-    def _inverse(self, y):
-        eps = torch.finfo(y.dtype).eps
-        input_val = y.clamp(min=-1.0 + eps, max=1.0 - eps)
-        return torch.atanh(input_val)
-
-
 class BasePolicy(nn.Module):
     def __init__(self):
         super().__init__()
