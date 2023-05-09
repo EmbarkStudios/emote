@@ -124,8 +124,10 @@ class OnnxExporter(LoggingMixin, Callback):
         self.inputs = input_shapes
         self.outputs = output_shapes
 
-    def end_cycle(self):
+    def end_batch(self):
         self.process_pending_exports()
+
+    def end_cycle(self):
         self.export()
 
         for name, (mean, var) in self.scopes.stats().items():
