@@ -155,6 +155,10 @@ class OnnxExporter(LoggingMixin, Callback):
 
             self.policy.train(False)
 
+            # NOTE: This might seem like a good use case for torch.jit.trace,
+            # but it unfortunately leaks a full copy of the neural network.
+            # See: https://github.com/pytorch/pytorch/issues/82532
+
             with io.BytesIO() as f:
                 torch.onnx.export(
                     model=self.policy,
