@@ -1,4 +1,3 @@
-from .signal import ExitSignal
 from .spaces import MDPSpace
 from .threading import AtomicContainer, AtomicInt, LockedResource
 from .timed_call import BlockTimers, TimedBlock
@@ -12,6 +11,5 @@ __all__ = [
     "AtomicInt",
     "TimedBlock",
     "BlockTimers",
-    "ExitSignal",
     "MDPSpace",
 ]
