@@ -15,6 +15,16 @@ from .callback import Callback
 from .trainer import TrainingShutdownException
 
 
+def _force_detach_value(
+    value: Union[float, Tensor, np.ndarray]
+) -> Union[float, Tensor, np.ndarray]:
+    """Checks if a value is a tensor, and detaches it if necessary"""
+    if isinstance(value, Tensor) and value.requires_grad:
+        return value.clone().detach()
+
+    return value
+
+
 class LoggingMixin:
     """A Mixin that accepts logging calls.
 
@@ -38,7 +48,9 @@ class LoggingMixin:
 
     def log_scalar(self, key: str, value: Union[float, torch.Tensor]):
         """Use log_scalar to periodically log scalar data."""
+        value = _force_detach_value(value)
         if isinstance(value, torch.Tensor):
+            assert not value.requires_grad
             self.scalar_logs[key] = value.item()
         else:
             self.scalar_logs[key] = value
@@ -51,7 +63,7 @@ class LoggingMixin:
         windowed[LENGTH]:foo/bar. Note that this cannot be changed between multiple invocations -
         whichever length is found first will be permanent.
         """
-
+        value = _force_detach_value(value)
         if key not in self.windowed_scalar:
             # we allow windowed[100]:some_key/foobar to override window size
             if "windowed[" in key:
@@ -65,12 +77,15 @@ class LoggingMixin:
             self.windowed_scalar_cumulative[key] = 0
 
         if isinstance(value, torch.Tensor):
+            assert not value.requires_grad
             self.windowed_scalar[key].append(value.item())
         else:
             self.windowed_scalar[key].append(value)
 
     def log_image(self, key: str, value: torch.Tensor):
         """Use log_image to periodically log image data."""
+        value = _force_detach_value(value)
+        assert not value.requires_grad
         if len(value.shape) == 3:
             self.image_logs[key] = value
 
@@ -79,6 +94,8 @@ class LoggingMixin:
         self.video_logs[key] = value
 
     def log_histogram(self, key: str, value: torch.Tensor):
+        value = _force_detach_value(value)
+        assert not value.requires_grad
         self.hist_logs[key] = value.detach()
 
     def state_dict(self):
