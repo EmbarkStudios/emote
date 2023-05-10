@@ -1,3 +1,5 @@
+import logging
+
 from itertools import count
 from typing import Any, Callable, Iterable, List, MutableMapping
 from weakref import ref
@@ -56,7 +58,16 @@ class Trainer:
         """
         shutdown_signal = shutdown_signal or (lambda: False)
 
-        self._begin_training()
+        try:
+            self._begin_training()
+
+        except TrainingShutdownException:
+            logging.info("Training shutdown requested before training began")
+            return
+
+        except Exception as ex:
+            raise Exception("Error in begin_training, aborting") from ex
+
         self.state["bp_samples"] = 0
 
         try:
@@ -67,6 +78,7 @@ class Trainer:
 
                 if shutdown_signal():
                     raise TrainingShutdownException
+
                 self._begin_cycle(bp_step)
                 self._begin_batch()
                 self._backward()
@@ -75,6 +87,7 @@ class Trainer:
 
         except TrainingShutdownException as ex:
             self._end_training(ex)
+
         except Exception as ex:
             self._end_training(ex)
             raise ex
