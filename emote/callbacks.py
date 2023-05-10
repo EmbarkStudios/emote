@@ -18,7 +18,7 @@ from .trainer import TrainingShutdownException
 def _force_detach_value(
     value: Union[float, Tensor, np.ndarray]
 ) -> Union[float, Tensor, np.ndarray]:
-    """Checks if a value is a tensor, and detaches it if necessary"""
+    """Checks if a value is a tensor, and detaches it if has gradients enabled"""
     if isinstance(value, Tensor) and value.requires_grad:
         return value.clone().detach()
 
