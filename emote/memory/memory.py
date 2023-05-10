@@ -102,6 +102,11 @@ class TableMemoryProxy:
             if observation.episode_state != EpisodeState.INITIAL:
                 data["rewards"] = observation.rewards["reward"]
 
+            else:
+                assert (
+                    agent_id not in self._store
+                ), f"Agent {agent_id} already has an ongoing episode"
+
             if observation.episode_state in self._term_states:
                 if self._use_terminal:
                     # The terminal value assigned here is the terminal _mask_ value,
