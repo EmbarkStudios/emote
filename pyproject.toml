@@ -24,7 +24,7 @@ atari = [
     "box2d-py>=2.3.5",
     "pygame>=2.1.0"
 ]
-wandb = ["wandb>=0.14.0"]
+wandb = ["wandb>=0.14.0", "urllib3<2.0.0"]
 ci = ["gsutil>=4.66", "emote-rl[atari, wandb]"]
 
 [tool.pdm.dev-dependencies]
