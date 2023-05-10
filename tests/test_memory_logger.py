@@ -62,11 +62,13 @@ def test_add_multiple(table_proxy, tmpdir):
         2,
     )
 
-    for _ in range(10):
+    for idx in range(10):
         proxy.add(
             {
                 0: DictObservation(
-                    episode_state=EpisodeState.INITIAL,
+                    episode_state=EpisodeState.INITIAL
+                    if idx == 0
+                    else EpisodeState.RUNNING,
                     array_data={"obs": [1.0]},
                     rewards={"reward": None},
                     metadata=MetaData(info={"episode/reward": 10.0}, info_lists={}),
