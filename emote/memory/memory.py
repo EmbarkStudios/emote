@@ -13,12 +13,14 @@ import warnings
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Mapping, Optional, Tuple, Union
+from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 from torch.utils.tensorboard import SummaryWriter
 
 from emote.callback import Callback
 from emote.callbacks import LoggingMixin
+from emote.extra.onnx_exporter import OnnxExporter
+from emote.trainer import TrainingShutdownException
 
 from ..typing import AgentId, DictObservation, DictResponse, EpisodeState
 from ..utils import BlockTimers, TimedBlock
@@ -374,13 +376,25 @@ class MemoryWarmup(Callback):
     loop and prevent progress.
     """
 
-    def __init__(self, loader: MemoryLoader):
+    def __init__(
+        self,
+        loader: MemoryLoader,
+        exporter: Optional[OnnxExporter],
+        shutdown_signal: Optional[Callable[[], bool]] = None,
+    ):
         super().__init__()
         self._order = 100
         self._loader = loader
+        self._exporter = exporter
+        self._shutdown_signal = shutdown_signal or (lambda: False)
 
     def begin_training(self):
         import time
 
         while not self._loader.is_ready():
             time.sleep(0.1)
+            if self._exporter:
+                self._exporter.process_pending_exports()
+
+            if self._shutdown_signal():
+                raise TrainingShutdownException
