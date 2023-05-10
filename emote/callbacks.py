@@ -20,7 +20,11 @@ def _force_detach_value(
 ) -> Union[float, Tensor, np.ndarray]:
     """Checks if a value is a tensor, and detaches it if has gradients enabled"""
     if isinstance(value, Tensor) and value.requires_grad:
-        return value.clone().detach()
+        # No need to clone, as detach creates a new tensor (with shared storage). Clone actually
+        # maintains differentiability, so it does even less for us. The caveat here is that we can
+        # mutate the original tensor via the shared storage. However; the logger shouldn't.
+
+        return value.detach()
 
     return value
 
