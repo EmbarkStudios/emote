@@ -155,21 +155,10 @@ class OnnxExporter(LoggingMixin, Callback):
 
             self.policy.train(False)
 
-            with torch.jit.optimized_execution(True):
-                with torch.no_grad():
-                    trace = torch.jit.trace(
-                        self.policy,
-                        args,
-                        check_trace=True,
-                        check_tolerance=1e-05,
-                    )
-
-            self.policy.train(True)
-
             with io.BytesIO() as f:
                 torch.onnx.export(
-                    model=trace,
-                    args=args,
+                    model=self.policy,
+                    args=tuple(args),
                     f=f,
                     input_names=list(map(lambda pair: pair[0], self.inputs)),
                     output_names=list(map(lambda pair: pair[0], self.outputs)),
@@ -179,6 +168,8 @@ class OnnxExporter(LoggingMixin, Callback):
                     },
                     opset_version=13,
                 )
+
+                self.policy.train(True)
 
                 f.seek(0)
                 model_proto = onnx.load_model(f, onnx.ModelProto)
