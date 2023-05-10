@@ -379,14 +379,13 @@ class MemoryWarmup(Callback):
     def __init__(
         self,
         loader: MemoryLoader,
-        exporter: OnnxExporter,
-        shutdown_signal: Callable[[], bool] = None,
+        exporter: Optional[OnnxExporter],
+        shutdown_signal: Optional[Callable[[], bool]] = None,
     ):
         super().__init__()
         self._order = 100
         self._loader = loader
         self._exporter = exporter
-
         self._shutdown_signal = shutdown_signal or (lambda: False)
 
     def begin_training(self):
@@ -394,7 +393,8 @@ class MemoryWarmup(Callback):
 
         while not self._loader.is_ready():
             time.sleep(0.1)
-            self._exporter.process_pending_exports()
+            if self._exporter:
+                self._exporter.process_pending_exports()
 
             if self._shutdown_signal():
                 raise TrainingShutdownException
