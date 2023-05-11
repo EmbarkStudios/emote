@@ -374,13 +374,14 @@ class Checkpointer(Callback):
         callbacks: List[Callback],
         path: str,
         checkpoint_interval: int,
+        checkpoint_index: int = 0,
         optimizers: Optional[List[optim.Optimizer]] = None,
         networks: Optional[List[nn.Module]] = None,
     ):
         super().__init__(cycle=checkpoint_interval)
         self._cbs = callbacks
         self._path = path
-        self._checkpoint_index = 0
+        self._checkpoint_index = checkpoint_index
         self._opts: List[optim.Optimizer] = optimizers if optimizers else []
         self._nets: List[nn.Module] = networks if networks else []
 
