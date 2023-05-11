@@ -7,6 +7,7 @@ import torch
 from torch import optim
 
 from emote.callback import BatchCallback
+from emote.callbacks.logging import LoggingMixin
 from emote.callbacks.loss import LossCallback
 from emote.extra.schedules import BPStepScheduler
 from emote.memory import MemoryLoader
@@ -61,7 +62,7 @@ class ModelLoss(LossCallback):
         return loss
 
 
-class LossProgressCheck(BatchCallback):
+class LossProgressCheck(LoggingMixin, BatchCallback):
     def __init__(
         self,
         model: DynamicModel,
@@ -197,7 +198,7 @@ class BatchSampler(BatchCallback):
         return True if rnd < self.prob_of_sampling_model_data else False
 
 
-class ModelBasedCollector(BatchCallback):
+class ModelBasedCollector(LoggingMixin, BatchCallback):
     """ModelBasedCollector class is used to sample rollouts from the trained dynamic model.
     The rollouts are stored in a replay buffer memory.
 
