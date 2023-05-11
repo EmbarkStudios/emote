@@ -72,7 +72,7 @@ class LoggingMixin:
     def log_image(self, key: str, value: torch.Tensor):
         """Use log_image to periodically log image data."""
         if len(value.shape) == 3:
-            self.image_logs[key] = value
+            self.image_logs[key] = value.detach()
 
     def log_video(self, key: str, value: Tuple[np.ndarray, int]):
         """Use log_scalar to periodically log scalar data."""
