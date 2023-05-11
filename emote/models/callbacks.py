@@ -7,10 +7,10 @@ import torch
 from torch import optim
 
 from emote.callback import BatchCallback
-from emote.callbacks.logging import LoggingMixin
 from emote.callbacks.loss import LossCallback
 from emote.extra.schedules import BPStepScheduler
 from emote.memory import MemoryLoader
+from emote.mixins.logging import LoggingMixin
 from emote.models.model import DynamicModel
 from emote.models.model_env import ModelEnv
 from emote.proxies import AgentProxy, MemoryProxy

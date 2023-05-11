@@ -1,8 +1,8 @@
 from typing import List
 
 from emote.callback import Callback
-from emote.callbacks.logging import LoggingMixin
 from emote.callbacks.loss import LossCallback
+from emote.mixins.logging import LoggingMixin
 from emote.trainer import TrainingShutdownException
 
 

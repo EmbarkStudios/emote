@@ -16,9 +16,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
 from emote.callbacks.generic import BackPropStepsTerminator
-from emote.callbacks.logging import LoggingMixin, TensorboardLogger, WBLogger
+from emote.callbacks.logging import TensorboardLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
+from emote.mixins.logging import LoggingMixin
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
@@ -248,6 +249,8 @@ def create_complementary_callbacks(
             (list[Callback]): the full list of callbacks for the training
     """
     if args.use_wandb:
+        from emote.callbacks.wb_logger import WBLogger
+
         config = {
             "wandb_project": args.name,
             "wandb_run": args.wandb_run,

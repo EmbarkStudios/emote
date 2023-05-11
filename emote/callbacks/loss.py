@@ -4,7 +4,7 @@ from torch import Tensor, nn, optim
 from torch.optim import lr_scheduler
 
 from emote.callback import Callback
-from emote.callbacks.logging import LoggingMixin
+from emote.mixins.logging import LoggingMixin
 
 
 class LossCallback(LoggingMixin, Callback):

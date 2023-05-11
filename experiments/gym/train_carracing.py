@@ -17,10 +17,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
 from emote.callback import Callback
-from emote.callbacks.logging import LoggingMixin, TensorboardLogger
+from emote.callbacks.logging import TensorboardLogger
 from emote.env.box2d import make_vision_box2d_env
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
+from emote.mixins.logging import LoggingMixin
 from emote.nn import GaussianPolicyHead
 from emote.nn.action_value_mlp import SharedEncoderActionValueNet
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_

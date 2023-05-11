@@ -4,7 +4,7 @@ import pytest
 import wandb
 
 from emote.callback import Callback
-from emote.callbacks.logging import LoggingMixin, WBLogger
+from emote.mixins.logging import LoggingMixin
 from emote.trainer import Trainer
 
 
@@ -32,14 +32,18 @@ def test_raises_help_if_wandb_not_installed(hide_pkg):
     hide_pkg("wandb")
 
     with pytest.raises(ImportError) as ex:
+        from emote.callbacks.wb_logger import WBLogger
+
         WBLogger([], {}, log_interval=1)
 
-    assert ex.value.msg == "enable the optional `wandb` future to use the WBLogger"
+    assert ex.value.msg == "enable the optional `wandb` feature to use the WBLogger"
     assert isinstance(ex.value.__cause__, ImportError)
     assert ex.value.__cause__.msg == "No module named 'wandb'"
 
 
 def test_logging():
+    from emote.callbacks.wb_logger import WBLogger
+
     dummy_cb = DummyCallback()
     logger = WBLogger(
         callbacks=[dummy_cb],

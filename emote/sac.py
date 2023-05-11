@@ -8,8 +8,8 @@ import torch
 from torch import nn, optim
 
 from emote.callback import Callback
-from emote.callbacks.logging import LoggingMixin
 from emote.callbacks.loss import LossCallback
+from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
