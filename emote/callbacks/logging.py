@@ -14,13 +14,13 @@ class TensorboardLogger(Callback):
 
     def __init__(
         self,
-        callbacks: List[LoggingMixin],
+        loggables: List[LoggingMixin],
         writer: SummaryWriter,
         log_interval: int,
         log_by_samples: bool = False,
     ):
         super().__init__(cycle=log_interval)
-        self._cbs = callbacks
+        self._logs = loggables
         self._writer = writer
         self._log_samples = log_by_samples
 
@@ -30,7 +30,7 @@ class TensorboardLogger(Callback):
     def end_cycle(self, bp_step, bp_samples):
         suffix = "bp_step"
 
-        for cb in self._cbs:
+        for cb in self._logs:
             for k, v in cb.scalar_logs.items():
                 if suffix:
                     k_split = k.split("/")
