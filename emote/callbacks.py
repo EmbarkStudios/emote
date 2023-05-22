@@ -380,7 +380,7 @@ class Checkpointer(Callback):
         checkpoint_index: int = 0,
         optimizers: Optional[List[optim.Optimizer]] = None,
         networks: Optional[List[nn.Module]] = None,
-        storage_subdirectory: str = "checkpoints"
+        storage_subdirectory: str = "checkpoints",
     ):
         super().__init__(cycle=checkpoint_interval)
         self._cbs = callbacks
@@ -390,7 +390,7 @@ class Checkpointer(Callback):
         self._nets: List[nn.Module] = networks if networks else []
         self._folder_path = os.path.join(run_root, storage_subdirectory)
 
-    def begin_training(self): 
+    def begin_training(self):
         os.makedirs(self._folder_path, exist_ok=True)
 
     def end_cycle(self):
@@ -439,7 +439,7 @@ class CheckpointLoader(Callback):
         reset_training_steps: bool = False,
         optimizers: Optional[List[optim.Optimizer]] = None,
         networks: Optional[List[nn.Module]] = None,
-        storage_subdirectory: str = "checkpoints"
+        storage_subdirectory: str = "checkpoints",
     ):
         super().__init__()
         self._cbs = callbacks
@@ -452,7 +452,9 @@ class CheckpointLoader(Callback):
 
     def begin_training(self):
         if not os.path.exists(self._folder_path):
-            raise InvalidCheckpointLocation(f"Checkpoint folder {self._folder_path} was specified but does not exist.")
+            raise InvalidCheckpointLocation(
+                f"Checkpoint folder {self._folder_path} was specified but does not exist."
+            )
         name = f"checkpoint_{self._checkpoint_index}.tar"
         final_path = os.path.join(self._folder_path, name)
         state_dict: dict = torch.load(final_path)
@@ -529,5 +531,6 @@ class BatchCallback(LoggingMixin, Callback):
     def get_batch(self, *args, **kwargs):
         pass
 
-class InvalidCheckpointLocation(ValueError): 
+
+class InvalidCheckpointLocation(ValueError):
     pass
