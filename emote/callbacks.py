@@ -397,7 +397,9 @@ class Checkpointer(Callback):
             "checkpoint_index": self._checkpoint_index,
         }
         name = f"checkpoint_{self._checkpoint_index}.tar"
-        final_path = os.path.join(self._path, self._storage_subdirectory, name)
+        folder_path = os.path.join(self._path, self._storage_subdirectory)
+        os.makedirs(folder_path, exist_ok=True)
+        final_path = os.path.join(folder_path, name)
         torch.save(state_dict, final_path)
         self._checkpoint_index += 1
 
@@ -445,7 +447,9 @@ class CheckpointLoader(Callback):
 
     def begin_training(self):
         name = f"checkpoint_{self._checkpoint_index}.tar"
-        final_path = os.path.join(self._path, self._storage_subdirectory, name)
+        folder_path = os.path.join(self._path, self._stored_subdirectory)
+        os.makedirs(folder_path, exist_ok=True)
+        final_path = os.path.join(folder_path, name)
         state_dict: dict = torch.load(final_path)
         for cb, state in zip(self._cbs, state_dict["callback_state_dicts"]):
             cb.load_state_dict(state)
