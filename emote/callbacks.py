@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 
 from collections import deque
@@ -377,6 +378,7 @@ class Checkpointer(Callback):
         checkpoint_index: int = 0,
         optimizers: Optional[List[optim.Optimizer]] = None,
         networks: Optional[List[nn.Module]] = None,
+        storage_subdirectory: str = "checkpoints"
     ):
         super().__init__(cycle=checkpoint_interval)
         self._cbs = callbacks
@@ -384,6 +386,7 @@ class Checkpointer(Callback):
         self._checkpoint_index = checkpoint_index
         self._opts: List[optim.Optimizer] = optimizers if optimizers else []
         self._nets: List[nn.Module] = networks if networks else []
+        self._storage_subdirectory = storage_subdirectory
 
     def end_cycle(self):
         state_dict = {}
@@ -393,7 +396,9 @@ class Checkpointer(Callback):
         state_dict["training_state"] = {
             "checkpoint_index": self._checkpoint_index,
         }
-        torch.save(state_dict, f"{self._path}.{self._checkpoint_index}.tar")
+        name = f"checkpoint_{self._checkpoint_index}.tar"
+        final_path = os.path.join(self._path, self._storage_subdirectory, name)
+        torch.save(state_dict, final_path)
         self._checkpoint_index += 1
 
 
@@ -427,6 +432,7 @@ class CheckpointLoader(Callback):
         reset_training_steps: bool = False,
         optimizers: Optional[List[optim.Optimizer]] = None,
         networks: Optional[List[nn.Module]] = None,
+        storage_subdirectory: str = "checkpoints"
     ):
         super().__init__()
         self._cbs = callbacks
@@ -435,9 +441,12 @@ class CheckpointLoader(Callback):
         self._reset_training_steps = reset_training_steps
         self._opts: List[optim.Optimizer] = optimizers if optimizers else []
         self._nets: List[nn.Module] = networks if networks else []
+        self._stored_subdirectory = storage_subdirectory
 
     def begin_training(self):
-        state_dict: dict = torch.load(f"{self._path}.{self._checkpoint_index}.tar")
+        name = f"checkpoint_{self._checkpoint_index}.tar"
+        final_path = os.path.join(self._path, self._storage_subdirectory, name)
+        state_dict: dict = torch.load(final_path)
         for cb, state in zip(self._cbs, state_dict["callback_state_dicts"]):
             cb.load_state_dict(state)
         for net, state in zip(self._nets, state_dict["network_state_dicts"]):
