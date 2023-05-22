@@ -359,7 +359,7 @@ class Checkpointer(Callback):
     callbacks supplied in the constructor.
 
     :param callbacks (List[Callback]): A list of callbacks the should be saved.
-    :param run_root (str): The root path to where the checkpoint should be stored.
+    :param run_root (str): The root path to where the run artifacts should be stored.
     :param checkpoint_interval (int): Number of backprops between checkpoints.
     :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
         to save. Usually optimizers are handled by their respective callbacks but
@@ -367,6 +367,8 @@ class Checkpointer(Callback):
     :param networks (Optional[List[nn.Module]]): An optional list of networks that
         should be saved. Usually networks and optimizers are both restored by the
         callbacks which handles their parameters.
+    :param storage_subdirectory (str): The subdirectory where the checkpoints are
+        stored.
     """
 
     def __init__(
@@ -413,7 +415,7 @@ class CheckpointLoader(Callback):
     probably easier to just do it explicitly when the network is constructed.
 
     :param callbacks (List[Callback]): A list of callbacks the should be restored.
-    :param run_root (str): The root path to where the checkpoint should be stored.
+    :param run_root (str): The root path to where the run artifacts should be stored.
     :param checkpoint_index (int): Which checkpoint to load.
     :param reset_training_steps (bool): If False, start training at bp_steps=0 etc.
         Otherwise start the training at whatever step and state the checkpoint has
@@ -424,6 +426,8 @@ class CheckpointLoader(Callback):
     :param networks (Optional[List[nn.Module]]): An optional list of networks that
         should be restored. Usually networks and optimizers are both restored by the
         callbacks which handles their parameters.
+    :param storage_subdirectory (str): The subdirectory where the checkpoints are
+        stored.
     """
 
     def __init__(
@@ -447,7 +451,8 @@ class CheckpointLoader(Callback):
         self._folder_path = os.path.join(run_root, storage_subdirectory)
 
     def begin_training(self):
-        assert(os.path.exists(self._folder_path))
+        if not os.path.exists(self._folder_path):
+            raise InvalidCheckpointLocation(f"Checkpoint folder {self._folder_path} was specified but does not exist.")
         name = f"checkpoint_{self._checkpoint_index}.tar"
         final_path = os.path.join(self._folder_path, name)
         state_dict: dict = torch.load(final_path)
@@ -523,3 +528,6 @@ class BatchCallback(LoggingMixin, Callback):
     @Callback.extend
     def get_batch(self, *args, **kwargs):
         pass
+
+class InvalidCheckpointLocation(ValueError): 
+    pass
