@@ -359,7 +359,7 @@ class Checkpointer(Callback):
     callbacks supplied in the constructor.
 
     :param callbacks (List[Callback]): A list of callbacks the should be saved.
-    :param path (str): The path to where the checkpoint should be stored.
+    :param run_root (str): The root path to where the checkpoint should be stored.
     :param checkpoint_interval (int): Number of backprops between checkpoints.
     :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
         to save. Usually optimizers are handled by their respective callbacks but
@@ -373,7 +373,7 @@ class Checkpointer(Callback):
         self,
         *,
         callbacks: List[Callback],
-        path: str,
+        run_root: str,
         checkpoint_interval: int,
         checkpoint_index: int = 0,
         optimizers: Optional[List[optim.Optimizer]] = None,
@@ -382,11 +382,14 @@ class Checkpointer(Callback):
     ):
         super().__init__(cycle=checkpoint_interval)
         self._cbs = callbacks
-        self._path = path
+        self._run_root = run_root
         self._checkpoint_index = checkpoint_index
         self._opts: List[optim.Optimizer] = optimizers if optimizers else []
         self._nets: List[nn.Module] = networks if networks else []
-        self._storage_subdirectory = storage_subdirectory
+        self._folder_path = os.path.join(run_root, storage_subdirectory)
+
+    def begin_training(self): 
+        os.makedirs(self._folder_path, exist_ok=True)
 
     def end_cycle(self):
         state_dict = {}
@@ -397,9 +400,7 @@ class Checkpointer(Callback):
             "checkpoint_index": self._checkpoint_index,
         }
         name = f"checkpoint_{self._checkpoint_index}.tar"
-        folder_path = os.path.join(self._path, self._storage_subdirectory)
-        os.makedirs(folder_path, exist_ok=True)
-        final_path = os.path.join(folder_path, name)
+        final_path = os.path.join(self._folder_path, name)
         torch.save(state_dict, final_path)
         self._checkpoint_index += 1
 
@@ -412,7 +413,7 @@ class CheckpointLoader(Callback):
     probably easier to just do it explicitly when the network is constructed.
 
     :param callbacks (List[Callback]): A list of callbacks the should be restored.
-    :param path (str): The path to where the checkpoint should be stored.
+    :param run_root (str): The root path to where the checkpoint should be stored.
     :param checkpoint_index (int): Which checkpoint to load.
     :param reset_training_steps (bool): If False, start training at bp_steps=0 etc.
         Otherwise start the training at whatever step and state the checkpoint has
@@ -429,7 +430,7 @@ class CheckpointLoader(Callback):
         self,
         *,
         callbacks: List[Callback],
-        path: str,
+        run_root: str,
         checkpoint_index: int,
         reset_training_steps: bool = False,
         optimizers: Optional[List[optim.Optimizer]] = None,
@@ -438,18 +439,17 @@ class CheckpointLoader(Callback):
     ):
         super().__init__()
         self._cbs = callbacks
-        self._path = path
+        self._run_root = run_root
         self._checkpoint_index = checkpoint_index
         self._reset_training_steps = reset_training_steps
         self._opts: List[optim.Optimizer] = optimizers if optimizers else []
         self._nets: List[nn.Module] = networks if networks else []
-        self._stored_subdirectory = storage_subdirectory
+        self._folder_path = os.path.join(run_root, storage_subdirectory)
 
     def begin_training(self):
+        assert(os.path.exists(self._folder_path))
         name = f"checkpoint_{self._checkpoint_index}.tar"
-        folder_path = os.path.join(self._path, self._stored_subdirectory)
-        os.makedirs(folder_path, exist_ok=True)
-        final_path = os.path.join(folder_path, name)
+        final_path = os.path.join(self._folder_path, name)
         state_dict: dict = torch.load(final_path)
         for cb, state in zip(self._cbs, state_dict["callback_state_dicts"]):
             cb.load_state_dict(state)
