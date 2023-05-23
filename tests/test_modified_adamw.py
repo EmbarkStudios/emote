@@ -51,7 +51,7 @@ def num_groups(param_groups):
             wd += 1
         else:
             no_wd += 1
-        
+
     assert (
         wd == 1
     ), f"There should be one group that has weight decay, but there are {wd}"
@@ -75,7 +75,7 @@ def test_module_separation():
     param_dict = dict(q.named_parameters())
 
     module_separation(param_dict, decay, no_decay)
-    
+
     # Make sure the test fails when a module is not added to either of the sets
     with pytest.raises(
         AssertionError,
@@ -91,7 +91,7 @@ def test_module_separation():
     ):
         decay.add("test")
         no_decay.add("test")
-        
+
         module_separation(param_dict, decay, no_decay)
 
 
@@ -107,7 +107,7 @@ def test_num_groups():
     )
 
     num_groups(q_optim.param_groups)
-    
+
     # Make sure the test fails when a group with weight decay doesn't exist
     with pytest.raises(
         AssertionError,
