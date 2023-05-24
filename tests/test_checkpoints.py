@@ -8,7 +8,8 @@ from torch import nn
 from torch.optim import Adam
 
 from emote import Trainer
-from emote.callbacks import BackPropStepsTerminator, Checkpointer, CheckpointLoader
+from emote.callbacks.checkpointing import Checkpointer, CheckpointLoader
+from emote.callbacks.generic import BackPropStepsTerminator
 from emote.sac import QLoss
 from emote.trainer import TrainingShutdownException
 

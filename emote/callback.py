@@ -213,3 +213,12 @@ class Callback(metaclass=CallbackMeta):
 
     def load_state_dict(self, state_dict: Dict[str, Any]):
         pass
+
+
+class BatchCallback(Callback):
+    def __init__(self, cycle: int | None = None):
+        super().__init__(cycle)
+
+    @Callback.extend
+    def get_batch(self, *args, **kwargs):
+        pass

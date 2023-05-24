@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Deprecations
+
+- `emote.callbacks` has been converted to a package. Future built-in
+  callbacks will not be re-exported from `emote.callbacks`, and should
+  instead be imported from their internal location.
+- `emote.callbacks.LoggingMixin` is now in the `emote.mixins.logging` module instead.
+
 ### Bugfixes
 
 - Fix `FeatureAgentProxy.input_names` to use `input_key` when configured.

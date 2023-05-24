@@ -5,7 +5,7 @@ from tests.gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
 from torch import nn
 
 from emote import Trainer
-from emote.callbacks import BatchCallback
+from emote.callback import BatchCallback
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
 from emote.sac import FeatureAgentProxy

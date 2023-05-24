@@ -1,13 +1,13 @@
 # 🌡 Metrics
 
 Emote can log metrics from two locations: inside the training loop, and outside the training
-loop. The base for this is the [`LoggingMixin`](emote.callbacks.LoggingMixin) class in both cases,
+loop. The base for this is the [`LoggingMixin`](emote.callbacks.logging.LoggingMixin) class in both cases,
 adds logging functionality to anything. However, it doesn't do any actual logging.
 
 On the training side, the second part of the puzzle is a LogWriter, for example
-[`TensorboardLogger`](emote.callbacks.TensorboardLogger). We also provide a built-in
-[`TerminalLogger`](emote.callbacks.TerminalLogger). These accept a list of objects derived from
-[`LoggingMixin`](emote.callbacks.LoggingMixin), and will execute the actual writing of values from
+[`TensorboardLogger`](emote.callbacks.logging.TensorboardLogger). We also provide a built-in
+[`TerminalLogger`](emote.callbacks.logging.TerminalLogger). These accept a list of objects derived from
+[`LoggingMixin`](emote.callbacks.logging.LoggingMixin), and will execute the actual writing of values from
 the previously of values. This makes implementing log-data-providers easier, as they do not have to
 care about *when to write*, only how often they can record data.
 

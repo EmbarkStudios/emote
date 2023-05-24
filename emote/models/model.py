@@ -144,7 +144,6 @@ class DynamicModel(nn.Module):
         action: torch.Tensor,
         reward: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-
         """The function processes the given batch, normalizes inputs and targets,
          and prepares them for the training.
 

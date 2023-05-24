@@ -18,8 +18,8 @@ from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 from torch.utils.tensorboard import SummaryWriter
 
 from emote.callback import Callback
-from emote.callbacks import LoggingMixin
 from emote.extra.onnx_exporter import OnnxExporter
+from emote.mixins.logging import LoggingMixin
 from emote.trainer import TrainingShutdownException
 
 from ..typing import AgentId, DictObservation, DictResponse, EpisodeState

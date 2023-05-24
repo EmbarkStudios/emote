@@ -13,8 +13,8 @@ import torch
 from google.protobuf import text_format
 
 from emote.callback import Callback
-from emote.callbacks import LoggingMixin
 from emote.extra.crud_storage import CRUDStorage, StorageItem, StorageItemHandle
+from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
 from emote.utils.spaces import MDPSpace
 from emote.utils.timed_call import BlockTimers
