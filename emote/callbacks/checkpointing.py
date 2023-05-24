@@ -74,7 +74,7 @@ class CheckpointLoader(Callback):
     :param callbacks (List[Callback]): A list of callbacks the should be restored.
     :param run_root (str): The root path to where the run artifacts should be stored.
     :param checkpoint_index (int): Which checkpoint to load.
-    :param reset_training_steps (bool): If False, start training at bp_steps=0 etc.
+    :param reset_training_steps (bool): If True, start training at bp_steps=0 etc.
         Otherwise start the training at whatever step and state the checkpoint has
         saved.
     :param optimizers (Optional[List[optim.Optimizer]]): Optional list of optimizers
