@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-torch = ["torch==1.11.0"]
+torch = ["torch==1.12.0"]
 atari = [
     "gymnasium>=0.27.1",
     "box2d-py>=2.3.5",
@@ -59,16 +59,16 @@ respect-source-order = false
 
 [tool.pdm.plugins.torch]
 dependencies = [
-   "torch==1.11.0"
+   "torch==1.12.0"
 ]
 lockfile = "torch.lock"
 enable-cpu = true
 
-enable-rocm = true
-rocm-versions = ["4.5.2"]
+enable-rocm = false  # there's no +rocm variants for mac where it'd be useful, so this is a bit shot.
+rocm-versions = ["5.0"]
 
 enable-cuda = true
-cuda-versions = ["cu115"]
+cuda-versions = ["cu116"]
 
 [project.urls]
 repository = "https://github.com/EmbarkStudios/emote"
