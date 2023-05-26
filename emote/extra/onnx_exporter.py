@@ -73,7 +73,7 @@ class OnnxExporter(LoggingMixin, Callback):
                       it will be created.
     :param interval: if provided, will automatically export ONNX files at this cadence.
     :param prefix: all file names will have this prefix.
-
+    :param device: if provided, will transfer the model inputs to this device before exporting.
     """
 
     __HAS_INSERTED_FILTER = False
@@ -86,7 +86,7 @@ class OnnxExporter(LoggingMixin, Callback):
         directory: str,
         interval: int | None = None,
         prefix: str = "savedmodel_",
-        device: str = torch.device = None,
+        device: torch.device | None = None,
     ):
         super().__init__(cycle=interval)
 

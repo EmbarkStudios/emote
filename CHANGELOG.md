@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changes
 
 - Now targetting torch version 1.12, up from 1.11.
+- `OnnxExporter` accepts a `device` argument to enable tracing on other devices.
 
 ### Deprecations
 
