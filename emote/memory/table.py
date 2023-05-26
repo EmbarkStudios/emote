@@ -252,7 +252,7 @@ class ArrayTable:
                             "filled": self._filled,
                         }
 
-                        cloudpickle.dump(parts, data_file)
+                        cloudpickle.dump(parts, data_file, protocol=4)
 
                     for key, data in self._data.items():
                         if isinstance(data, VirtualStorage):
