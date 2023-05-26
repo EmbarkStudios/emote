@@ -20,19 +20,20 @@ Depending on how you use ``emote``, you'll need to approach GPU support slightly
 Using the emote repository and PDM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For those wanting GPU support; we have a plugin for PDM to help install these variants while maintaining compatibility
-and the lockfile securities. This plugin is exposed as ``pdm torch`` after installing the repository.
+For those wanting GPU support; we have a plugin for PDM to help install these variants while
+maintaining compatibility and the lockfile securities. This plugin is exposed as ``pdm torch`` after
+installing the repository.
 
-To install a specific backend API for torch; use the command ``pdm torch install {API}``. We have enabled ``cpu``, ``cu111``,
-``cu113``, and ``rocm4.2`` by default. If you're using the repository and something is missing that you need, feel free to
-add it and PR it back to us. Any backend selected here has to be available from a PEP503 or PEP621 page hosted by
-PyTorch.
+To install a specific backend API for torch; use the command ``pdm torch install {API}``. We have
+enabled ``cpu`` and ``cu116`` by default. If you're using the repository and something is missing
+that you need, feel free to add it and PR it back to us. Any backend selected here has to be
+available from a PEP503 or PEP621 page hosted by PyTorch.
 
 When installing from PyPi
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Our suggestion is to avoid mixing package managers and Python Interpreters. We'd suggest following the method of the
 plugin and installing torch from PyTorch's PEP503 index. For example; for CUDA 11.1 you can use the command ``pip
-install -i https://download.pytorch.org/whl/cu111 torch==$TORCH_VERSION``. There's other pages for other APIs. There's
+install -i https://download.pytorch.org/whl/cu116/ torch==$TORCH_VERSION``. There's other pages for other APIs. There's
 also a generic `repository <https://download.pytorch.org/whl/>`_ which provides a combination of APIs, such as pure CPU
 and rocm.

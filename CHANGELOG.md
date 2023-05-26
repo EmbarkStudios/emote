@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changes
+
+- Now targetting torch version 1.12, up from 1.11.
+
 ### Deprecations
 
 - `emote.callbacks` has been converted to a package. Future built-in
