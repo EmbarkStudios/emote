@@ -86,6 +86,7 @@ class OnnxExporter(LoggingMixin, Callback):
         directory: str,
         interval: int | None = None,
         prefix: str = "savedmodel_",
+        device: str = torch.device = None,
     ):
         super().__init__(cycle=interval)
 
@@ -124,6 +125,8 @@ class OnnxExporter(LoggingMixin, Callback):
         self.inputs = input_shapes
         self.outputs = output_shapes
 
+        self._device = device
+
     def end_batch(self):
         self.process_pending_exports()
 
@@ -151,7 +154,11 @@ class OnnxExporter(LoggingMixin, Callback):
             args = []
 
             for _, shape in self.inputs:
-                args.append(torch.randn(1, *shape).detach())
+                arg = torch.randn(1, *shape).detach()
+                if self._device is not None:
+                    arg = arg.to(self._device)
+
+                args.append(arg)
 
             self.policy.train(False)
 
