@@ -1,3 +1,4 @@
+import logging
 import os
 
 from typing import List, Optional
@@ -121,6 +122,7 @@ class CheckpointLoader(Callback):
             net.load_state_dict(state)
         for opt, state in zip(self._opts, state_dict["optim_state_dicts"]):
             opt.load_state_dict(state)
+        logging.info(f"Loading checkpoints from {final_path}")
         if self._reset_training_steps:
             return {}
         return state_dict.get("training_state", {})

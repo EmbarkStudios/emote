@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import logging
 import warnings
 
 from queue import Empty, Queue
@@ -234,6 +235,7 @@ class OnnxExporter(LoggingMixin, Callback):
         That is, the thread which has ownership over the model and that modifies it.
         This is usually the thread that has the training loop.
         """
+        logging.info(f"Exporting onnx files!")
         return self._export(metadata, True)
 
     def delete(self, handle: StorageItemHandle) -> bool:
