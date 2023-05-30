@@ -332,8 +332,7 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 self.log_scalar(
                     f"memory/{self._target_memory_name}/{name}/timing/var", var
                 )
-            end_time = time.time()
-            elapsed_time = end_time - start_time
+            elapsed_time = time.time() - start_time
             logging.info(f"Memory export completed in {elapsed_time} seconds")
 
 

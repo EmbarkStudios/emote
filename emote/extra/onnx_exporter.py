@@ -238,12 +238,8 @@ class OnnxExporter(LoggingMixin, Callback):
         """
         logging.info("Starting ONNX export...")
         start_time = time.time()
-
         storage_item = self._export(metadata, True)
-
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-
+        elapsed_time = time.time() - start_time
         logging.info(
             f"ONNX Export completed in {elapsed_time} seconds. \n"
             f"ONNX timestamp: {storage_item.timestamp} \n"
