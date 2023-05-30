@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import logging
+import time
 import warnings
 
 from queue import Empty, Queue
@@ -237,6 +238,28 @@ class OnnxExporter(LoggingMixin, Callback):
         """
         logging.info(f"Exporting onnx files!")
         return self._export(metadata, True)
+
+    def export(self, metadata=None) -> StorageItem:
+        """
+        Serializes a model to onnx and saves it to disk.
+        This must only be called from the main thread.
+        That is, the thread which has ownership over the model and that modifies it.
+        This is usually the thread that has the training loop.
+        """
+        logging.info("Starting ONNX export...")
+        start_time = time.time()
+
+        storage_item = self._export(metadata, True)
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        logging.info(f"ONNX Export completed in {elapsed_time} seconds")
+
+        logging.info(
+            f"ONNX timestamp: {storage_item.timestamp} "
+            f"and filepath: {storage_item.filepath}"
+        )  
+        return storage_item
 
     def delete(self, handle: StorageItemHandle) -> bool:
         return self.storage.delete(handle)

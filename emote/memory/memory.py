@@ -302,6 +302,9 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         observations: Dict[AgentId, DictObservation],
         responses: Dict[AgentId, DictResponse],
     ):
+        logging.info("Starting Memory export...")
+        start_time = time.time()
+        
         """First add the new batch to the memory"""
         self._inner.add(observations, responses)
 
@@ -329,7 +332,9 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 self.log_scalar(
                     f"memory/{self._target_memory_name}/{name}/timing/var", var
                 )
-            logging.info(f"Exported memory to {export_path}")
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            logging.info(f"Memory export completed in {elapsed_time} seconds")
 
 
 class MemoryLoader:

@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 from typing import List, Optional
 
@@ -109,12 +110,14 @@ class CheckpointLoader(Callback):
         self._folder_path = os.path.join(run_root, storage_subdirectory)
 
     def begin_training(self):
+        start_time = time.time()
         if not os.path.exists(self._folder_path):
             raise InvalidCheckpointLocation(
                 f"Checkpoint folder {self._folder_path} was specified but does not exist."
             )
         name = f"checkpoint_{self._checkpoint_index}.tar"
         final_path = os.path.join(self._folder_path, name)
+        logging.info(f"Loading checkpoints from {self._folder_path}")
         state_dict: dict = torch.load(final_path)
         for cb, state in zip(self._cbs, state_dict["callback_state_dicts"]):
             cb.load_state_dict(state)
@@ -122,10 +125,12 @@ class CheckpointLoader(Callback):
             net.load_state_dict(state)
         for opt, state in zip(self._opts, state_dict["optim_state_dicts"]):
             opt.load_state_dict(state)
-        logging.info(f"Loading checkpoints from {final_path}")
-        if self._reset_training_steps:
-            return {}
-        return state_dict.get("training_state", {})
+        return_value = {}
+        if not self._reset_training_steps:
+            return_value = state_dict.get("training_state", {})
+        duration = time.time() - start_time
+        logging.info(f"Loaded checkpoint from {final_path} in {duration:.2f}s")
+        return return_value
 
 
 class InvalidCheckpointLocation(ValueError):
