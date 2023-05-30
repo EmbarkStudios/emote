@@ -329,6 +329,7 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 self.log_scalar(
                     f"memory/{self._target_memory_name}/{name}/timing/var", var
                 )
+            logging.info(f"Exported memory to {export_path}")
 
 
 class MemoryLoader:

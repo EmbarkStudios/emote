@@ -226,9 +226,7 @@ class OnnxExporter(LoggingMixin, Callback):
         This method relies on the main thread calling `process_pending_exports` from time to time.
         You cannot call this method from the main thread. It will block indefinitely.
         """
-        result = self._export(metadata, False)
-        logging.info("Exported thread safe!")
-        return result
+        return self._export(metadata, False)
 
     def export(self, metadata=None) -> StorageItem:
         """
