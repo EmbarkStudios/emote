@@ -243,10 +243,10 @@ class OnnxExporter(LoggingMixin, Callback):
 
         end_time = time.time()
         elapsed_time = end_time - start_time
-        logging.info(f"ONNX Export completed in {elapsed_time} seconds")
 
         logging.info(
-            f"ONNX timestamp: {storage_item.timestamp} "
+            f"ONNX Export completed in {elapsed_time} seconds. \n"
+            f"ONNX timestamp: {storage_item.timestamp} \n"
             f"and filepath: {storage_item.filepath}"
         )  
         return storage_item
