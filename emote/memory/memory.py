@@ -304,7 +304,7 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
     ):
         logging.info("Starting Memory export...")
         start_time = time.time()
-        
+
         """First add the new batch to the memory"""
         self._inner.add(observations, responses)
 

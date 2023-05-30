@@ -244,7 +244,7 @@ class OnnxExporter(LoggingMixin, Callback):
             f"ONNX Export completed in {elapsed_time} seconds. \n"
             f"ONNX timestamp: {storage_item.timestamp} \n"
             f"and filepath: {storage_item.filepath}"
-        )  
+        )
         return storage_item
 
     def delete(self, handle: StorageItemHandle) -> bool:
