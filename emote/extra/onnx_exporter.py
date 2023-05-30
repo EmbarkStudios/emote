@@ -236,16 +236,6 @@ class OnnxExporter(LoggingMixin, Callback):
         That is, the thread which has ownership over the model and that modifies it.
         This is usually the thread that has the training loop.
         """
-        logging.info(f"Exporting onnx files!")
-        return self._export(metadata, True)
-
-    def export(self, metadata=None) -> StorageItem:
-        """
-        Serializes a model to onnx and saves it to disk.
-        This must only be called from the main thread.
-        That is, the thread which has ownership over the model and that modifies it.
-        This is usually the thread that has the training loop.
-        """
         logging.info("Starting ONNX export...")
         start_time = time.time()
 
