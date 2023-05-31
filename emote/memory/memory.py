@@ -12,8 +12,11 @@ import time
 import warnings
 
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
+
+import torch
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -209,6 +212,40 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
 
         return self._inner.add(observations, responses)
 
+    def report(self, metrics, metrics_lists):
+        if "agent_metrics" in metrics:
+            agent_metrics = metrics.pop("agent_metrics")
+            assert isinstance(agent_metrics, Iterable)
+
+            for mapping in agent_metrics:
+                for key, value in mapping.items():
+                    if key.startswith("histogram:"):
+                        self.log_histogram(key[10:], value)
+                    else:
+                        self.log_windowed_scalar(key, value)
+
+        for key, value in metrics.items():
+            self.log_windowed_scalar(key, value)
+
+        for key, value in metrics_lists.items():
+            self.log_windowed_scalar(key, value)
+
+    def get_report(self, keys) -> Tuple[dict, dict]:
+        keys = set(keys)
+        out = {}
+        out_lists = {}
+
+        for key in keys:
+            if key.startswith("histogram:") and key[10:] in self.hist_logs:
+                out[key] = self.hist_logs[key]
+            elif key in self.windowed_scalar:
+                window = self.windowed_scalar[key]
+                out_lists[key] = list(window)
+                out[key] = sum(window) / len(window)
+                out[f"{key}/cumulative"] = self.windowed_scalar_cumulative[key]
+
+        return out, out_lists
+
     def _end_cycle(self):
         now_time = time.perf_counter()
         cycle_time = now_time - self._cycle_start_time
@@ -216,6 +253,24 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         inf_step = self.completed_inferences
         self.log_scalar("training/inf_per_sec", cycle_infs / cycle_time)
         self.log_scalar("episode/completed", self.completed_episodes)
+
+        if "episode/reward" in self.windowed_scalar:
+            rewards = self.windowed_scalar["episode/reward"]
+            average_reward = sum(rewards) / len(rewards)
+            rewards_tensor = torch.Tensor(rewards)
+
+            self._writer.add_scalar(
+                "env_vs_episode/reward", average_reward, self.completed_episodes
+            )
+            self._writer.add_histogram(
+                "episode/reward_distribution", rewards_tensor, inf_step
+            )
+            self._writer.add_histogram(
+                "env_vs_episode/reward_distribution",
+                rewards_tensor,
+                self.completed_episodes,
+            )
+
         suffix = "inf_step"
         for k, v in self.scalar_logs.items():
             if suffix:
@@ -253,6 +308,13 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 k_split[0] = k_split[0] + "_" + suffix
                 k = "/".join(k_split)
             self._writer.add_video(k, video_array, inf_step, fps=fps, walltime=None)
+
+        for k, v in self.hist_logs:
+            if suffix:
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
+            self._writer.add_histogram(k, v, inf_step)
 
         time_since_start = time.monotonic() - self._start_time
 
