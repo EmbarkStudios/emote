@@ -212,7 +212,11 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
 
         return self._inner.add(observations, responses)
 
-    def report(self, metrics: Dict[str, Union[int, float, List[float]]], metrics_lists: Dict[str, List[float]]):
+    def report(
+        self,
+        metrics: Dict[str, Union[int, float, List[float]]],
+        metrics_lists: Dict[str, List[float]],
+    ):
         if "agent_metrics" in metrics:
             agent_metrics = metrics.pop("agent_metrics")
             assert isinstance(agent_metrics, Iterable)
@@ -230,7 +234,9 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         for key, value in metrics_lists.items():
             self.log_windowed_scalar(key, value)
 
-    def get_report(self, keys: List[str]) -> Tuple[Dict[str, Union[int, float, List[float]]], Dict[str, List[float]]]:
+    def get_report(
+        self, keys: List[str]
+    ) -> Tuple[Dict[str, Union[int, float, List[float]]], Dict[str, List[float]]]:
         keys = set(keys)
         out = {}
         out_lists = {}

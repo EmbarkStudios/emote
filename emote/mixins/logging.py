@@ -75,11 +75,13 @@ class LoggingMixin:
 
     def log_histogram(self, key: str, value: torch.Tensor):
         if isinstance(value, Iterable):
-            self.hist_logs[key] = value.detach() if isinstance(value, torch.Tensor) else value
+            self.hist_logs[key] = (
+                value.detach() if isinstance(value, torch.Tensor) else value
+            )
         else:
             if key not in self.hist_logs:
                 self.hist_logs[key] = deque(maxlen=self._default_window_length)
-            
+
             self.hist_logs[key].append(value)
 
     def state_dict(self):
