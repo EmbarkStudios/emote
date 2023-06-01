@@ -302,6 +302,7 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         observations: Dict[AgentId, DictObservation],
         responses: Dict[AgentId, DictResponse],
     ):
+
         """First add the new batch to the memory"""
         self._inner.add(observations, responses)
 
@@ -313,6 +314,8 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         self._inf_step += 1
 
         if has_enough_data and has_enough_time:
+            logging.info("Starting Memory export...")
+            start_time = time.time()
             self._next_export = self._inf_step + self._inf_steps_per_memory_export
             self._next_export_time = time_now + self._min_time_per_export
 
@@ -329,6 +332,8 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 self.log_scalar(
                     f"memory/{self._target_memory_name}/{name}/timing/var", var
                 )
+            elapsed_time = time.time() - start_time
+            logging.info(f"Memory export completed in {elapsed_time} seconds")
 
 
 class MemoryLoader:
