@@ -104,3 +104,64 @@ def test_completed(table_proxy, tmpdir):
         state = EpisodeState.RUNNING if s < 8 else EpisodeState.TERMINAL
 
     assert proxy.completed_episodes == 1
+
+def test_report(table_proxy, tmpdir):
+    proxy = LoggingProxyWrapper(
+        table_proxy,
+        SummaryWriter(
+            log_dir=tmpdir,
+        ),
+        2,
+    )
+    
+    agent_metrics = [{"histogram:ones": [1, 1, 1, 1, 1]}, {"one": 1}]
+    metrics = {"agent_metrics": agent_metrics, "two": 2}
+    metrics_lists = {"three": [3, 3]}
+
+    proxy.report(metrics, metrics_lists)
+
+    for _ in range(2):
+        proxy.report({"agent_metrics": [{"histogram:twos": 2}]}, {})
+    
+    for _ in range(2):
+        proxy.report({"one": 1}, {})
+
+    assert "ones" in proxy.hist_logs
+    assert "one" in proxy.windowed_scalar and "one" in proxy.windowed_scalar_cumulative
+    assert proxy.windowed_scalar_cumulative["one"] == 3
+    assert "two" in proxy.windowed_scalar
+    assert "three" in proxy.windowed_scalar and "three" in proxy.windowed_scalar_cumulative
+    assert proxy.windowed_scalar_cumulative["three"] == 6
+    assert "twos" in proxy.hist_logs and len(proxy.hist_logs["twos"]) == 2
+
+
+def test_get_report(table_proxy, tmpdir):
+    proxy = LoggingProxyWrapper(
+        table_proxy,
+        SummaryWriter(
+            log_dir=tmpdir,
+        ),
+        2,
+    )
+    
+    agent_metrics = [{"histogram:ones": [1, 1, 1, 1, 1]}, {"one": 1}]
+    metrics = {"agent_metrics": agent_metrics, "two": 2}
+    metrics_lists = {"three": [3, 3]}
+
+    proxy.report(metrics, metrics_lists)
+    
+    for _ in range(2):
+        proxy.report({"one": 1}, {})
+
+    keys = ["histogram:ones", "one", "two", "three", "random"]
+    out, out_lists = proxy.get_report(keys)
+    for key in keys[:-1]:
+        if "histogram" in key:
+            assert key in out and key not in out_lists
+        else:
+            assert key in out and key in out_lists
+    
+    assert "random" not in out and "random" not in out_lists
+    assert out["histogram:ones"] == 1
+    assert out["one"] == 1 and out["one/cumulative"] == 3
+    assert out_lists["three"] == [3, 3]
