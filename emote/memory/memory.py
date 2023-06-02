@@ -260,6 +260,8 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
             "performance/inf_steps_per_sec", inf_step / time_since_start, inf_step
         )
 
+        self._writer.flush()
+
         self._cycle_start_infs = self.completed_inferences
         self._cycle_start_time = now_time
 
