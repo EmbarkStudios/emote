@@ -214,7 +214,7 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
 
     def report(
         self,
-        metrics: Dict[str, Union[int, float, List[float]]],
+        metrics: Dict[str, float],
         metrics_lists: Dict[str, List[float]],
     ):
         if "agent_metrics" in metrics:
