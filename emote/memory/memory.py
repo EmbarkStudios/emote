@@ -5,6 +5,7 @@ proxy and the episode-based functionality of the memory implementation. The goal
 of the sequence builder is to consume individual timesteps per agent and collate
 them into episodes before submission into the memory.
 """
+from __future__ import annotations
 
 import logging
 import os
@@ -194,17 +195,10 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         self.completed_episodes += len(observations) - len(responses)
 
         for obs in observations.values():
-            # todo: handle info lists how?
-
             if obs.metadata is None:
                 continue
 
-            # all infos for agents are windowed
-            for k, v in obs.metadata.info.items():
-                if k.startswith("histogram:"):
-                    continue
-
-                self.log_windowed_scalar(k, v)
+            self.report(obs.metadata.info, obs.metadata.info_lists)
 
         if (self._counter % self._log_interval) == 0:
             self._end_cycle()
@@ -214,29 +208,25 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
 
     def report(
         self,
-        metrics: Dict[str, float],
-        metrics_lists: Dict[str, List[float]],
+        metrics: dict[str, float],
+        metrics_lists: dict[str, list[float]],
     ):
-        if "agent_metrics" in metrics:
-            agent_metrics = metrics.pop("agent_metrics")
-            assert isinstance(agent_metrics, Iterable)
-
-            for mapping in agent_metrics:
-                for key, value in mapping.items():
-                    if key.startswith("histogram:"):
-                        self.log_histogram(key[10:], value)
-                    else:
-                        self.log_windowed_scalar(key, value)
 
         for key, value in metrics.items():
-            self.log_windowed_scalar(key, value)
+            if key.startswith("histogram:"):
+                self.log_histogram(key[10:], value)
+            else:
+                self.log_windowed_scalar(key, value)
 
         for key, value in metrics_lists.items():
-            self.log_windowed_scalar(key, value)
+            if key.startswith("histogram:"):
+                self.log_histogram(key[10:], value)
+            else:
+                self.log_windowed_scalar(key, value)
 
     def get_report(
         self, keys: List[str]
-    ) -> Tuple[Dict[str, Union[int, float, List[float]]], Dict[str, List[float]]]:
+    ) -> Tuple[dict[str, Union[int, float, list[float]]], dict[str, list[float]]]:
         keys = set(keys)
         out = {}
         out_lists = {}

@@ -115,14 +115,13 @@ def test_report(table_proxy, tmpdir):
         2,
     )
 
-    agent_metrics = [{"histogram:ones": [1, 1, 1, 1, 1]}, {"one": 1}]
-    metrics = {"agent_metrics": agent_metrics, "two": 2}
-    metrics_lists = {"three": [3, 3]}
+    metrics = {"one": 1}
+    metrics_lists = {"three": [3, 3], "histogram:ones": [1, 1, 1, 1, 1]}
 
     proxy.report(metrics, metrics_lists)
 
     for _ in range(2):
-        proxy.report({"agent_metrics": [{"histogram:twos": 2}]}, {})
+        proxy.report({"histogram:twos": 2}, {})
 
     for _ in range(2):
         proxy.report({"one": 1}, {})
@@ -130,7 +129,6 @@ def test_report(table_proxy, tmpdir):
     assert "ones" in proxy.hist_logs
     assert "one" in proxy.windowed_scalar and "one" in proxy.windowed_scalar_cumulative
     assert proxy.windowed_scalar_cumulative["one"] == 3
-    assert "two" in proxy.windowed_scalar
     assert (
         "three" in proxy.windowed_scalar and "three" in proxy.windowed_scalar_cumulative
     )
@@ -147,16 +145,15 @@ def test_get_report(table_proxy, tmpdir):
         2,
     )
 
-    agent_metrics = [{"histogram:ones": [1, 1, 1, 1, 1]}, {"one": 1}]
-    metrics = {"agent_metrics": agent_metrics, "two": 2}
-    metrics_lists = {"three": [3, 3]}
+    metrics = {"one": 1}
+    metrics_lists = {"three": [3, 3], "histogram:ones": [1, 1, 1, 1, 1]}
 
     proxy.report(metrics, metrics_lists)
 
     for _ in range(2):
         proxy.report({"one": 1}, {})
 
-    keys = ["histogram:ones", "one", "two", "three", "random"]
+    keys = ["histogram:ones", "one", "three", "random"]
     out, out_lists = proxy.get_report(keys)
     for key in keys[:-1]:
         if "histogram" in key:

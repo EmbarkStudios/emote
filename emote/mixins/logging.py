@@ -34,7 +34,11 @@ class LoggingMixin:
         else:
             self.scalar_logs[key] = value
 
-    def log_windowed_scalar(self, key: str, value: Union[float, torch.Tensor]):
+    def log_windowed_scalar(
+        self,
+        key: str,
+        value: Union[float, torch.Tensor, Iterable[Union[torch.Tensor, float]]],
+    ):
         """Log scalars using a moving window average.
 
         By default this will use `default_window_length` from the constructor as the window
@@ -73,7 +77,11 @@ class LoggingMixin:
         """Use log_scalar to periodically log scalar data."""
         self.video_logs[key] = value
 
-    def log_histogram(self, key: str, value: torch.Tensor):
+    def log_histogram(
+        self,
+        key: str,
+        value: Union[torch.Tensor, float, Iterable[Union[torch.Tensor, float]]],
+    ):
         if isinstance(value, Iterable):
             self.hist_logs[key] = (
                 value.detach() if isinstance(value, torch.Tensor) else value
