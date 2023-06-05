@@ -921,9 +921,7 @@ requires_python = ">=3.7"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
-lock_version = "4.2"
-cross_platform = true
-groups = ["default", "atari", "ci", "docs", "tools", "torch", "wandb"]
+lock_version = "4.1"
 content_hash = "sha256:c62fd7a8972dd75b443186402c7df6270adefb79bfa27d914dacf1a3465fd195"
 
 [metadata.files]
