@@ -77,6 +77,8 @@ class TensorboardLogger(Callback):
             "performance/bp_steps_per_sec", bp_step / time_since_start, bp_step
         )
 
+        self._writer.flush()
+
 
 class TerminalLogger(Callback):
     """Logs the provided loggable callbacks to the python logger."""
