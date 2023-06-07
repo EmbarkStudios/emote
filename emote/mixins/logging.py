@@ -1,4 +1,5 @@
 from collections import deque
+from collections.abc import Iterable
 from typing import Any, Dict, Tuple, Union
 
 import numpy as np
@@ -33,7 +34,11 @@ class LoggingMixin:
         else:
             self.scalar_logs[key] = value
 
-    def log_windowed_scalar(self, key: str, value: Union[float, torch.Tensor]):
+    def log_windowed_scalar(
+        self,
+        key: str,
+        value: Union[float, torch.Tensor, Iterable[Union[torch.Tensor, float]]],
+    ):
         """Log scalars using a moving window average.
 
         By default this will use `default_window_length` from the constructor as the window
@@ -54,10 +59,14 @@ class LoggingMixin:
             self.windowed_scalar[key] = deque(maxlen=length)
             self.windowed_scalar_cumulative[key] = 0
 
-        if isinstance(value, torch.Tensor):
-            self.windowed_scalar[key].append(value.item())
+        if isinstance(value, Iterable):
+            val = value.numpy() if isinstance(value, torch.Tensor) else value
+            self.windowed_scalar[key].extend(val)
+            self.windowed_scalar_cumulative[key] += sum(val)
         else:
-            self.windowed_scalar[key].append(value)
+            val = value.item() if isinstance(value, torch.Tensor) else value
+            self.windowed_scalar[key].append(val)
+            self.windowed_scalar_cumulative[key] += val
 
     def log_image(self, key: str, value: torch.Tensor):
         """Use log_image to periodically log image data."""
@@ -68,8 +77,20 @@ class LoggingMixin:
         """Use log_scalar to periodically log scalar data."""
         self.video_logs[key] = value
 
-    def log_histogram(self, key: str, value: torch.Tensor):
-        self.hist_logs[key] = value.detach()
+    def log_histogram(
+        self,
+        key: str,
+        value: Union[torch.Tensor, float, Iterable[Union[torch.Tensor, float]]],
+    ):
+        if isinstance(value, Iterable):
+            self.hist_logs[key] = (
+                value.detach() if isinstance(value, torch.Tensor) else value
+            )
+        else:
+            if key not in self.hist_logs:
+                self.hist_logs[key] = deque(maxlen=self._default_window_length)
+
+            self.hist_logs[key].append(value)
 
     def state_dict(self):
         state_dict = super().state_dict()
