@@ -38,16 +38,16 @@ Checkpointing
 Logging callbacks and utilities
 -------------------------------
 
-.. currentmodule:: emote.callbacks.logging
-.. automodule:: emote.callbacks.logging
+.. currentmodule:: emote.callbacks
+.. automodule:: emote.callbacks
 
 .. autosummary::
     :toctree: generated
 
-    LoggingMixin
-	TensorboardLogger
-	TerminalLogger
-	WBLogger
+    logging.LoggingMixin
+	logging.TensorboardLogger
+	logging.TerminalLogger
+	wb_logger.WBLogger
 
 Testing
 -------
