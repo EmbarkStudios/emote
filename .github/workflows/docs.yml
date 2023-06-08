@@ -2,7 +2,7 @@ name: Deploy static content to Pages
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "ts/fix-docs-build"]
 
   workflow_dispatch:
 
@@ -37,7 +37,7 @@ jobs:
           cache: true
           cache-dependency-path: '**/pdm.lock'
       - name: Install dependencies
-        run: pdm install -d -G ci
+        run: pdm install -d -G ci && pdm torch install cpu
       - name: Build docs
         run: cd docs && make deploy
       - name: Upload artifact
