@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v1
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - uses: pdm-project/setup-pdm@v3
@@ -37,7 +39,7 @@ jobs:
           cache: true
           cache-dependency-path: '**/pdm.lock'
       - name: Install dependencies
-        run: pdm install -d -G ci
+        run: pdm install -d -G ci && pdm torch install cpu
       - name: Build docs
         run: cd docs && make deploy
       - name: Upload artifact
