@@ -436,7 +436,7 @@ class MultiKeyAgentProxy:
             tensor_obs = torch.tensor(np_obs).to(self.device)
             dict_tensor_obs[input_key] = tensor_obs
 
-        actions = self.policy(dict_tensor_obs)[0].detach().cpu().numpy()
+        actions = self.policy(**dict_tensor_obs)[0].detach().cpu().numpy()
 
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
