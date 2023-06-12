@@ -75,7 +75,7 @@ class Conv2dEncoder(nn.Module):
             x = layer(x)
         return x
 
-    def get_encoder_output_size(self, return_flattened: bool = False):
+    def get_encoder_output_size(self):
         curr_size_x, curr_size_y = self._img_shape_cwh[1], self._img_shape_cwh[2]
 
         """Calculate the outputs size of a conv encoder."""
@@ -85,9 +85,8 @@ class Conv2dEncoder(nn.Module):
 
         out_size = (self._channels[-1], curr_size_x, curr_size_y)
 
-        if self.flatten or return_flattened:
-            flattened_out_size = np.prod(out_size)
-            return *out_size, flattened_out_size
+        if self.flatten:
+            out_size = np.prod(out_size)
 
         return out_size
 
@@ -163,7 +162,7 @@ class Conv1dEncoder(nn.Module):
             x = layer(x)
         return x
 
-    def get_encoder_output_size(self, return_flattened: bool = False):
+    def get_encoder_output_size(self):
         curr_size = self._input_shape[1]
 
         for k, s, p in zip(self._kernels, self._strides, self._padding):
@@ -171,8 +170,7 @@ class Conv1dEncoder(nn.Module):
 
         out_size = (self._channels[-1], curr_size)
 
-        if self.flatten or return_flattened:
-            flattened_out_size = np.prod(out_size)
-            return *out_size, flattened_out_size
+        if self.flatten:
+            out_size = np.prod(out_size)
 
         return out_size
