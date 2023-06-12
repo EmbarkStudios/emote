@@ -175,11 +175,14 @@ class CurlLoss(LossCallback):
         self._augment_anchor_and_pos = augment_anchor_and_pos
         self._tau = tau
 
-        _, _, _, encoder_output_size = encoder_model.get_encoder_output_size(
-            return_flattened=True
-        )
+        encoder_output_size = encoder_model.get_encoder_output_size()
+
         if not encoder_model.flatten:
+            encoder_output_size = (
+                encoder_output_size[0] * encoder_output_size[1] * encoder_output_size[2]
+            )
             encoder_model = nn.Sequential(encoder_model, nn.Flatten())
+
         if not target_encoder_model.flatten:
             target_encoder_model = nn.Sequential(target_encoder_model, nn.Flatten())
 
