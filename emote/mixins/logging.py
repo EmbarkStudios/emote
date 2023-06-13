@@ -51,7 +51,7 @@ class LoggingMixin:
             # we allow windowed[100]:some_key/foobar to override window size
             if "windowed[" in key:
                 p, k = key.split(":")
-                length = int(key.split("[")[1][:-1])
+                length = int(p.split("[")[1][:-1])
                 key = k
             else:
                 length = self._default_window_length
