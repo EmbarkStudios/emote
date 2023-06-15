@@ -15,6 +15,7 @@ from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
+from emote.utils.spaces import MDPSpace
 
 
 def soft_update_from_to(source, target, tau):  # From rlkit
@@ -399,7 +400,13 @@ class VisionAgentProxy:
 class MultiKeyAgentProxy:
     """Observations are dicts that contain multiple input keys (e.g. both "features" and "images")"""
 
-    def __init__(self, policy: nn.Module, device: torch.device, input_keys: tuple):
+    def __init__(
+        self,
+        policy: nn.Module,
+        device: torch.device,
+        input_keys: tuple,
+        spaces: MDPSpace = None,
+    ):
         """Create a new proxy.
 
         Args:
@@ -411,6 +418,7 @@ class MultiKeyAgentProxy:
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device
         self.input_keys = input_keys
+        self._spaces = spaces
 
     def __call__(
         self, observations: dict[AgentId, DictObservation]
@@ -433,6 +441,12 @@ class MultiKeyAgentProxy:
                     for agent_id in active_agents
                 ]
             )
+
+            if self._spaces is not None:
+                shape = (np_obs.shape[0],) + self._spaces.state.spaces[input_key].shape
+                if shape != np_obs.shape:
+                    np_obs = np.reshape(np_obs, shape)
+
             tensor_obs = torch.tensor(np_obs).to(self.device)
             dict_tensor_obs[input_key] = tensor_obs
 
