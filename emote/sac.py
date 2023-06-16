@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 
 from typing import Any, Dict, Optional
@@ -13,6 +15,7 @@ from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
+from emote.utils.spaces import MDPSpace
 
 
 def soft_update_from_to(source, target, tau):  # From rlkit
@@ -392,3 +395,68 @@ class VisionAgentProxy:
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
         }
+
+
+class MultiKeyAgentProxy:
+    """Observations are dicts that contain multiple input keys (e.g. both "features" and "images")"""
+
+    def __init__(
+        self,
+        policy: nn.Module,
+        device: torch.device,
+        input_keys: tuple,
+        spaces: MDPSpace = None,
+    ):
+        """Create a new proxy.
+
+        Args:
+            policy (nn.Module): The policy to execute for actions.
+            device (torch.device): The device to run on.
+            input_keys (tuple): The names of the input.
+        """
+        self.policy = policy
+        self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
+        self.device = device
+        self.input_keys = input_keys
+        self._spaces = spaces
+
+    def __call__(
+        self, observations: dict[AgentId, DictObservation]
+    ) -> dict[AgentId, DictResponse]:
+        """Runs the policy and returns the actions."""
+        # The network takes observations of size batch x obs for each observation space.
+        assert len(observations) > 0, "Observations must not be empty."
+
+        active_agents = [
+            agent_id
+            for agent_id, obs in observations.items()
+            if obs.episode_state not in self._end_states
+        ]
+
+        dict_tensor_obs = {}
+        for input_key in self.input_keys:
+            np_obs = np.array(
+                [
+                    observations[agent_id].array_data[input_key]
+                    for agent_id in active_agents
+                ]
+            )
+
+            if self._spaces is not None:
+                shape = (np_obs.shape[0],) + self._spaces.state.spaces[input_key].shape
+                if shape != np_obs.shape:
+                    np_obs = np.reshape(np_obs, shape)
+
+            tensor_obs = torch.tensor(np_obs).to(self.device)
+            dict_tensor_obs[input_key] = tensor_obs
+
+        actions = self.policy(**dict_tensor_obs)[0].detach().cpu().numpy()
+
+        return {
+            agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
+            for i, agent_id in enumerate(active_agents)
+        }
+
+    @property
+    def input_names(self):
+        return self.input_keys
