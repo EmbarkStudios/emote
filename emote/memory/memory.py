@@ -12,11 +12,12 @@ import os
 import time
 import warnings
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
+import numpy as np
 import torch
 
 from torch.utils.tensorboard import SummaryWriter
@@ -216,7 +217,6 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         metrics: dict[str, float],
         metrics_lists: dict[str, list[float]],
     ):
-
         for key, value in metrics.items():
             if key.startswith("histogram:"):
                 self.log_histogram(key[10:], value)
@@ -311,11 +311,15 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 k = "/".join(k_split)
             self._writer.add_video(k, video_array, inf_step, fps=fps, walltime=None)
 
-        for k, v in self.hist_logs:
+        for k, v in self.hist_logs.items():
             if suffix:
                 k_split = k.split("/")
                 k_split[0] = k_split[0] + "_" + suffix
                 k = "/".join(k_split)
+
+            if isinstance(v, deque):
+                v = np.array(v)
+
             self._writer.add_histogram(k, v, inf_step)
 
         time_since_start = time.monotonic() - self._start_time
@@ -368,7 +372,6 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         observations: Dict[AgentId, DictObservation],
         responses: Dict[AgentId, DictResponse],
     ):
-
         """First add the new batch to the memory"""
         self._inner.add(observations, responses)
 
