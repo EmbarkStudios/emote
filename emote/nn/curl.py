@@ -174,7 +174,17 @@ class CurlLoss(LossCallback):
         self._use_temperature_variant = use_temperature_variant
         self._augment_anchor_and_pos = augment_anchor_and_pos
         self._tau = tau
-        encoder_output_size = encoder_model.get_encoder_output_size(flatten=True)
+
+        encoder_output_size = encoder_model.get_encoder_output_size()
+
+        if not encoder_model.flatten:
+            encoder_output_size = (
+                encoder_output_size[0] * encoder_output_size[1] * encoder_output_size[2]
+            )
+            encoder_model = nn.Sequential(encoder_model, nn.Flatten())
+
+        if not target_encoder_model.flatten:
+            target_encoder_model = nn.Sequential(target_encoder_model, nn.Flatten())
 
         if self._use_projection_layer:
             # Add a layer to reduce the encoder output size to the size of zdim.
@@ -186,9 +196,7 @@ class CurlLoss(LossCallback):
                 encoder_output_size, desired_zdim, device=device
             )
             self._proj_layer_source_vars = encoder_proj_layer.parameters()
-            encoder_model = nn.Sequential(
-                encoder_model, nn.Flatten(), encoder_proj_layer, nn.ReLU()
-            )
+            encoder_model = nn.Sequential(encoder_model, encoder_proj_layer, nn.ReLU())
 
             # Add projection layer to the target encoder.
             target_proj_layer = nn.Linear(
@@ -196,7 +204,7 @@ class CurlLoss(LossCallback):
             )
             self._proj_layer_target_vars = target_proj_layer.parameters()
             target_encoder_model = nn.Sequential(
-                target_encoder_model, nn.Flatten(), target_proj_layer, nn.ReLU()
+                target_encoder_model, target_proj_layer, nn.ReLU()
             )
 
             # Update the projection layers on the target to match the source
@@ -205,8 +213,6 @@ class CurlLoss(LossCallback):
             )
         else:
             self._zdim = encoder_output_size
-            encoder_model = nn.Sequential(encoder_model, nn.Flatten())
-            target_encoder_model = nn.Sequential(target_encoder_model, nn.Flatten())
 
         self._encoder = encoder_model
         self._target_encoder = target_encoder_model
