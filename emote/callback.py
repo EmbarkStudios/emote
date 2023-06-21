@@ -211,7 +211,13 @@ class Callback(metaclass=CallbackMeta):
     def state_dict(self) -> Dict[str, Any]:
         return {}
 
-    def load_state_dict(self, state_dict: Dict[str, Any], *args, **kwargs):
+    def load_state_dict(
+        self,
+        state_dict: Dict[str, Any],
+        load_network: bool = True,
+        load_optimizer: bool = True,
+        load_hparams: bool = True,
+    ):
         pass
 
 

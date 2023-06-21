@@ -77,7 +77,6 @@ def test_networks_checkpoint():
             callbacks=[loss_cb],
             run_root=run_root,
             checkpoint_index=0,
-            only_load_networks=True,
         ),
         BackPropStepsTerminator(1),
     ]

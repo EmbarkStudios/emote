@@ -3,11 +3,9 @@ import os
 import time
 import warnings
 
-from typing import List, Optional
+from typing import List
 
 import torch
-
-from torch import nn, optim
 
 from emote.callback import Callback
 
@@ -78,19 +76,18 @@ class Checkpointer(Callback):
 class CheckpointLoader(Callback):
     """CheckpointLoader loads a checkpoint like the one created by Checkpointer.
 
-    This is intended for resuming training given a specific checkpoint index. It is
-    also possible to only load neural networks.  If you want to do something more
-    specific, like only restore a specific network, it is probably easier to just
-    do it explicitly when the network is constructed.
+    This is intended for resuming training given a specific checkpoint index. It also
+    enables you to load network weights, optimizer, or other callback hyper-params
+    independently.  If you want to do something more specific, like only restore a
+    specific network (outside a callback), it is probably easier to just do it
+    explicitly when the network is constructed.
 
     :param callbacks (List[Callback]): A list of callbacks that should be restored.
     :param run_root (str): The root path to where the run artifacts should be stored.
     :param checkpoint_index (int): Which checkpoint to load.
-    :param reset_training_steps (bool): If True, start training at bp_steps=0 etc.
-        Otherwise start the training at whatever step and state the checkpoint has
-        saved.
-    :param only_load_networks (bool): If True, only loads the neural network params
-        inside the callback and skips the rest of them.
+    :param load_weights (bool): If True, it loads the network weights
+    :param load_optimizers (bool): If True, it loads the optimizer state
+    :param load_hparams (bool): If True, it loads other callback hyper-params
     :param storage_subdirectory (str): The subdirectory where the checkpoints are
         stored.
     """
@@ -101,17 +98,20 @@ class CheckpointLoader(Callback):
         callbacks: List[Callback],
         run_root: str,
         checkpoint_index: int,
-        reset_training_steps: bool = False,
-        only_load_networks: bool = False,
+        load_weights: bool = True,
+        load_optimizers: bool = True,
+        load_hparams: bool = True,
         storage_subdirectory: str = "checkpoints",
     ):
         super().__init__()
         self._run_root = run_root
         self._checkpoint_index = checkpoint_index
-        self._reset_training_steps = reset_training_steps
         self._folder_path = os.path.join(run_root, storage_subdirectory)
 
-        self._only_load_networks = only_load_networks
+        self._load_weights = load_weights
+        self._load_optimizers = load_optimizers
+        self._load_hparams = load_hparams
+
         self._cbs = []
         names = []
         for cb in callbacks:
@@ -144,10 +144,12 @@ class CheckpointLoader(Callback):
 
         for cb in self._cbs:
             state = state_dict["callback_state_dicts"][cb.name]
-            cb.load_state_dict(state, self._only_load_networks)
+            cb.load_state_dict(
+                state, self._load_weights, self._load_optimizers, self._load_hparams
+            )
 
         return_value = {}
-        if not self._reset_training_steps:
+        if self._load_hparams:
             return_value = state_dict.get("training_state", {})
         duration = time.time() - start_time
         logging.info(f"Loaded checkpoint from {final_path} in {duration:.2f}s")

@@ -53,16 +53,20 @@ class LossCallback(LoggingMixin, Callback):
         return state
 
     def load_state_dict(
-        self, state_dict: Dict[str, Any], only_load_network: bool = False
+        self,
+        state_dict: Dict[str, Any],
+        load_weights: bool = True,
+        load_optimizers: bool = True,
+        load_hparams: bool = True,
     ):
-        if self.network:
+        if self.network and load_weights:
             self.network.load_state_dict(state_dict.pop("network_state_dict"))
-        if only_load_network:
-            return
 
-        if self.optimizer:
+        if self.optimizer and load_optimizers:
             self.optimizer.load_state_dict(state_dict.pop("optimizer_state_dict"))
-        super().load_state_dict(state_dict)
+
+        if load_hparams:
+            super().load_state_dict(state_dict)
 
     @Callback.extend
     def loss(self, *args, **kwargs) -> Tensor:
