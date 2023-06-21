@@ -52,11 +52,16 @@ class LossCallback(LoggingMixin, Callback):
             state["network_state_dict"] = self.network.state_dict()
         return state
 
-    def load_state_dict(self, state_dict: Dict[str, Any]):
-        if self.optimizer:
-            self.optimizer.load_state_dict(state_dict.pop("optimizer_state_dict"))
+    def load_state_dict(
+        self, state_dict: Dict[str, Any], only_load_network: bool = False
+    ):
         if self.network:
             self.network.load_state_dict(state_dict.pop("network_state_dict"))
+        if only_load_network:
+            return
+
+        if self.optimizer:
+            self.optimizer.load_state_dict(state_dict.pop("optimizer_state_dict"))
         super().load_state_dict(state_dict)
 
     @Callback.extend
