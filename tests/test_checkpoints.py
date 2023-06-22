@@ -10,6 +10,7 @@ from torch.optim import Adam
 from emote import Trainer
 from emote.callbacks.checkpointing import Checkpointer, CheckpointLoader
 from emote.callbacks.generic import BackPropStepsTerminator
+from emote.callbacks.loss import LossCallback
 from emote.sac import QLoss
 from emote.trainer import TrainingShutdownException
 
@@ -47,9 +48,18 @@ def test_networks_checkpoint():
     chkpt_dir = mkdtemp()
     run_root = join(chkpt_dir, "chkpt")
     n1 = nn.Linear(1, 1)
+    loss_cb = LossCallback(
+        name="linear",
+        optimizer=Adam(n1.parameters(), lr=0.01),
+        network=n1,
+        max_grad_norm=0,
+        data_group="",
+    )
     c1 = [
         Checkpointer(
-            networks=[n1], callbacks=[], run_root=run_root, checkpoint_interval=1
+            callbacks=[loss_cb],
+            run_root=run_root,
+            checkpoint_interval=1,
         )
     ]
 
@@ -64,12 +74,16 @@ def test_networks_checkpoint():
 
     c2 = [
         CheckpointLoader(
-            networks=[n2], callbacks=[], run_root=run_root, checkpoint_index=0
+            callbacks=[loss_cb],
+            run_root=run_root,
+            checkpoint_index=0,
         ),
         BackPropStepsTerminator(1),
     ]
+    n2 = loss_cb.network
     t2 = Trainer(c2, nostep_dataloader())
     t2.train()
+
     assert torch.allclose(n1(test_data), n2(test_data))
 
 
@@ -91,9 +105,7 @@ def test_qloss_checkpoints():
     ql1 = QLoss(name="q", q=q1, opt=Adam(q1.parameters()))
     c1 = [
         ql1,
-        Checkpointer(
-            networks=[], callbacks=[ql1], run_root=run_root, checkpoint_interval=1
-        ),
+        Checkpointer(callbacks=[ql1], run_root=run_root, checkpoint_interval=1),
     ]
 
     t1 = Trainer(c1, random_onestep_dataloader())
@@ -109,9 +121,7 @@ def test_qloss_checkpoints():
     ql2 = QLoss(name="q", q=q2, opt=Adam(q1.parameters()))
     c2 = [
         ql2,
-        CheckpointLoader(
-            networks=[], callbacks=[ql2], run_root=run_root, checkpoint_index=0
-        ),
+        CheckpointLoader(callbacks=[ql2], run_root=run_root, checkpoint_index=0),
     ]
     t2 = Trainer(c2, nostep_dataloader())
     t2.train()
