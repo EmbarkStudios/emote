@@ -65,8 +65,7 @@ class LossCallback(LoggingMixin, Callback):
         if self.optimizer and load_optimizers:
             self.optimizer.load_state_dict(state_dict.pop("optimizer_state_dict"))
 
-        if load_hparams:
-            super().load_state_dict(state_dict)
+        super().load_state_dict(state_dict, load_weights, load_optimizers, load_hparams)
 
     @Callback.extend
     def loss(self, *args, **kwargs) -> Tensor:

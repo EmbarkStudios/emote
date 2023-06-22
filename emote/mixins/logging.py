@@ -104,14 +104,23 @@ class LoggingMixin:
         state_dict["windowed_scalar_cumulative"] = self.windowed_scalar_cumulative
         return state_dict
 
-    def load_state_dict(self, state_dict: Dict[str, Any]):
-        self.scalar_logs = state_dict.pop("scalar_logs")
-        self.hist_logs = state_dict.pop("hist_logs")
-        self.video_logs = state_dict.pop("video_logs")
-        self.image_logs = state_dict.pop("image_logs")
-        self.windowed_scalar = {
-            k: deque(v[0], maxlen=v[1]) for (k, v) in self.windowed_scalar.items()
-        }
-        self.windowed_scalar_cumulative = state_dict.pop("windowed_scalar_cumulative")
+    def load_state_dict(
+        self,
+        state_dict: Dict[str, Any],
+        load_network: bool = True,
+        load_optimizer: bool = True,
+        load_hparams: bool = True,
+    ):
+        if load_hparams:
+            self.scalar_logs = state_dict.pop("scalar_logs")
+            self.hist_logs = state_dict.pop("hist_logs")
+            self.video_logs = state_dict.pop("video_logs")
+            self.image_logs = state_dict.pop("image_logs")
+            self.windowed_scalar = {
+                k: deque(v[0], maxlen=v[1]) for (k, v) in self.windowed_scalar.items()
+            }
+            self.windowed_scalar_cumulative = state_dict.pop(
+                "windowed_scalar_cumulative"
+            )
 
-        super().load_state_dict(state_dict)
+        super().load_state_dict(state_dict, load_network, load_optimizer, load_hparams)
