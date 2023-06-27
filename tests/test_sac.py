@@ -63,6 +63,9 @@ def test_alpha_value_ref_valid_after_load():
     )
     ln_alpha_after_load = loss.ln_alpha
 
+    assert torch.equal(
+        ln_alpha_after_load, dummy_load_ln_alpha
+    ), "expected to actually load a alpha value."
     assert (
         ln_alpha_before_load is ln_alpha_after_load
     ), "expected ln(alpha) to be the same python object after loading. The reference is used by other loss functions such as PolicyLoss!"
