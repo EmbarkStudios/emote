@@ -296,10 +296,16 @@ class AlphaLoss(LossCallback):
         state["network_state_dict"] = self.ln_alpha
         return state
 
-    def load_state_dict(self, state_dict: Dict[str, Any]):
+    def load_state_dict(
+        self,
+        state_dict: Dict[str, Any],
+        load_weights: bool = True,
+        load_optimizer: bool = True,
+        load_hparams: bool = True,
+    ):
         self.ln_alpha = state_dict.pop("network_state_dict")
         # TODO(singhblom) Set the right device
-        super().load_state_dict(state_dict)
+        super().load_state_dict(state_dict, load_weights, load_optimizer, load_hparams)
 
 
 class AgentProxyWrapper:
