@@ -296,10 +296,23 @@ class AlphaLoss(LossCallback):
         state["network_state_dict"] = self.ln_alpha
         return state
 
-    def load_state_dict(self, state_dict: Dict[str, Any]):
-        self.ln_alpha = state_dict.pop("network_state_dict")
+    def load_state_dict(
+        self,
+        state_dict: Dict[str, Any],
+        load_weights: bool = True,
+        load_optimizer: bool = True,
+        load_hparams: bool = True,
+    ):
+        saved_ln_alpha = state_dict.pop("network_state_dict")
+
+        self.ln_alpha.requires_grad_(False)
+        self.ln_alpha.copy_(
+            saved_ln_alpha.detach()
+        )  # We copy to the existing tensor instead of creating a new one to keep references used by other loss functions, such as PolicyLoss, valid.
+        self.ln_alpha.requires_grad_(True)
+
         # TODO(singhblom) Set the right device
-        super().load_state_dict(state_dict)
+        super().load_state_dict(state_dict, load_weights, load_optimizer, load_hparams)
 
 
 class AgentProxyWrapper:
