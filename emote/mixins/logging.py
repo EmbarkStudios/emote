@@ -47,17 +47,16 @@ class LoggingMixin:
         whichever length is found first will be permanent.
         """
 
-        # we allow windowed[100]:some_key/foobar to override window size
-        if "windowed[" in key:
-            p, k = key.split(":")
-            length = int(p.split("[")[1][:-1])
-            key = k
-        else:
-            length = self._default_window_length
-
         if key not in self.windowed_scalar:
-            self.windowed_scalar[key] = deque(maxlen=length)
-            self.windowed_scalar_cumulative[key] = 0
+            # we allow windowed[100]:some_key/foobar to override window size
+            if "windowed[" in key:
+                p, k = key.split(":")
+                length = int(p.split("[")[1][:-1])
+            else:
+                length = self._default_window_length
+
+                self.windowed_scalar[key] = deque(maxlen=length)
+                self.windowed_scalar_cumulative[key] = 0
 
         if isinstance(value, Iterable):
             val = value.numpy() if isinstance(value, torch.Tensor) else value
