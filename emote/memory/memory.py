@@ -296,7 +296,7 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 k_split = k.split("/")
                 k_split[0] = k_split[0] + "_" + suffix
                 k = "/".join(k_split)
-                
+
             k = k.split(":")[1] if k.startswith("windowed[") else k
 
             self._writer.add_scalar(f"{k}/cumulative", v, inf_step)
