@@ -130,7 +130,8 @@ class VirtualStorage:
         return length
 
     def get_empty_storage(self, count, length):
-        if self._temp_storage is None:
+        # TODO(klas.henriksson) does it make sense to make a temp for each size?
+        if self._temp_storage is None or self._temp_storage.shape[0] != count * length:
             d = np.empty((count * length, *self._shape), self._dtype)
             self._temp_storage = d
 
