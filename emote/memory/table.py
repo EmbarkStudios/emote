@@ -67,6 +67,9 @@ class ArrayTable:
         self.adaptors = adaptors if adaptors else []
         self._device = device
 
+        for adaptor in self.adaptors:
+            adaptor._table = self
+
         self.clear()
 
     def resize(self, new_size):
@@ -138,7 +141,8 @@ class ArrayTable:
 
                 for identity, start, end in sample_points:
                     try:
-                        output_store[idx:next_idx] = store[identity][start:end]
+                        sample = store[identity][start:end]
+                        output_store[idx : idx + len(sample)] = sample
                         idx = next_idx
 
                     except ValueError as err:
@@ -150,6 +154,10 @@ class ArrayTable:
                     next_idx += local_seq_length
 
                 out[key] = torch.tensor(output_store).to(self._device)
+
+            out["rollout_length"] = torch.tensor(sequence_length).to(self._device)
+            out["next_rollout_length"] = torch.tensor(1).to(self._device)
+            out["sample_points"] = sample_points
 
         return out
 
@@ -163,8 +171,9 @@ class ArrayTable:
                 sample_points = self._sampler.sample(count, sequence_length)
 
             result = self._execute_gather(count, sequence_length, sample_points)
-        for adaptor in self.adaptors:
-            result = adaptor(result, count, sequence_length)
+
+            for adaptor in self.adaptors:
+                result = adaptor(result, count, sequence_length)
         return result
 
     def size(self) -> int:

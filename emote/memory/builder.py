@@ -1,14 +1,10 @@
-"""
-
-"""
-
-from typing import List
+from __future__ import annotations
 
 import numpy as np
 import torch
 
 from ..utils import MDPSpace
-from .adaptors import DictObsAdaptor, TerminalAdaptor
+from .adaptors import Adaptor, DictObsAdaptor, TerminalAdaptor
 from .column import Column, TagColumn, VirtualColumn
 from .fifo_strategy import FifoEjectionStrategy
 from .storage import NextElementMapper, SyntheticDones
@@ -21,13 +17,18 @@ class DictTable(ArrayTable):
         self,
         *,
         use_terminal_column: bool,
-        obs_keys: List[str],
-        columns: List[Column],
+        obs_keys: list[str],
+        columns: list[Column],
         maxlen: int,
         length_key="actions",
         device: torch.device,
+        adaptors: list[Adaptor] | None = None,
     ):
-        adaptors = [DictObsAdaptor(obs_keys)]
+        if adaptors is None:
+            adaptors = []
+
+        adaptors.append(DictObsAdaptor(obs_keys))
+
         if use_terminal_column:
             columns.append(
                 TagColumn(
@@ -64,6 +65,7 @@ class DictObsTable(DictTable):
         device: torch.device,
         dones_dtype=np.bool_,
         masks_dtype=np.float32,
+        adaptors: list[Adaptor] | None = None,
     ):
         if spaces.rewards is not None:
             reward_column = Column(
@@ -119,6 +121,7 @@ class DictObsTable(DictTable):
             columns=columns,
             obs_keys=obs_keys,
             device=device,
+            adaptors=adaptors,
         )
 
 
@@ -135,6 +138,7 @@ class DictObsNStepTable(DictTable):
         use_terminal_column: bool,
         maxlen: int,
         device: torch.device,
+        adaptors: list[Adaptor] | None = None,
     ):
         if spaces.rewards is not None:
             reward_column = Column(
@@ -190,4 +194,5 @@ class DictObsNStepTable(DictTable):
             columns=columns,
             obs_keys=obs_keys,
             device=device,
+            adaptors=adaptors,
         )
