@@ -84,7 +84,9 @@ log_cli = true
 #log_cli_level = "INFO"  # Useful when debugging locally
 log_format = "%(asctime)s:\t%(message)s"
 log_date_format = "%H:%M:%S"
-
+markers = [
+    "slow: the test is slow and normally skipped (enable with --runslow)",
+]
 [tool.isort]
 py_version = 39
 profile = "black"

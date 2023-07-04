@@ -142,7 +142,10 @@ class ArrayTable:
                 for identity, start, end in sample_points:
                     try:
                         sample = store[identity][start:end]
-                        output_store[idx : idx + len(sample)] = sample
+                        if hasattr(sample, "__len__"):
+                            output_store[idx : idx + len(sample)] = sample
+                        else:
+                            output_store[idx:next_idx] = sample
                         idx = next_idx
 
                     except ValueError as err:

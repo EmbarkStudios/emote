@@ -11,11 +11,11 @@ class ForgetMeNot(Env):
         game_length=2,
         min_memory_gap=1,
         max_memory_gap=5,
-        hard_mode=False,
+        difficulty=0,
     ):
         """
-        This game involves memorising a pattern for a set number of steps. On the last step the agent has
-        to output an action that matches this pattern.
+        This game involves memorising a pattern for a set number of steps. On the last step the agent
+        has to output an action that matches this pattern.
         * The pattern length should be <= to the number of actions that the network can output.
         * Set min_memory_gap and max_memory_gap to 0 to make a variant that doesn't require memory.
         * Increase min_memory_gap and max_memory_gap to make the game more difficult.
@@ -27,7 +27,7 @@ class ForgetMeNot(Env):
         assert game_length >= max_memory_gap
         self._game_length = game_length
         self._final_step = game_length - 1
-        self._hard_mode = hard_mode
+        self._difficulty = max(0, min(difficulty, 2))
 
         high = np.array([1.0] * (num_actions + 2), dtype=np.float32)
 
@@ -62,14 +62,16 @@ class ForgetMeNot(Env):
             done = True
             error = np.abs(action - self._pattern)
             reward = np.exp(-2.0 * np.mean(error))
-
         else:
             done = False
-            if self._hard_mode:
-                reward = 0.0
+            if self._difficulty == 2:
+                error = np.abs(action - np.zeros(self._pattern.shape))
+                reward = (-1.0 + np.exp(-2.0 * np.mean(error))) / self._game_length
+            elif self._difficulty == 1:
+                reward = 0
             else:
                 error = np.abs(action - self._pattern)
-                reward = np.exp(-2.0 * np.mean(error))
+                reward = 1.0 - np.exp(-2.0 * np.mean(error))
 
         obs = self._create_observation()
         return obs, reward, done, False, {}

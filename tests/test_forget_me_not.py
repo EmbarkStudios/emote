@@ -157,7 +157,6 @@ def _run_gru_test(root_dir, suffix, config):
         adaptors.append(
             BurnInSamplerAdaptor(
                 ["obs", "gru_hidden", "actions", "rewards", "masks"],
-                ["obs"],
                 config["burn_in_length"],
             )
         )
@@ -266,6 +265,7 @@ def test_gru(tmpdir, base_config):
     _run_gru_test(tmpdir, "gru_base", base_config)
 
 
+@pytest.mark.slow
 def test_gru_long_episodes(tmpdir, base_config):
     base_config["game_length"] = 10
     base_config["max_memory_gap"] = 5
@@ -273,6 +273,7 @@ def test_gru_long_episodes(tmpdir, base_config):
     _run_gru_test(tmpdir, "gru_long_episodes", base_config)
 
 
+@pytest.mark.slow
 def test_gru_long_episodes_burn_in1(tmpdir, base_config):
     base_config["game_length"] = 10
     base_config["max_memory_gap"] = 5
@@ -283,6 +284,7 @@ def test_gru_long_episodes_burn_in1(tmpdir, base_config):
     _run_gru_test(tmpdir, "gru_long_episodes_b1", base_config)
 
 
+@pytest.mark.slow
 def test_gru_long_episodes_burn_in3(tmpdir, base_config):
     base_config["game_length"] = 10
     base_config["max_memory_gap"] = 5
@@ -292,6 +294,7 @@ def test_gru_long_episodes_burn_in3(tmpdir, base_config):
     _run_gru_test(tmpdir, "gru_long_episodes_b3", base_config)
 
 
+@pytest.mark.slow
 def test_gru_long_episodes_burn_in5(tmpdir, base_config):
     base_config["game_length"] = 10
     base_config["max_memory_gap"] = 5

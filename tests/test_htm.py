@@ -9,7 +9,7 @@ from emote.callbacks.logging import TerminalLogger
 from emote.callbacks.testing import FinalRewardTestCheck
 from emote.extra.onnx_exporter import OnnxExporter
 from emote.memory import MemoryLoader, TableMemoryProxy
-from emote.memory.builder import DictObsTable
+from emote.memory.builder import DictObsNStepTable
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
 from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
@@ -38,7 +38,9 @@ class QNet(nn.Module):
 def test_htm():
     device = torch.device("cpu")
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-    table = DictObsTable(spaces=env.dict_space, maxlen=1000, device=device)
+    table = DictObsNStepTable(
+        spaces=env.dict_space, maxlen=1000, device=device, use_terminal_column=False
+    )
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(table, 100, 2, "batch_size")
 
@@ -53,7 +55,7 @@ def test_htm():
         QLoss(name="q2", q=q2, opt=Adam(q2.parameters(), lr=8e-3)),
         PolicyLoss(pi=policy, ln_alpha=ln_alpha, q=q1, opt=Adam(policy.parameters())),
         AlphaLoss(pi=policy, ln_alpha=ln_alpha, opt=Adam([ln_alpha]), n_actions=1),
-        QTarget(pi=policy, ln_alpha=ln_alpha, q1=q1, q2=q2),
+        QTarget(pi=policy, ln_alpha=ln_alpha, q1=q1, q2=q2, roll_length=2),
     ]
 
     callbacks = logged_cbs + [
@@ -73,7 +75,9 @@ def test_htm():
 def test_htm_onnx(tmpdir):
     device = torch.device("cpu")
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-    table = DictObsTable(spaces=env.dict_space, maxlen=1000, device=device)
+    table = DictObsNStepTable(
+        spaces=env.dict_space, maxlen=1000, device=device, use_terminal_column=False
+    )
     memory_proxy = TableMemoryProxy(table)
     dataloader = MemoryLoader(table, 100, 2, "batch_size")
 
@@ -96,7 +100,7 @@ def test_htm_onnx(tmpdir):
         QLoss(name="q2", q=q2, opt=Adam(q2.parameters(), lr=8e-3)),
         PolicyLoss(pi=policy, ln_alpha=ln_alpha, q=q1, opt=Adam(policy.parameters())),
         AlphaLoss(pi=policy, ln_alpha=ln_alpha, opt=Adam([ln_alpha]), n_actions=1),
-        QTarget(pi=policy, ln_alpha=ln_alpha, q1=q1, q2=q2),
+        QTarget(pi=policy, ln_alpha=ln_alpha, q1=q1, q2=q2, roll_length=2),
     ]
 
     callbacks = logged_cbs + [

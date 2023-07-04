@@ -42,6 +42,7 @@ def test_forget_me_not_incorrect_pattern():
         game_length=game_length,
         min_memory_gap=memory_gap,
         max_memory_gap=memory_gap,
+        difficulty=1,
     )
 
     run_game_helper(game, game_length, num_actions)
@@ -63,6 +64,7 @@ def test_forget_me_not_correct_pattern():
         game_length=game_length,
         min_memory_gap=memory_gap,
         max_memory_gap=memory_gap,
+        difficulty=1,
     )
 
     run_game_helper(game, game_length, num_actions)
@@ -84,6 +86,7 @@ def test_forget_me_not_correct_pattern_long_game():
         game_length=game_length,
         min_memory_gap=memory_gap,
         max_memory_gap=memory_gap,
+        difficulty=1,
     )
 
     run_game_helper(game, game_length, num_actions)
@@ -105,6 +108,7 @@ def test_forget_me_not_correct_pattern_long_game_large_gap():
         game_length=game_length,
         min_memory_gap=memory_gap,
         max_memory_gap=memory_gap,
+        difficulty=1,
     )
 
     run_game_helper(game, game_length, num_actions)
@@ -127,6 +131,7 @@ def test_forget_me_not_correct_pattern_long_game_variable_gap():
         game_length=game_length,
         min_memory_gap=memory_gap_min,
         max_memory_gap=memory_gap_max,
+        difficulty=1,
     )
 
     for _ in range(5):
@@ -149,6 +154,7 @@ def test_forget_me_not_no_gap():
         game_length=game_length,
         min_memory_gap=memory_gap,
         max_memory_gap=memory_gap,
+        difficulty=1,
     )
 
     # FIRST STEP: PATTERN

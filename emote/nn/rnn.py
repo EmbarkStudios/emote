@@ -15,15 +15,11 @@ from emote.utils.timed_call import BlockTimers
 class BurnInSamplerAdaptor:
     """This adaptor splits the sampled data into a burn in part and a train part.
 
-    ... warning:
+    .. warning:: The burn in data is padded with zeros *at the end*, after the real data.
 
-        The burn in data is returned as PaddedSequence, not a regular Tensor. Special care must be
-        taken when using this type. Note that it stores data internally as [L, B, *], while most of
-        Emote assumes [B * L, *].
-
-    The burn in part is intended for use with a BurnInCallback to update the hidden states before
+    The burn in data is intended for use with a BurnInCallback to update the hidden states before
     the backprop. This should help with the stability of the training, as the hidden states can
-    otherwise drift away from the current meaning. The method here is derived from the R2D2
+    otherwise drift away from the current interpretation. The method here is derived from the R2D2
     algorithm.
 
     An implementation detail worth noting is that when the sampling offset is shorter than the burn
@@ -34,12 +30,16 @@ class BurnInSamplerAdaptor:
     def __init__(
         self,
         keys: list[str],
-        packed_keys: list[str],
         burn_in_length: int,
     ):
+        """Creates a new BurnInSamplerAdaptor.
+
+        :param keys: The keys to sample burn in data for.
+        :param burn_in_length: The length of the burn in.
+        """
+
         self.burn_in_length = burn_in_length
         self.keys = keys
-        self.packed_keys = packed_keys
 
     def __call__(
         self, result: SampleResult, count: int, sequence_length: int

@@ -327,6 +327,14 @@ class AgentProxyWrapper:
     def input_names(self):
         return self._inner.input_names
 
+    @property
+    def output_names(self):
+        return self._inner.output_names
+
+    @property
+    def policy(self):
+        return self._inner.policy
+
 
 class FeatureAgentProxy(AgentProxy):
     """An agent proxy for basic MLPs.
@@ -383,6 +391,10 @@ class FeatureAgentProxy(AgentProxy):
     def output_names(self):
         return ("actions",)
 
+    @property
+    def policy(self):
+        return self._policy
+
 
 class VisionAgentProxy(AgentProxy):
     """This AgentProxy assumes that the observations will contain image observations 'obs'"""
@@ -420,6 +432,10 @@ class VisionAgentProxy(AgentProxy):
     @property
     def output_names(self):
         return ("actions",)
+
+    @property
+    def policy(self):
+        return self._policy
 
 
 class GenericAgentProxy(AgentProxy):
@@ -511,3 +527,7 @@ class GenericAgentProxy(AgentProxy):
     @property
     def output_names(self):
         return self.output_keys
+
+    @property
+    def policy(self):
+        return self._policy

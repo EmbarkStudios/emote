@@ -10,7 +10,7 @@ def test_adaptor_start_at_zero(mock_table):
     When the sampling point is at zero the burn in lengths should be 0 and the burn in data
     should be zeros.
     """
-    adaptor = BurnInSamplerAdaptor(["obs", "action"], ["obs", "action"], 2)
+    adaptor = BurnInSamplerAdaptor(["obs", "action"], 2)
     adaptor._table = mock_table
 
     result = adaptor(mock_results(0), 2, 5)
@@ -50,7 +50,7 @@ def test_adaptor_start_at_one(mock_table):
     burn in and the burn in data should be the prefix of the regular data.
 
     """
-    adaptor = BurnInSamplerAdaptor(["obs", "action"], ["obs", "action"], 2)
+    adaptor = BurnInSamplerAdaptor(["obs", "action"], 2)
     adaptor._table = mock_table
 
     result = adaptor(mock_results(1), 2, 5)
@@ -172,7 +172,7 @@ def test_adaptor_start_at_two(mock_table):
 
     """
 
-    adaptor = BurnInSamplerAdaptor(["obs", "action"], ["obs", "action"], 2)
+    adaptor = BurnInSamplerAdaptor(["obs", "action"], 2)
     adaptor._table = mock_table
 
     result = adaptor(mock_results(2), 2, 3)
@@ -229,7 +229,7 @@ def test_adaptor_start_at_two_actions_obs_extra(mock_table):
     burn in and the burn in data should be the prefix of the regular data.
 
     """
-    adaptor = BurnInSamplerAdaptor(["obs", "action"], ["obs", "action"], 2)
+    adaptor = BurnInSamplerAdaptor(["obs", "action"], 2)
     adaptor._table = mock_table
 
     result = adaptor(mock_results(2), 2, 5)
