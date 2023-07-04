@@ -28,14 +28,7 @@ class BurnInSamplerAdaptor:
 
     An implementation detail worth noting is that when the sampling offset is shorter than the burn
     in, the burn in part will be shortened and padded with zeros. This ensures that the sampling
-    probabilities of the underlying sequence are respected. Special care might need to be taken with
-    a prioritized sampler as the probability used would be for where the burn in begins, not the
-    training data.
-
-    The above issue could be solved by invoking the sample method twice, but since we couldn't hold
-    the lock between the samples we would be at risk of data corruption! Thus, it'd need a bigger
-    refactor.
-
+    probabilities of the underlying sequence are respected.
     """
 
     def __init__(
