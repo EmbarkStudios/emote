@@ -20,13 +20,17 @@ RUN mkdir -p /gcloud/ && \
 RUN pip install \
 	--no-cache-dir \
 	pipx && \
-	pipx install pdm~=2.4.0 && \
-	pipx install pdm~=2.3.0 --suffix 23 && \
-	pipx install pdm~=2.4.0 --suffix 24 && \
-	pipx install pdm~=2.5.0 --suffix 25 && \
+	pipx install --pip-args='--no-cache-dir' pdm~=2.4.0 && \
+	pipx install --pip-args='--no-cache-dir' pdm~=2.3.0 --suffix 23 && \
+	pipx install --pip-args='--no-cache-dir' pdm~=2.4.0 --suffix 24 && \
+	pipx install --pip-args='--no-cache-dir' pdm~=2.5.0 --suffix 25 && \
+	pipx install --pip-args='--no-cache-dir' pdm~=2.6.0 --suffix 26 && \
+	pipx install --pip-args='--no-cache-dir' pdm~=2.7.0 --suffix 27 && \
 	pdm23 --version && \
 	pdm24 --version && \
 	pdm25 --version && \
+	pdm26 --version && \
+	pdm27 --version && \
 	pdm --version
 
 ENTRYPOINT bash
