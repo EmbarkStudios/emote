@@ -12,6 +12,7 @@ if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "sphinx"
 :warning: Failed building documentation. Please check logs below, or build docs locally using `make deploy` to check for errors.
 EOF
+	exit 1
 else
 	if [[ "$BUILDKITE_BRANCH" = "main" ]]; then
 		gsutil rsync -r ./_build/dirhtml gs://embark-static/emote-docs
