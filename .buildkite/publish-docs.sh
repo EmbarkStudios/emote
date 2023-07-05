@@ -3,13 +3,10 @@ set -eo pipefail
 
 source .buildkite/install-repo.sh
 
-echo --- Initializing gcloud
-
-
 echo --- Building docs
 pushd docs
 EXIT_CODE=0
-pdm run make deploy || EXIT_CODE=$?
+$PDM_COMMAND run make deploy || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "sphinx"

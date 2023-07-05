@@ -5,7 +5,7 @@ source .buildkite/install-repo.sh
 echo --- Packaging emote
 
 EXIT_CODE=0
-pdm build > errors.txt || EXIT_CODE=$?
+$PDM_COMMAND build > errors.txt || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "package"
