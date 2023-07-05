@@ -1,5 +1,8 @@
 set -eo pipefail
 
+ls -alh /root/.local/bin/
+echo $(which pdm25)
+echo $PATH
 $PDM_COMMAND plugin add pdm-plugin-torch==23.1
 
 EXIT_CODE=0
