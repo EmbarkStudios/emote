@@ -273,7 +273,7 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 self.completed_episodes,
             )
 
-        suffix = "inf_step"
+        suffix = False
         for k, v in self.scalar_logs.items():
             if suffix:
                 k_split = k.split("/")
