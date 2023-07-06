@@ -36,7 +36,6 @@ large: &large
       resources-limit-cpu: 14
       resources-limit-memory: 35Gi
 
-
 env:
   PDM_COMMAND: pdm25
 
