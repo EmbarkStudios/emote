@@ -31,8 +31,4 @@ RUN pip install \
 	pdm26 --version && \
 	pdm27 --version
 
-COPY fetcher fetcher
-
-RUN pip install fetcher/ && rm -rf fetcher
-
 ENTRYPOINT bash
