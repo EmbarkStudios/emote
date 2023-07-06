@@ -1,6 +1,6 @@
 plugin_base: &plugin_base
     service-account-name: monorepo-ci
-    image: gcr.io/embark-shared/ml/ci-runner@sha256:59f978e2fa6f12a6e9714b59947028f89ad263f333a785531d58df8042af292a
+    image: gcr.io/embark-shared/ml/ci-runner@sha256:c48501865482a725e3f5ef947b84dfd448d286f8a12c108ab32e22f82abb407b
     default-secret-name: buildkite-k8s-plugin
     always-pull: false
     use-agent-node-affinity: true
@@ -37,6 +37,8 @@ large: &large
       resources-limit-memory: 35Gi
 
 
+env:
+  PDM_COMMAND: pdm25
 
 steps:
   - group: ":passport_control: Validating PR"

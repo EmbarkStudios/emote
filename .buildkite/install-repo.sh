@@ -7,5 +7,6 @@ gcloud config set account monorepo-ci@embark-builds.iam.gserviceaccount.com
 
 echo --- Installing dependencies
 
-pdm install -d -G ci
-pdm torch install cpu
+${PDM_COMMAND:1:-1} install -d -G ci -k post_install
+${PDM_COMMAND:1:-1} plugin add pdm-plugin-torch>=23.1.1
+${PDM_COMMAND:1:-1} torch install cpu
