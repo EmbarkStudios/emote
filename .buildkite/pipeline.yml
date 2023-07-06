@@ -38,6 +38,7 @@ large: &large
 
 env:
   PDM_COMMAND: pdm25
+  RUST_BACKTRACE: 1
 
 steps:
   - group: ":passport_control: Validating PR"
