@@ -1,58 +1,40 @@
 from __future__ import annotations
 
-import sys
-
-from typing import Iterable
-
-import tomlkit
-
-from pdm import termui
-from pdm._types import Source
 from pdm.cli.actions import resolve_candidates_from_lockfile
 from pdm.cli.commands.base import BaseCommand
-from pdm.cli.utils import (
-    fetch_hashes,
-    format_lockfile,
-    format_resolution_impossible,
-    translate_groups,
+from pdm.cli.filters import GroupSelection
+from pdm.cli.options import (
+    clean_group,
+    dry_run_option,
+    groups_group,
+    install_group,
+    lockfile_option,
+    skip_option,
+    venv_option,
 )
 from pdm.core import Core
 from pdm.models.caches import SafeFileCache
-from pdm.models.candidates import Candidate, _find_best_match_link
-from pdm.models.repositories import BaseRepository, LockedRepository
-from pdm.models.requirements import Requirement, parse_requirement
-from pdm.models.specifiers import get_specifier
-from pdm.project import Project
-from pdm.project.config import ConfigItem
-from pdm.resolver import resolve
-from pdm.resolver.providers import BaseProvider
-from pdm.termui import Verbosity
-from pdm.utils import atomic_open_for_write
-from resolvelib.reporters import BaseReporter
-from resolvelib.resolvers import ResolutionImpossible, ResolutionTooDeep, Resolver
+from pdm.models.candidates import _find_best_match_link
 
 
 class FetcherCommand(BaseCommand):
     """Generate a lockfile for torch specifically."""
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "-G",
-            "--group",
-            dest="groups",
-            metavar="GROUP",
-            action="append",
-            help="Select group of optional-dependencies "
-            "or dev-dependencies(with -d). Can be supplied multiple times, "
-            'use ":all" to include all groups under the same species.',
-            default=[],
-        )
+    arguments = (
+        *BaseCommand.arguments,
+        groups_group,
+        dry_run_option,
+        lockfile_option,
+        skip_option,
+        clean_group,
+        install_group,
+        venv_option,
+    )
 
     def handle(self, project, options):
-        groups = translate_groups(project, True, True, options.groups)
-
+        selection = GroupSelection.from_options(project, options)
         requirements = []
-        for group in groups:
+        for group in selection:
             requirements.extend(project.get_dependencies(group).values())
         candidates = resolve_candidates_from_lockfile(project, requirements)
 

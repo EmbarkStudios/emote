@@ -14,8 +14,8 @@ dependencies = []
 repository = "https://github.com/EmbarkStudios/emote"
 
 [build-system]
-requires = ["pdm-pep517>=1.0.0"]
-build-backend = "pdm.pep517.api"
+requires = ["pdm-backend>=1.0.0"]
+build-backend = "pdm.backend"
 
 [project.entry-points.pdm]
 pdm_plugin_fetcher = "pdm_plugin_fetcher.main:fetcher_plugin"
