@@ -9,6 +9,10 @@ from emote.callback import Callback
 from emote.mixins.logging import LoggingMixin
 
 
+def _friendly_size_str(size: torch.Size):
+    return str(list(size)).replace("[", "").replace("]", "").replace(", ", "_")
+
+
 class LossCallback(LoggingMixin, Callback):
     """Losses are callbacks that implement a *loss function*."""
 
@@ -65,16 +69,13 @@ class LossCallback(LoggingMixin, Callback):
             self.log_per_param_weights_and_grads()
 
     def log_per_param_weights_and_grads(self):
-        def _friendly_shape_str(shape):
-            return str(list(shape)).replace("[", "").replace("]", "").replace(", ", "_")
-
         for name, parameter in self._named_parameters.items():
             split = name.split(".")
             log_name = self.name + "_" + "_".join(split[:-1])
             param_type = split[-1]
 
             if self._log_per_param_grads and parameter.grad is not None:
-                g_shape = _friendly_shape_str(parameter.grad.shape)
+                g_shape = _friendly_size_str(parameter.grad.shape)
                 self.log_histogram(
                     f"{param_type}_grads/{log_name}_{g_shape}", parameter.grad
                 )
@@ -84,7 +85,7 @@ class LossCallback(LoggingMixin, Callback):
                 )
 
             if self._log_per_param_weights:
-                p_shape = _friendly_shape_str(parameter.shape)
+                p_shape = _friendly_size_str(parameter.shape)
                 self.log_histogram(f"{param_type}/{log_name}_{p_shape}", parameter)
                 self.log_scalar(
                     f"{param_type}_l2/{log_name}_{p_shape}", torch.norm(parameter, p=2)
