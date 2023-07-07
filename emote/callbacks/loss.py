@@ -61,7 +61,8 @@ class LossCallback(LoggingMixin, Callback):
         self.log_scalar(f"loss/{self.name}_loss", loss)
         self.log_scalar(f"loss/{self.name}_gradient_norm", grad_norm)
 
-        self.log_per_param_weights_and_grads()
+        if self._log_per_param_weights or self._log_per_param_grads:
+            self.log_per_param_weights_and_grads()
 
     def log_per_param_weights_and_grads(self):
         def _friendly_shape_str(shape):
