@@ -70,13 +70,10 @@ class LossCallback(LoggingMixin, Callback):
         for name, parameter in self._named_parameters.items():
             split = name.split(".")
             log_name = self.name + "_" + "_".join(split[:-1])
-
-            p_shape = _friendly_shape_str(parameter.shape)
-            g_shape = _friendly_shape_str(parameter.grad.shape)
-
             param_type = split[-1]
 
-            if self._log_per_param_grads:
+            if self._log_per_param_grads and parameter.grad is not None:
+                g_shape = _friendly_shape_str(parameter.grad.shape)
                 self.log_histogram(
                     f"{param_type}_grads/{log_name}_{g_shape}", parameter.grad
                 )
@@ -86,6 +83,7 @@ class LossCallback(LoggingMixin, Callback):
                 )
 
             if self._log_per_param_weights:
+                p_shape = _friendly_shape_str(parameter.shape)
                 self.log_histogram(f"{param_type}/{log_name}_{p_shape}", parameter)
                 self.log_scalar(
                     f"{param_type}_l2/{log_name}_{p_shape}", torch.norm(parameter, p=2)
