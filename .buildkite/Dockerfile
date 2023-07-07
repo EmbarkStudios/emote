@@ -1,4 +1,5 @@
-FROM docker.io/python@sha256:832385dfbafed97b56379fa2665f858d9178f8fea4bc6efc8d3282804d68a6b4
+# image: python:3.11-slim-bookworm
+FROM python@sha256:364ee1a9e029fb7b60102ae56ff52153ccc929ceab9aa387402fe738432d24cc
 
 ENV PYTHONUNBUFFERED=1 \
 	PYTHONDONTWRITEBYTECODE=1 \

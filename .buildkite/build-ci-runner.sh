@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-GCR_PATH=gcr.io/embark-shared/ml/ci-runner
+GCR_PATH=europe-docker.pkg.dev/main/embark-shared/ml/ci-runner
 
 buildah build-using-dockerfile \
         --tag $GCR_PATH \
