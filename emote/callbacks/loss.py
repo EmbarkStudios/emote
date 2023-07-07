@@ -1,7 +1,8 @@
 from typing import Any, Dict, Optional
 
-from torch import Tensor, nn, optim
 import torch
+
+from torch import Tensor, nn, optim
 from torch.optim import lr_scheduler
 
 from emote.callback import Callback
