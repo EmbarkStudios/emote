@@ -1,10 +1,16 @@
 from typing import Any, Dict, Optional
 
+import torch
+
 from torch import Tensor, nn, optim
 from torch.optim import lr_scheduler
 
 from emote.callback import Callback
 from emote.mixins.logging import LoggingMixin
+
+
+def _friendly_size_str(size: torch.Size):
+    return str(list(size)).replace("[", "").replace("]", "").replace(", ", "_")
 
 
 class LossCallback(LoggingMixin, Callback):
@@ -19,6 +25,8 @@ class LossCallback(LoggingMixin, Callback):
         optimizer: Optional[optim.Optimizer],
         max_grad_norm: float,
         data_group: str,
+        log_per_param_weights=False,
+        log_per_param_grads=False,
     ):
         super().__init__()
         self.data_group = data_group
@@ -32,6 +40,19 @@ class LossCallback(LoggingMixin, Callback):
             p for param_group in optimizer.param_groups for p in param_group["params"]
         ]
         self._max_grad_norm = max_grad_norm
+        self._log_per_param_weights = log_per_param_weights
+        self._log_per_param_grads = log_per_param_grads
+        # Cache parameters and parameter name for all parameters that we optimize.
+        # We can use this when debugging per param values and gradients.
+        self._named_parameters = (
+            {
+                n: p
+                for n, p in network.named_parameters(recurse=True)
+                if any(p is p_ for p_ in self.parameters)
+            }
+            if self.network is not None
+            else {}
+        )
 
     def backward(self, *args, **kwargs):
         self.optimizer.zero_grad()
@@ -43,6 +64,32 @@ class LossCallback(LoggingMixin, Callback):
         self.log_scalar(f"loss/{self.name}_lr", self.lr_schedule.get_last_lr()[0])
         self.log_scalar(f"loss/{self.name}_loss", loss)
         self.log_scalar(f"loss/{self.name}_gradient_norm", grad_norm)
+
+        if self._log_per_param_weights or self._log_per_param_grads:
+            self.log_per_param_weights_and_grads()
+
+    def log_per_param_weights_and_grads(self):
+        for name, parameter in self._named_parameters.items():
+            split = name.split(".")
+            log_name = self.name + "_" + "_".join(split[:-1])
+            param_type = split[-1]
+
+            if self._log_per_param_grads and parameter.grad is not None:
+                g_shape = _friendly_size_str(parameter.grad.shape)
+                self.log_histogram(
+                    f"{param_type}_grads/{log_name}_{g_shape}", parameter.grad
+                )
+                self.log_scalar(
+                    f"{param_type}_grads_l2/{log_name}_{g_shape}",
+                    torch.norm(parameter.grad, p=2),
+                )
+
+            if self._log_per_param_weights:
+                p_shape = _friendly_size_str(parameter.shape)
+                self.log_histogram(f"{param_type}/{log_name}_{p_shape}", parameter)
+                self.log_scalar(
+                    f"{param_type}_l2/{log_name}_{p_shape}", torch.norm(parameter, p=2)
+                )
 
     def state_dict(self):
         state = super().state_dict()
