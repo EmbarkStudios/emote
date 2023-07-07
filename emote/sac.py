@@ -37,6 +37,8 @@ class QLoss(LossCallback):
         for the optimizer of q.
     :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
     :param data_group (str): The name of the data group from which this Loss takes its data.
+    :param log_per_param_weights (bool): If true, log each individual policy parameter that is optimized (norm and value histogram).
+    :param log_per_param_grads (bool): If true, log the gradients of each individual policy parameter that is optimized (norm and histogram).
     """
 
     def __init__(
@@ -48,6 +50,8 @@ class QLoss(LossCallback):
         lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
         max_grad_norm: float = 10.0,
         data_group: str = "default",
+        log_per_param_weights=False,
+        log_per_param_grads=False,
     ):
         super().__init__(
             name=name,
@@ -56,6 +60,8 @@ class QLoss(LossCallback):
             network=q,
             max_grad_norm=max_grad_norm,
             data_group=data_group,
+            log_per_param_weights=log_per_param_weights,
+            log_per_param_grads=log_per_param_grads,
         )
         self.q_network = q
         self.mse = nn.MSELoss()
@@ -170,6 +176,8 @@ class PolicyLoss(LossCallback):
     :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
     :param name (str): The name of the module. Used e.g. while logging.
     :param data_group (str): The name of the data group from which this Loss takes its data.
+    :param log_per_param_weights (bool): If true, log each individual policy parameter that is optimized (norm and value histogram).
+    :param log_per_param_grads (bool): If true, log the gradients of each individual policy parameter that is optimized (norm and histogram).
     """
 
     def __init__(
@@ -184,6 +192,8 @@ class PolicyLoss(LossCallback):
         max_grad_norm: float = 10.0,
         name: str = "policy",
         data_group: str = "default",
+        log_per_param_weights=False,
+        log_per_param_grads=False,
     ):
         super().__init__(
             name=name,
@@ -192,6 +202,8 @@ class PolicyLoss(LossCallback):
             network=pi,
             max_grad_norm=max_grad_norm,
             data_group=data_group,
+            log_per_param_weights=log_per_param_weights,
+            log_per_param_grads=log_per_param_grads,
         )
         self.policy = pi
         self._ln_alpha = ln_alpha
