@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from emote.nn.initialization import ortho_init_
+from emote.nn.misc import FrozenBatchNorm1d
 
 
 class Conv2dEncoder(nn.Module):
@@ -174,3 +175,159 @@ class Conv1dEncoder(nn.Module):
             out_size = np.prod(out_size)
 
         return out_size
+
+
+class FullyConnectedEncoder(nn.Module):
+    def __init__(
+        self,
+        input_size: int,
+        output_size: int,
+        device: torch.device,
+        condition_size: int = 0,
+        hidden_sizes: list[int] = None,
+        freeze_bn: bool = True,
+    ):
+        super().__init__()
+        self.device = device
+
+        self.input_size = input_size
+        self.output_size = output_size
+        self._freeze_bn = freeze_bn
+
+        num_layers = len(hidden_sizes)
+        batch_norm = (
+            FrozenBatchNorm1d(hidden_sizes[0])
+            if self._freeze_bn
+            else nn.BatchNorm1d(hidden_sizes[0])
+        )
+        layers = [
+            nn.Sequential(
+                nn.Linear(input_size + condition_size, hidden_sizes[0]),
+                batch_norm,
+                nn.ReLU(),
+            )
+        ]
+        for i in range(num_layers - 1):
+            batch_norm = (
+                FrozenBatchNorm1d(hidden_sizes[i + 1])
+                if self._freeze_bn
+                else nn.BatchNorm1d(hidden_sizes[i + 1])
+            )
+            layers.append(
+                nn.Sequential(
+                    nn.Linear(hidden_sizes[i], hidden_sizes[i + 1]),
+                    batch_norm,
+                    nn.ReLU(),
+                )
+            )
+        self.hidden_layers = nn.Sequential(*layers).to(self.device)
+        self.output_mean = nn.Linear(hidden_sizes[num_layers - 1], output_size).to(
+            self.device
+        )
+        self.output_log_std = nn.Linear(hidden_sizes[num_layers - 1], output_size).to(
+            self.device
+        )
+
+    def forward(
+        self, data: torch.Tensor, condition: torch.Tensor = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Running encoder
+
+            Arguments:
+                data (torch.Tensor): batch x data_size
+                condition (torch.Tensor): batch x condition_size
+
+            Returns:
+                tuple(torch.Tensor, torch.Tensor): the mean (batch x data_size)
+                    and log_std (batch x data_size)
+        """
+        assert len(data.shape) == 2
+        if condition is not None:
+            assert len(condition.shape) == 2
+            data = torch.cat((data, condition), dim=1)
+
+        x = self.hidden_layers(data)
+
+        mean = self.output_mean(x)
+        log_std = self.output_log_std(x)
+        return mean, log_std
+
+
+class FullyConnectedDecoder(nn.Module):
+    def __init__(
+        self,
+        latent_size: int,
+        output_size: int,
+        device: torch.device,
+        condition_size: int = 0,
+        hidden_sizes: list[int] = None,
+        freeze_bn: bool = True,
+    ):
+        super().__init__()
+        if hidden_sizes is None:
+            hidden_sizes = [128, 256, 512]
+
+        self.device = device
+
+        self.input_size = latent_size
+        self.output_size = output_size
+        self._freeze_bn = freeze_bn
+
+        num_layers = len(hidden_sizes)
+        batch_norm = (
+            FrozenBatchNorm1d(hidden_sizes[0])
+            if self._freeze_bn
+            else nn.BatchNorm1d(hidden_sizes[0])
+        )
+        layers = [
+            nn.Sequential(
+                nn.Linear(latent_size + condition_size, hidden_sizes[0]),
+                batch_norm,
+                nn.ReLU(),
+            )
+        ]
+        for i in range(num_layers - 1):
+            batch_norm = (
+                FrozenBatchNorm1d(hidden_sizes[i + 1])
+                if self._freeze_bn
+                else nn.BatchNorm1d(hidden_sizes[i + 1])
+            )
+            layers.append(
+                nn.Sequential(
+                    nn.Linear(hidden_sizes[i], hidden_sizes[i + 1]),
+                    batch_norm,
+                    nn.ReLU(),
+                )
+            )
+        layers.append(
+            nn.Sequential(
+                nn.Linear(hidden_sizes[num_layers - 1], output_size),
+            )
+        )
+        self.layers = nn.Sequential(*layers).to(self.device)
+
+    def forward(
+        self, latent: torch.Tensor, condition: torch.Tensor = None
+    ) -> torch.Tensor:
+        """
+        Running decoder
+
+            Arguments:
+                latent (torch.Tensor): batch x latent_size
+                condition (torch.Tensor): batch x condition_size
+
+            Returns:
+                torch.Tensor: the sample (batch x data_size)
+        """
+        assert len(latent.shape) == 2
+
+        if condition is not None:
+
+            assert len(condition.shape) == 2
+
+            latent = torch.cat((latent, condition), dim=1)
+
+        x = self.layers(latent)
+
+        return x
