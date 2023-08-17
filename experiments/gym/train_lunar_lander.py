@@ -342,7 +342,7 @@ if __name__ == "__main__":
     """Creating the memory and the dataloader"""
     gym_memory_proxy, dataloader = create_memory(
         space=gym_wrapper.dict_space,
-        memory_size=100_000,
+        memory_size=4_000_000,
         len_rollout=input_args.rollout_length,
         batch_size=input_args.batch_size,
         data_group="default",
@@ -356,7 +356,7 @@ if __name__ == "__main__":
         gym_memory_proxy = MemoryExporterProxyWrapper(
             memory=gym_memory_proxy,
             target_memory_name=dataloader.data_group,
-            inf_steps_per_memory_export=(input_args.bp_steps - 1),
+            inf_steps_per_memory_export=10_000,
             experiment_root_path=input_args.log_dir,
             min_time_per_export=0,
         )

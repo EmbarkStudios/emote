@@ -1,3 +1,20 @@
+"""
+
+This is an example training with GenRL algorithm. GenRL training requires a generative model as an input. The generative
+model should be trained prior to the GenRL training using VAE training as an example. One can use train_vae.py as an
+example way to train a generative model. Please follow the instruction given by 'train_vae.py' to train a vae model for
+the lunar lander environment.
+
+Policy training with GenRL can be done using the following:
+
+    python experiments/gym/train_genrl.py --vae-checkpoint-dir checkpoints/vae_ll/checkpoint --vae-checkpoint-index 1
+        --vae-latent-size 1 --condition-size 24 --num-hidden-layer 4 --bp-steps 10000
+
+The above example assumes a pre-trained generative model exists in the directory defined by '--vae-checkpoint-dir' at
+the index defined by '--vae-checkpoint-index'.
+
+"""
+
 import argparse
 
 import numpy as np
@@ -64,7 +81,6 @@ def create_memory(
 def create_actor_critic_agents(
     args,
     num_obs: int,
-    num_actions: int,
     num_latent: int,
     decoder: DecoderWrapper,
     encoder: EncoderWrapper,
@@ -74,15 +90,15 @@ def create_actor_critic_agents(
     device = args.device
 
     hidden_dims = [args.hidden_layer_size] * arg.num_hidden_layer
-    q1 = GenRLQNet(encoder, num_obs, num_actions, hidden_dims).to(device)
-    q2 = GenRLQNet(encoder, num_obs, num_actions, hidden_dims).to(device)
+    q1 = GenRLQNet(encoder, num_obs, num_latent, hidden_dims).to(device)
+    q2 = GenRLQNet(encoder, num_obs, num_latent, hidden_dims).to(device)
     policy = GenRLPolicy(decoder, num_obs, num_latent, hidden_dims).to(device)
 
     policy_proxy = FeatureAgentProxy(policy, device=device)
 
-    logn_alpha = torch.tensor(np.log(init_alpha), requires_grad=True, device=device)
+    log_alpha = torch.tensor(np.log(init_alpha), requires_grad=True, device=device)
 
-    return q1, q2, policy_proxy, logn_alpha
+    return q1, q2, policy_proxy, log_alpha
 
 
 if __name__ == "__main__":
@@ -144,37 +160,37 @@ if __name__ == "__main__":
         device=training_device,
     )
 
-    checkpoint_filename = f"{arg.vae_checkpoint_dir}.{arg.vae_checkpoint_index}.tar"
+    checkpoint_filename = f"{arg.vae_checkpoint_dir}_{arg.vae_checkpoint_index}.tar"
+
     state_dict = torch.load(checkpoint_filename, map_location=training_device)
-
     state = state_dict["callback_state_dicts"]["vae"]
-
     vae_encoder.load_state_dict(state.pop("network_state_dict"))
-    for param in vae_encoder.parameters():
-        param.requires_grad = False
 
     state_dict = torch.load(checkpoint_filename)
     state = state_dict["callback_state_dicts"]["vae"]
     vae_decoder.load_state_dict(state.pop("network_state_dict"))
-    for param in vae_decoder.parameters():
-        param.requires_grad = False
 
-    """Create agent and the Q-functions"""
-    qnet1, qnet2, agent_proxy, ln_alpha = create_actor_critic_agents(
-        decoder=vae_decoder,
-        encoder=vae_encoder,
-        args=arg,
-        num_actions=number_of_actions,
-        num_latent=action_latent_size,
-        num_obs=number_of_obs,
-    )
+    for model in [vae_encoder, vae_decoder]:
+        for param in model.parameters():
+            param.requires_grad = False
 
+    """Creating the MDP space"""
     spaces = MDPSpace(
         rewards=gym_wrapper.dict_space.rewards,
         actions=BoxSpace(dtype=np.float32, shape=(action_latent_size,)),
         state=gym_wrapper.dict_space.state,
     )
 
+    """Creating agent and the Q-functions"""
+    qnet1, qnet2, agent_proxy, ln_alpha = create_actor_critic_agents(
+        decoder=vae_decoder,
+        encoder=vae_encoder,
+        args=arg,
+        num_latent=action_latent_size,
+        num_obs=number_of_obs,
+    )
+
+    """Creating the memory"""
     gym_memory, dataloader = create_memory(
         space=spaces,
         encoder=vae_encoder,
@@ -185,6 +201,7 @@ if __name__ == "__main__":
         device=training_device,
     )
 
+    """Creating the train callbacks"""
     train_callbacks = create_train_callbacks(
         args=arg,
         q1=qnet1,
@@ -196,11 +213,12 @@ if __name__ == "__main__":
         data_group="rl_buffer",
     )
 
-    """Creating the complementary callbacks and starting the training"""
+    """Creating the complementary callbacks"""
     callbacks = create_complementary_callbacks(
         args=arg,
         logged_cbs=train_callbacks,
     )
 
+    """Start the training"""
     trainer = Trainer(callbacks, dataloader)
     trainer.train()

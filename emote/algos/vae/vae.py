@@ -1,3 +1,5 @@
+from typing import Callable
+
 import torch
 import torch.nn.functional as F
 
@@ -55,7 +57,7 @@ class VAELoss(LossCallback):
         name: str = "vae",
         data_group: str = "default",
         input_key: str = "obs",
-        conditioning_func=lambda _: None,
+        conditioning_func: Callable = lambda _: None,
     ):
         super().__init__(
             name=name,
@@ -76,4 +78,5 @@ class VAELoss(LossCallback):
         loss, info = self.vae.loss(actions, samples, dist_mean, dist_log_std)
         self.log_scalar("genrl/restore_loss", torch.mean(info["restore_loss"]))
         self.log_scalar("genrl/kl_loss", torch.mean(info["kl_loss"]))
+
         return loss

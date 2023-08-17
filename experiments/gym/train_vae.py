@@ -10,8 +10,11 @@ The '--export-memory' flag is needed to save the replay buffer after the trainin
 Once the expert replay buffer is created, you can train the VAE model using the example below:
 
     python experiments/gym/train_vae.py --beta 0.004 --action-size 2 --observation-size 24
-        --condition-size 24 --latent-size 2 --num-hidden-layer 4 --bp-steps 10000 --checkpoint-interval 9999
+        --condition-size 24 --latent-size 1 --num-hidden-layer 4 --bp-steps 10000 --checkpoint-interval 9999
         --buffer-dir logs/ --buffer-filename default_export
+
+The '--latent-size 1' learns a latent space to represent actions with only one dimension. Note that the original action
+space is 2-dimensional.
 
 """
 

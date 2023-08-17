@@ -25,10 +25,12 @@ class GenRLPolicy(GaussianMlpPolicy):
 
         if epsilon is not None:
             epsilon = epsilon[:, : self.num_actions]
+
         if self.training:
             sample, log_prob = super().forward(obs, epsilon)
             action = self.decoder(sample, obs)
             return action, log_prob
+
         return self.decoder(super().forward(obs, epsilon), obs)
 
 
