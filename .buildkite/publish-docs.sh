@@ -6,6 +6,9 @@ source .buildkite/install-repo.sh
 echo --- Building docs
 pushd docs
 EXIT_CODE=0
+
+export TZ=UTC
+
 PDM=${PDM_COMMAND:1:-1} ${PDM_COMMAND:1:-1} run make deploy  || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
