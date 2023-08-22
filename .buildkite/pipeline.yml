@@ -39,7 +39,7 @@ large: &large
 
 env:
   PDM_COMMAND: pdm25
-  PYTHON_VERSION: '3.8'
+  PYTHON_VERSION: '3.9'
 
 steps:
   - group: ":passport_control: Validating PR"
