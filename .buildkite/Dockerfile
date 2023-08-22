@@ -23,6 +23,12 @@ RUN curl https://pyenv.run | bash && \
 	python --version && \
 	pyenv exec pip --version
 
+RUN mkdir -p /gcloud/ && \
+	curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-408.0.1-linux-x86_64.tar.gz && \
+	tar -xf google-cloud-cli-408.0.1-linux-x86_64.tar.gz -C /gcloud/ && \
+	/gcloud/google-cloud-sdk/install.sh --quiet --usage-reporting false && \
+	rm google-cloud-cli-408.0.1-linux-x86_64.tar.gz
+
 RUN eval "$(pyenv init --path)" && \
 	eval "$(pyenv init -)" && \
 	pyenv global 3.11 && python --version && python -m pip install \
