@@ -162,7 +162,7 @@ class CurlLoss(LossCallback):
         use_per_image_mask_size: bool = False,
         use_fast_augment: bool = False,
         use_projection_layer: bool = True,
-        augment_anchor_and_pos: bool = False,  # disabling this saves some computation and doesn't seem to have any adverse effects.
+        augment_anchor_and_pos: bool = True,  # disabling this saves some computation and doesn't seem to have any adverse effects.
         log_images: bool = True,
     ):
         self._max_grad_norm = max_grad_norm
