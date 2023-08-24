@@ -47,15 +47,14 @@ class LoggingMixin:
         whichever length is found first will be permanent.
         """
 
-        # we allow windowed[100]:some_key/foobar to override window size
-        if "windowed[" in key:
-            p, k = key.split(":")
-            length = int(p.split("[")[1][:-1])
-            key = k
-        else:
-            length = self._default_window_length
-
         if key not in self.windowed_scalar:
+            # we allow windowed[100]:some_key/foobar to override window size
+            if "windowed[" in key:
+                p = key.split(":")[0]
+                length = int(p.split("[")[1][:-1])
+            else:
+                length = self._default_window_length
+
             self.windowed_scalar[key] = deque(maxlen=length)
             self.windowed_scalar_cumulative[key] = 0
 

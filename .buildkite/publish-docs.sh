@@ -3,18 +3,19 @@ set -eo pipefail
 
 source .buildkite/install-repo.sh
 
-echo --- Initializing gcloud
-
-
 echo --- Building docs
 pushd docs
 EXIT_CODE=0
-pdm run make deploy || EXIT_CODE=$?
+
+export TZ=UTC
+
+PDM=${PDM_COMMAND:1:-1} ${PDM_COMMAND:1:-1} run make deploy  || EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "sphinx"
 :warning: Failed building documentation. Please check logs below, or build docs locally using `make deploy` to check for errors.
 EOF
+	exit 1
 else
 	if [[ "$BUILDKITE_BRANCH" = "main" ]]; then
 		gsutil rsync -r ./_build/dirhtml gs://embark-static/emote-docs

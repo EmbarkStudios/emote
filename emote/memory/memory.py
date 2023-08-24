@@ -273,7 +273,7 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 self.completed_episodes,
             )
 
-        suffix = "inf_step"
+        suffix = False
         for k, v in self.scalar_logs.items():
             if suffix:
                 k_split = k.split("/")
@@ -287,6 +287,8 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 k_split[0] = k_split[0] + "_" + suffix
                 k = "/".join(k_split)
 
+            k = k.split(":")[1] if k.startswith("windowed[") else k
+
             self._writer.add_scalar(k, sum(v) / len(v), inf_step)
 
         for k, v in self.windowed_scalar_cumulative.items():
@@ -294,6 +296,8 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 k_split = k.split("/")
                 k_split[0] = k_split[0] + "_" + suffix
                 k = "/".join(k_split)
+
+            k = k.split(":")[1] if k.startswith("windowed[") else k
 
             self._writer.add_scalar(f"{k}/cumulative", v, inf_step)
 
