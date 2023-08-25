@@ -86,11 +86,15 @@ class QTarget(LoggingMixin, Callback):
         given the current observations and a given action.
     :param q2 (torch.nn.Module): A deep neural net that outputs the discounted loss
         given the current observations and a given action.
-    :param gamma (float): Discount factor for the rewards in time.
-    :param reward_scale (float): Scale factor for the rewards.
-    :param target_q_tau (float): The weight given to the latest network in the
-        exponential moving average. So NewTargetQ = OldTargetQ * (1-tau) + Q*tau.
-    :param data_group (str): The name of the data group from which this Loss takes its data.
+    :param q1t (torch.nn.Module, optional): target Q network.  (default: None)
+    :param q2t (torch.nn.Module, optional): target Q network. (default: None)
+    :param gamma (float, optional): Discount factor for the rewards in time. (default: 0.99)
+    :param reward_scale (float, optional): Scale factor for the rewards. (default: 1.0)
+    :param target_q_tau (float, optional): The weight given to the latest network in the
+        exponential moving average. So NewTargetQ = OldTargetQ * (1-tau) + Q*tau. (default: 0.005)
+    :param data_group (str, optional): The name of the data group from which this Loss takes its data. (default: "default")
+    :param roll_length (int, optional): Rollout length. (default: 1)
+    :param use_terminal_masking (bool, optional): Whether to use terminal masking  for the next values. (default: False)
     """
 
     def __init__(
@@ -107,6 +111,7 @@ class QTarget(LoggingMixin, Callback):
         target_q_tau: float = 0.005,
         data_group: str = "default",
         roll_length: int = 1,
+        use_terminal_masking: bool = False,
     ):
         super().__init__()
         self._order = 1  # this is to ensure that the data_group is prepared beforehand
@@ -124,6 +129,7 @@ class QTarget(LoggingMixin, Callback):
         self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len).to(
             ln_alpha.device
         )
+        self.use_terminal_masking = use_terminal_masking
 
     def begin_batch(self, next_observation, rewards, masks):
         next_p_sample, next_logp_pi = self.policy(**next_observation)
@@ -138,8 +144,11 @@ class QTarget(LoggingMixin, Callback):
 
         last_step_masks = split_rollouts(masks, self.rollout_len)[:, -1]
         scaled_reward = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
-        next_value_masked = torch.multiply(next_value, last_step_masks)
-        qt = discount(scaled_reward, next_value_masked, self.gamma_matrix).detach()
+
+        if self.use_terminal_masking:
+            next_value = torch.multiply(next_value, last_step_masks)
+
+        qt = discount(scaled_reward, next_value, self.gamma_matrix).detach()
         assert qt.shape == (bsz, 1)
 
         self.log_scalar("training/next_logp_pi", torch.mean(next_logp_pi))
