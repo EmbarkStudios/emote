@@ -12,8 +12,7 @@ class DummyMemoryProxy:
 
 
 class EmptyMemoryProxyWrapper(MemoryProxyWrapper):
-    def __init__(self, inner):
-        super().__init__(inner)
+    pass
 
 
 class SayHelloMemoryProxyWrapper(MemoryProxyWrapper):
