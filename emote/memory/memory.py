@@ -7,13 +7,13 @@ them into episodes before submission into the memory.
 """
 from __future__ import annotations
 
+import inspect
 import logging
 import os
 import time
 import warnings
 
 from collections import defaultdict, deque
-from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
@@ -25,6 +25,7 @@ from torch.utils.tensorboard import SummaryWriter
 from emote.callback import Callback
 from emote.extra.onnx_exporter import OnnxExporter
 from emote.mixins.logging import LoggingMixin
+from emote.proxies import MemoryProxy
 from emote.trainer import TrainingShutdownException
 
 from ..typing import AgentId, DictObservation, DictResponse, EpisodeState
@@ -162,16 +163,39 @@ class TableMemoryProxy:
             self._table.add_sequence(agent_id, sequence)
 
 
-class TableMemoryProxyWrapper:
-    def __init__(self, *, inner: TableMemoryProxy, **kwargs):
-        super().__init__(**kwargs)
+class MemoryProxyWrapper:
+    """Base class for memory proxy wrappers.
+    This class forwards non-existing method accessess to the inner
+    MemoryProxy or MemoryProxyWrapper.
+    """
+
+    def __init__(self, inner: "MemoryProxyWrapper" | MemoryProxy):
         self._inner = inner
+
+    def __getattr__(self, name):
+        # get the attribute from inner.
+        # if it does not exist, exception will be raised.
+        attr = getattr(self._inner, name)
+
+        # for some safety, make sure it is an method.
+        # we only want the memory proxy wrapper to forward methods.
+        if not inspect.ismethod(attr):
+            raise AttributeError(
+                f"Accessing non-method inner attribute {name} is not allowed."
+            )
+
+        return attr
+
+
+class TableMemoryProxyWrapper(MemoryProxyWrapper):
+    def __init__(self, inner: TableMemoryProxy):
+        super().__init__(inner=inner)
 
     def store(self, path: str):
         return self._inner.store(path)
 
 
-class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
+class LoggingProxyWrapper(LoggingMixin, TableMemoryProxyWrapper):
     def __init__(
         self,
         inner: TableMemoryProxy,
