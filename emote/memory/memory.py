@@ -169,7 +169,8 @@ class MemoryProxyWrapper:
     MemoryProxy or MemoryProxyWrapper.
     """
 
-    def __init__(self, inner: "MemoryProxyWrapper" | MemoryProxy):
+    def __init__(self, inner: "MemoryProxyWrapper" | MemoryProxy, **kwargs):
+        super().__init__(**kwargs)
         self._inner = inner
 
     def __getattr__(self, name):
@@ -188,14 +189,14 @@ class MemoryProxyWrapper:
 
 
 class TableMemoryProxyWrapper(MemoryProxyWrapper):
-    def __init__(self, inner: TableMemoryProxy):
-        super().__init__(inner=inner)
+    def __init__(self, *, inner: TableMemoryProxy, **kwargs):
+        super().__init__(inner=inner, **kwargs)
 
     def store(self, path: str):
         return self._inner.store(path)
 
 
-class LoggingProxyWrapper(LoggingMixin, TableMemoryProxyWrapper):
+class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
     def __init__(
         self,
         inner: TableMemoryProxy,
