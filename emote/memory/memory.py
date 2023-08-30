@@ -182,7 +182,9 @@ class MemoryProxyWrapper:
         # we only want the memory proxy wrapper to forward methods.
         if not inspect.ismethod(attr):
             raise AttributeError(
-                f"Accessing non-method inner attribute {name} is not allowed."
+                f"Accessing non-method inner attribute {name} is not allowed.",
+                obj=self,
+                name=f"{name}",
             )
 
         return attr
