@@ -14,6 +14,7 @@ from emote.callbacks.loss import LossCallback
 from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
+from emote.utils.deprecated import deprecated
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 from emote.utils.spaces import MDPSpace
 
@@ -459,6 +460,7 @@ class FeatureAgentProxy(GenericAgentProxy):
     This AgentProxy assumes that the observations will contain a single flat array of features.
     """
 
+    @deprecated(reason="Use GenericAgentProxy instead", version="23.1.0")
     def __init__(self, policy: nn.Module, device: torch.device, input_key: str = "obs"):
         """Create a new proxy.
 
@@ -478,6 +480,7 @@ class FeatureAgentProxy(GenericAgentProxy):
 class VisionAgentProxy(FeatureAgentProxy):
     """This AgentProxy assumes that the observations will contain image observations 'obs'"""
 
+    @deprecated(reason="Use GenericAgentProxy instead", version="23.1.0")
     def __init__(self, policy: nn.Module, device: torch.device):
         super().__init__(policy=policy, device=device, input_key="obs")
 
@@ -488,6 +491,7 @@ class MultiKeyAgentProxy(GenericAgentProxy):
     Observations are dicts that contain multiple input keys (e.g. both "features" and "images").
     """
 
+    @deprecated(reason="Use GenericAgentProxy instead", version="23.1.0")
     def __init__(
         self,
         policy: nn.Module,
