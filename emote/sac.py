@@ -402,7 +402,7 @@ class GenericAgentProxy(AgentProxy):
             if obs.episode_state not in self._end_states
         ]
 
-        dict_tensor_obs = {}
+        tensor_obs_list = [None] * len(self.input_keys)
         for input_key in self.input_keys:
             np_obs = np.array(
                 [
@@ -417,9 +417,10 @@ class GenericAgentProxy(AgentProxy):
                     np_obs = np.reshape(np_obs, shape)
 
             tensor_obs = torch.tensor(np_obs).to(self.device)
-            dict_tensor_obs[input_key] = tensor_obs
+            index = self.input_keys.index(input_key)
+            tensor_obs_list[index] = tensor_obs
 
-        outputs: tuple[any, ...] = self._policy(**dict_tensor_obs)
+        outputs: tuple[any, ...] = self._policy(*tensor_obs_list)
         # we remove element 1 as we don't need the logprobs here
         outputs = outputs[0:1] + outputs[2:]
 
