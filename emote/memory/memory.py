@@ -181,10 +181,10 @@ class MemoryProxyWrapper:
         # for some safety, make sure it is an method.
         # we only want the memory proxy wrapper to forward methods.
         if not inspect.ismethod(attr):
+            # NOTE: In python >= 3.10 we should specify
+            # 'obj' and 'name' on the AttributeError so Python can provide hints to the user.
             raise AttributeError(
                 f"Accessing non-method inner attribute {name} is not allowed.",
-                obj=self,
-                name=f"{name}",
             )
 
         return attr
