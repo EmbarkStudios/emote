@@ -33,13 +33,23 @@ class FinalRewardTestCheck(Callback):
         callback: LoggingMixin,
         cutoff: float,
         test_length: int,
+        key: str = "training/scaled_reward",
+        use_windowed: bool = False,
     ):
         super().__init__(cycle=test_length)
         self._cb = callback
         self._cutoff = cutoff
+        self._key = key
+        self._use_windowed = use_windowed
 
     def end_cycle(self):
-        reward = self._cb.scalar_logs["training/scaled_reward"]
+        if self._use_windowed:
+            data = self._cb.windowed_scalar[self._key]
+            reward = sum(data) / len(data)
+        else:
+            reward = self._cb.scalar_logs[self._key]
+
         if reward < self._cutoff:
             raise Exception(f"Reward too low: {reward}")
+
         raise TrainingShutdownException()

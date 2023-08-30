@@ -132,7 +132,7 @@ class QTarget(LoggingMixin, Callback):
         self.use_terminal_masking = use_terminal_masking
 
     def begin_batch(self, next_observation, rewards, masks):
-        next_p_sample, next_logp_pi = self.policy(**next_observation)
+        next_p_sample, next_logp_pi = self.policy(**next_observation)[0:2]
         next_q1t = self.q1t(next_p_sample, **next_observation)
         next_q2t = self.q2t(next_p_sample, **next_observation)
         min_next_qt = torch.min(next_q1t, next_q2t)
@@ -220,7 +220,7 @@ class PolicyLoss(LossCallback):
         self.q2 = q2
 
     def loss(self, observation):
-        p_sample, logp_pi = self.policy(**observation)
+        p_sample, logp_pi = self.policy(**observation)[0:2]
         if self.q2 is not None:
             q_pi_min = torch.min(
                 self.q1(p_sample, **observation), self.q2(p_sample, **observation)
@@ -295,7 +295,7 @@ class AlphaLoss(LossCallback):
 
     def loss(self, observation):
         with torch.no_grad():
-            _, logp_pi = self.policy(**observation)
+            _, logp_pi = self.policy(**observation)[0:2]
             entropy = -logp_pi
             error = entropy - self.t_entropy
         alpha_loss = torch.mean(self.ln_alpha * error.detach())
@@ -348,8 +348,16 @@ class AgentProxyWrapper:
     def input_names(self):
         return self._inner.input_names
 
+    @property
+    def output_names(self):
+        return self._inner.output_names
 
-class FeatureAgentProxy:
+    @property
+    def policy(self):
+        return self._inner.policy
+
+
+class FeatureAgentProxy(AgentProxy):
     """An agent proxy for basic MLPs.
 
     This AgentProxy assumes that the observations will contain a single flat array of features.
@@ -362,7 +370,7 @@ class FeatureAgentProxy:
         :param device: The device to run on.
         :param input_key: The name of the features. (default: "obs")
         """
-        self.policy = policy
+        self._policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device
 
@@ -389,7 +397,7 @@ class FeatureAgentProxy:
             )
         ).to(self.device)
 
-        actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
+        actions = self._policy(tensor_obs)[0].detach().cpu().numpy()
 
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
@@ -400,12 +408,20 @@ class FeatureAgentProxy:
     def input_names(self):
         return (self._input_key,)
 
+    @property
+    def output_names(self):
+        return ("actions",)
 
-class VisionAgentProxy:
+    @property
+    def policy(self):
+        return self._policy
+
+
+class VisionAgentProxy(AgentProxy):
     """This AgentProxy assumes that the observations will contain image observations 'obs'"""
 
     def __init__(self, policy: nn.Module, device: torch.device):
-        self.policy = policy
+        self._policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device
 
@@ -424,34 +440,55 @@ class VisionAgentProxy:
             [observations[agent_id].array_data["obs"] for agent_id in active_agents]
         )
         tensor_obs = torch.tensor(np_obs).to(self.device)
-        actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
+        actions = self._policy(tensor_obs)[0].detach().cpu().numpy()
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
         }
 
+    @property
+    def input_names(self):
+        return (self._input_key,)
 
-class MultiKeyAgentProxy:
-    """Observations are dicts that contain multiple input keys (e.g. both "features" and "images")"""
+    @property
+    def output_names(self):
+        return ("actions",)
+
+    @property
+    def policy(self):
+        return self._policy
+
+
+class GenericAgentProxy(AgentProxy):
+    """Observations are dicts that contain multiple input and output keys.
+
+    For example, we might have a policy that takes in both "obs" and
+    "goal" and outputs "actions". In order to be able to properly
+    invoke the network it is the responsibility of this proxy to
+    collate the inputs and decollate the outputs per agent.
+    """
 
     def __init__(
         self,
         policy: nn.Module,
         device: torch.device,
         input_keys: tuple,
-        spaces: MDPSpace = None,
+        output_keys: tuple,
+        spaces: MDPSpace | None = None,
     ):
         """Create a new proxy.
 
-        Args:
-            policy (nn.Module): The policy to execute for actions.
-            device (torch.device): The device to run on.
-            input_keys (tuple): The names of the input.
+        :param policy (nn.Module): The policy to invoke
+        :param device (torch.device): The device to run on
+        :param input_keys (tuple): The names of the inputs to the policy
+        :param output_keys (tuple): The names of the outputs of the policy
+        :param spaces (MDPSpace): The spaces of the inputs and outputs
         """
-        self.policy = policy
+        self._policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device
         self.input_keys = input_keys
+        self.output_keys = output_keys
         self._spaces = spaces
 
     def __call__(
@@ -484,13 +521,34 @@ class MultiKeyAgentProxy:
             tensor_obs = torch.tensor(np_obs).to(self.device)
             dict_tensor_obs[input_key] = tensor_obs
 
-        actions = self.policy(**dict_tensor_obs)[0].detach().cpu().numpy()
+        outputs: tuple[any, ...] = self._policy(**dict_tensor_obs)
+        # we remove element 1 as we don't need the logprobs here
+        outputs = outputs[0:1] + outputs[2:]
 
-        return {
-            agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
-            for i, agent_id in enumerate(active_agents)
+        outputs = {
+            key: outputs[i].detach().cpu().numpy()
+            for i, key in enumerate(self.output_keys)
         }
+
+        agent_data = [
+            (agent_id, DictResponse(list_data={}, scalar_data={}))
+            for agent_id in active_agents
+        ]
+
+        for i, (_, response) in enumerate(agent_data):
+            for k, data in outputs.items():
+                response.list_data[k] = data[i]
+
+        return dict(agent_data)
 
     @property
     def input_names(self):
         return self.input_keys
+
+    @property
+    def output_names(self):
+        return self.output_keys
+
+    @property
+    def policy(self):
+        return self._policy

@@ -16,18 +16,20 @@ class BaseStorage(dict):
     def __init__(self, shape, dtype):
         self._shape = shape
         self._dtype = dtype
-        self._temp_storage = None
+        self._temp_storage = {}
 
     def get_empty_storage(self, count, length):
         """A workspace that can be reused to skip reallocating the same numpy buffer
         each time the memory is sampled. Will *not* work if the memory is
         sampled from multiple threads.
         """
-        if self._temp_storage is None:
+        if (count, length) not in self._temp_storage:
             d = np.empty((count * length, *self._shape), self._dtype)
-            self._temp_storage = d
+            self._temp_storage[(count, length)] = d
 
-        return self._temp_storage
+        arr = self._temp_storage[(count, length)]
+        arr.fill(0)
+        return arr
 
     def sequence_length_transform(self, length):
         return length
@@ -61,18 +63,21 @@ class TagStorage(dict):
     def __init__(self, shape, dtype):
         self._shape = shape
         self._dtype = dtype
-        self._temp_storage = None
+        self._temp_storage = {}
 
     def get_empty_storage(self, count, length):
         """A workspace that can be reused to skip reallocating the same numpy buffer
         each time the memory is sampled. Will *not* work if the memory is
         sampled from multiple threads.
         """
-        if self._temp_storage is None:
+        if (count, length) not in self._temp_storage:
             d = np.empty((count * length, *self._shape), self._dtype)
-            self._temp_storage = d
+            self._temp_storage[(count, length)] = d
 
-        return self._temp_storage
+        arr = self._temp_storage[(count, length)]
+        arr.fill(0)
+
+        return arr
 
     def sequence_length_transform(self, length):
         return 1
@@ -109,7 +114,7 @@ class VirtualStorage:
         self._storage = storage
         self._shape = shape
         self._dtype = dtype
-        self._temp_storage = None
+        self._temp_storage = {}
 
     @property
     def shape(self):
@@ -130,11 +135,13 @@ class VirtualStorage:
         return length
 
     def get_empty_storage(self, count, length):
-        if self._temp_storage is None:
+        if (count, length) not in self._temp_storage:
             d = np.empty((count * length, *self._shape), self._dtype)
-            self._temp_storage = d
+            self._temp_storage[(count, length)] = d
 
-        return self._temp_storage
+        arr = self._temp_storage[(count, length)]
+        arr.fill(0)
+        return arr
 
     def post_import(self):
         pass

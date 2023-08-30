@@ -69,6 +69,13 @@ class TensorboardLogger(Callback):
                     k = "/".join(k_split)
                 self._writer.add_video(k, video_array, bp_step, fps=fps, walltime=None)
 
+            for k, v in cb.hist_logs.items():
+                if suffix:
+                    k_split = k.split("/")
+                    k_split[0] = k_split[0] + "_" + suffix
+                    k = "/".join(k_split)
+                self._writer.add_histogram(k, v, bp_step)
+
         time_since_start = time.monotonic() - self._start_time
         self._writer.add_scalar(
             "performance/bp_samples_per_sec", bp_samples / time_since_start, bp_step
@@ -97,13 +104,15 @@ class TerminalLogger(Callback):
         **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
         'training_bp_step/loss'.
         """
+        print("Step %s" % step)
         for log in self._logs:
             for k, v in log.scalar_logs.items():
                 if suffix:
                     k_split = k.split("/")
                     k_split[0] = k_split[0] + "_" + suffix
                     k = "/".join(k_split)
-                logging.info("%s@%s:\t%.4f", k, step, v)
+                padding = " " * (30 - len(k))
+                print(f"\t{k[:30]}{padding}: {v:.4f}")
 
     def end_cycle(self, bp_step):
         self.log_scalars(bp_step)
