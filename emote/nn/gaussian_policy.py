@@ -44,7 +44,10 @@ class GaussianPolicyHead(nn.Module):
         self.log_std = nn.Linear(hidden_dim, action_dim)
 
     def forward(
-        self, x: Tensor, epsilon: Tensor | None = None
+        self,
+        x: Tensor,
+        epsilon: Tensor | None = None,
+        return_mean_std=False,
     ) -> Tensor | Tuple[Tensor]:
         """
         Sample pre-actions and associated log-probabilities.
@@ -53,7 +56,10 @@ class GaussianPolicyHead(nn.Module):
             Direct samples (pre-actions) from the policy
             log-probabilities associated to those samples
         """
-        bsz, _ = x.shape
+        if x.ndim == 1:
+            bsz = 1
+        else:
+            bsz, _ = x.shape
 
         mean = self.mean(x).clamp(min=-5, max=5)  # equates to 0.99991 after tanh.
         std = torch.exp(self.log_std(x).clamp(min=-20, max=2))
@@ -63,13 +69,17 @@ class GaussianPolicyHead(nn.Module):
                 transforms.TanhTransform(cache_size=1),
             )
             sample = dist.rsample()
+            sample = sample.unsqueeze(0) if bsz == 1 else sample
 
             log_prob = dist.log_prob(sample).view(bsz, 1)
 
             assert sample.shape == (bsz, self.action_dim)
             assert log_prob.shape == (bsz, 1)
 
-            return sample, log_prob
+            if return_mean_std:
+                return sample, log_prob, mean, std
+            else:
+                return sample, log_prob
 
         return torch.tanh(mean + std * epsilon)
 

@@ -12,6 +12,7 @@ from torch import nn, optim
 from emote.callback import Callback
 from emote.callbacks.loss import LossCallback
 from emote.mixins.logging import LoggingMixin
+from emote.optimistic_exploration import get_optimistic_exploration_action
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.deprecated import deprecated
@@ -513,3 +514,83 @@ class MultiKeyAgentProxy(GenericAgentProxy):
             output_keys=("actions",),
             spaces=spaces,
         )
+
+
+class OACAgentProxy(GenericAgentProxy):
+    """An agent proxy using optimistic exploration (optimistic actor critic).
+
+    This AgentProxy assumes that the observations will contain a single flat array of features.
+    """
+
+    def __init__(
+        self,
+        policy: nn.Module,
+        q1: nn.Module,
+        q2: nn.Module,
+        device: torch.device,
+        beta_ub: float = 4.66,
+        delta: float = 3.69,
+        input_key: str = "obs",
+    ):
+        """Create a new proxy.
+
+        :param policy: The policy to execute for actions.
+        :param q1: Q network
+        :param q2: Q network
+        :param device: The device to run on.
+        :beta_ub: controls the amount of uncertainty used to compute the upper bound. (default: 4.66)
+        :delta: controls the maximal allowed divergence between the exploration policy and the target policy. (default: 3.69)
+        :param input_key: The name of the features. (default: "obs")
+        """
+        super().__init__(
+            policy=policy,
+            device=device,
+            input_keys=(input_key,),
+            output_keys=("actions",),
+        )
+
+        self.q1 = q1
+        self.q2 = q2
+        self.beta_ub = beta_ub
+        self.delta = delta
+
+    def __call__(
+        self, observations: dict[AgentId, DictObservation]
+    ) -> dict[AgentId, DictResponse]:
+        """Runs the policy and returns the actions."""
+        # The network takes observations of size batch x obs for each observation space.
+        assert len(observations) > 0, "Observations must not be empty."
+
+        active_agents = [
+            agent_id
+            for agent_id, obs in observations.items()
+            if obs.episode_state not in self._end_states
+        ]
+
+        tensor_obs = torch.tensor(
+            np.array(
+                [
+                    observations[agent_id].array_data[self.input_keys[0]]
+                    for agent_id in active_agents
+                ]
+            )
+        ).to(self.device)
+
+        q1_copy = copy.deepcopy(self.q1)
+        q2_copy = copy.deepcopy(self.q2)
+        # The function get_optimistic_exploration_action() takes one observation at a time instead of a batch
+        # so that the per-sample gradient is computed and not the sum of gradients over the batch.
+        actions = []
+        for obs in tensor_obs:
+            actions.append(
+                get_optimistic_exploration_action(
+                    obs, self._policy, q1_copy, q2_copy, self.beta_ub, self.delta
+                )
+                .detach()
+                .cpu()
+                .numpy()
+            )
+        return {
+            agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
+            for i, agent_id in enumerate(active_agents)
+        }
