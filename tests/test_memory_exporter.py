@@ -58,10 +58,9 @@ def test_memory_export(tmpdir):
     for column in importer.memory._columns.values():
         if isinstance(importer.memory._data[column.name], BaseStorage):
             for key in importer.memory._data[column.name]:
-                reverted_key = -(key + 1)
                 assert (
                     importer.memory._data[column.name][key].all()
-                    == memory_proxy._inner._table._data[column.name][reverted_key].all()
+                    == memory_proxy._inner._table._data[column.name][key].all()
                 )
 
     env.close()
