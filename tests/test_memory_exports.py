@@ -14,7 +14,7 @@ from emote.memory.uniform_strategy import UniformSampleStrategy
 @pytest.fixture
 def memory():
     spec = [
-        Column(name="observation", dtype=np.float32, shape=tuple()),
+        Column(name="observation", dtype=np.dtype("float32"), shape=tuple()),
         Column(name="reward", dtype=np.float32, shape=tuple()),
         VirtualColumn(
             name="dones",

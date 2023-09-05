@@ -21,9 +21,15 @@ class Column:
     dtype: type
 
     def configuration(self):
+        dtype_name = ""
+        if hasattr(self.dtype, "name"):
+            dtype_name = self.dtype.name
+        else:
+            dtype_name = self.dtype.__name__
+
         return {
             "shape": self.shape,
-            "dtype": self.dtype.__name__,
+            "dtype": dtype_name,
         }
 
     def configure(self, config):
@@ -34,7 +40,10 @@ class Column:
             self.dtype = bool
 
         else:
-            self.dtype = getattr(np, dtype_name)
+            if hasattr(np, dtype_name):
+                self.dtype = getattr(np, dtype_name)
+            else:
+                self.dtype = np.dtype(dtype_name)
 
 
 @dataclass
