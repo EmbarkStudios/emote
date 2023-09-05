@@ -1,3 +1,5 @@
+# Adapted from https://github.com/microsoft/oac-explore/blob/master/optimistic_exploration.py (MIT license)
+
 import math
 
 import torch
@@ -22,9 +24,11 @@ def get_optimistic_exploration_action(obs, policy, q1, q2, beta_ub, delta):
     q1_value = q1(actions.unsqueeze(0), obs.unsqueeze(0))
     q2_value = q2(actions.unsqueeze(0), obs.unsqueeze(0))
 
+    # epistemic uncertainty
     q_mean = (q1_value + q2_value) / 2.0
     sigma_q = torch.abs(q1_value - q2_value) / 2.0
 
+    # upper bound
     q_ub = q_mean + beta_ub * sigma_q
 
     # Obtain the gradient of q_ub wrt to a with a evaluated at mean

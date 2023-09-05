@@ -529,7 +529,7 @@ class OACAgentProxy(GenericAgentProxy):
         q2: nn.Module,
         device: torch.device,
         beta_ub: float = 4.66,
-        delta: float = 3.69,
+        delta: float = 23.53,
         input_key: str = "obs",
     ):
         """Create a new proxy.
@@ -539,7 +539,7 @@ class OACAgentProxy(GenericAgentProxy):
         :param q2: Q network
         :param device: The device to run on.
         :beta_ub: controls the amount of uncertainty used to compute the upper bound. (default: 4.66)
-        :delta: controls the maximal allowed divergence between the exploration policy and the target policy. (default: 3.69)
+        :delta: controls the maximal allowed divergence between the exploration policy and the target policy. (default: 23.53)
         :param input_key: The name of the features. (default: "obs")
         """
         super().__init__(
