@@ -9,9 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 
-- Now targetting torch version 1.12, up from 1.11.
-- `OnnxExporter` accepts a `device` argument to enable tracing on other devices.
-- `FinalRewardTestCheck` can now be configured with another key and to use windowed data.
+#### New memory serialization format.
+A new version of memory Table export has been introduced. This removes the need for cloudpickle,
+while focusing on restoring data. Old memories can still be imported, and you can also force the old
+format by passing `version = TableSerializationFormat.Legacy` in `Table.store`. The new format works
+by simply ingesting all data from the memory using the regular `add_sequence`, instead of filling
+the data stores directly. As part of this, the `TableArray.store` and `TableArray.restore` functions
+have new arguments to handle versioning.
+
+  - New functions:
+    - `Column.configuration` and `Column.configure` for save and load respectively
+	- `Strategy.clear` to clear all state
+	- `Strategy.state` and `Strategy.load_state` for save and load of strategy data.
+	- `Strategy.begin_simple_import` and `Strategy.end_simple_import` to bookend the import process.
+	- `Strategy._in_simple_import` to allow derived classes to bypass work while import is happening.
+
+#### Other changes:
+
+  - Now targetting torch version 1.12, up from 1.11.
+  - `OnnxExporter` accepts a `device` argument to enable tracing on other devices.
+  - `FinalRewardTestCheck` can now be configured with another key and to use windowed data.
 
 ### Deprecations
 
@@ -24,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix `FeatureAgentProxy.input_names` to use `input_key` when configured.
 - `Callback.cycle` can now be `None`
+- Fixed a deprecation warning with `np.bool_` being used.
 
 ## [23.0.0] - 2023-03-03
 
