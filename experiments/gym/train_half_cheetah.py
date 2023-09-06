@@ -26,16 +26,8 @@ from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 
 def _make_env():
-    """Making a Lunar Lander Gym environment
-
-    Returns:
-        (Gym.env): one Lunar Lander Gym environment
-    """
-
     def _thunk():
-        env = gym.make("LunarLander-v2", continuous=True)
-        env = gym.wrappers.FrameStack(env, 3)
-        env = gym.wrappers.FlattenObservation(env)
+        env = gym.make("HalfCheetah-v4", exclude_current_positions_from_observation=False)
         return env
 
     return _thunk
@@ -283,10 +275,10 @@ def create_complementary_callbacks(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--name", type=str, default="ll")
-    parser.add_argument("--log-dir", type=str, default="/mnt/mllogs/emote/lunar_lander")
+    parser.add_argument("--name", type=str, default="half_cheetah")
+    parser.add_argument("--log-dir", type=str, default="logs")
     parser.add_argument("--num-envs", type=int, default=10)
-    parser.add_argument("--rollout-length", type=int, default=5)
+    parser.add_argument("--rollout-length", type=int, default=1)
     parser.add_argument("--batch-size", type=int, default=200)
     parser.add_argument("--hidden-layer-size", type=int, default=256)
     parser.add_argument(
@@ -296,7 +288,7 @@ if __name__ == "__main__":
         "--critic-lr", type=float, default=8e-3, help="Q-function learning rate"
     )
     parser.add_argument("--device", type=str, default="cuda:0")
-    parser.add_argument("--bp-steps", type=int, default=10000)
+    parser.add_argument("--bp-steps", type=int, default=100000)
     parser.add_argument("--use-wandb", action="store_true")
     parser.add_argument(
         "--wandb-run",

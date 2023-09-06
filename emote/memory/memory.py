@@ -457,7 +457,7 @@ class MemoryWarmup(Callback):
     def __init__(
         self,
         loader: MemoryLoader,
-        exporter: Optional[OnnxExporter],
+        exporter: Optional[OnnxExporter] = None,
         shutdown_signal: Optional[Callable[[], bool]] = None,
     ):
         super().__init__()

@@ -365,6 +365,7 @@ class FeatureAgentProxy:
     ) -> Dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
+
         assert len(observations) > 0, "Observations must not be empty."
         active_agents = [
             agent_id

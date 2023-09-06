@@ -125,7 +125,7 @@ class LossProgressCheck(LoggingMixin, BatchCallback):
         )
 
 
-class BatchSampler(BatchCallback):
+class BatchSampler(BatchCallback, LoggingMixin):
     """BatchSampler class is used to provide batches of data for the RL training callbacks.
     In every BP step, it samples one batch from either the gym buffer or the model buffer
     based on a Bernoulli probability distribution. It outputs the batch to a separate

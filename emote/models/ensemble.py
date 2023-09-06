@@ -121,6 +121,7 @@ class EnsembleOfGaussian(nn.Module):
         Returns:
             (tuple of two tensors): the predicted mean and log variance of the output.
         """
+        x = x.to(torch.float32)
         assert x.ndim == 2
         x = x.unsqueeze(0)
         mean, logvar = self.default_forward(x)
