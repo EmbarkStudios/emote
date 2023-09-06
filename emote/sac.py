@@ -12,7 +12,7 @@ from torch import nn, optim
 from emote.callback import Callback
 from emote.callbacks.loss import LossCallback
 from emote.mixins.logging import LoggingMixin
-from emote.optimistic_exploration import get_optimistic_exploration_action
+from emote.optimistic_exploration import get_optimistic_exploration_action_batch
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.deprecated import deprecated
@@ -578,18 +578,16 @@ class OACAgentProxy(GenericAgentProxy):
 
         q1_copy = copy.deepcopy(self.q1)
         q2_copy = copy.deepcopy(self.q2)
-        # The function get_optimistic_exploration_action() takes one observation at a time instead of a batch
-        # so that the per-sample gradient is computed and not the sum of gradients over the batch.
-        actions = []
-        for obs in tensor_obs:
-            actions.append(
-                get_optimistic_exploration_action(
-                    obs, self._policy, q1_copy, q2_copy, self.beta_ub, self.delta
-                )
-                .detach()
-                .cpu()
-                .numpy()
+
+        actions = (
+            get_optimistic_exploration_action_batch(
+                tensor_obs, self._policy, q1_copy, q2_copy, self.beta_ub, self.delta
             )
+            .detach()
+            .cpu()
+            .numpy()
+        )
+
         return {
             agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
             for i, agent_id in enumerate(active_agents)
