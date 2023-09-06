@@ -87,8 +87,15 @@ def get_optimistic_exploration_action_batch(obs, policy, q1, q2, beta_ub, delta)
 
         return q_ub_sample
 
-    per_sample_grads = torch.autograd.functional.jacobian(q_ub_fn, mean)
-    per_sample_grads = torch.sum(per_sample_grads, dim=(2)).squeeze(1)
+    # dims = B x 1 x B x N
+    per_sample_grads = torch.autograd.functional.jacobian(q_ub_fn, mean) 
+    
+    # there's only one non-zero row per sample
+    # by summing along 2, for each sample we get 1 x N (dims = B x 1 x N)
+    per_sample_grads = torch.sum(per_sample_grads, dim=2)
+
+    # squeeze to get dims = B x N
+    per_sample_grads = per_sample_grads.squeeze(1)
 
     assert per_sample_grads is not None
     assert mean.shape == per_sample_grads.shape
