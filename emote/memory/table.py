@@ -62,7 +62,9 @@ class Table(Protocol):
         ...
 
     def store(
-        self, path: str, version: TableSerializationVersion | None = None
+        self,
+        path: str,
+        version: TableSerializationVersion = TableSerializationVersion.LATEST,
     ) -> bool:
         """Persist the whole table and all metadata into the designated name"""
         ...
@@ -509,7 +511,9 @@ class ArrayTable:
             column_store.post_import()
 
     def store(
-        self, path: str, version: TableSerializationVersion | None = None
+        self,
+        path: str,
+        version: TableSerializationVersion = TableSerializationVersion.LATEST,
     ) -> bool:
         """Persist the whole table and all metadata into the designated name.
 
