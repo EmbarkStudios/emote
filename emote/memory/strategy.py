@@ -50,11 +50,11 @@ class Strategy(ABC):
         ...
 
     def state(self) -> dict:
-        """Serialize the strategy to a JSON-serializable dictionary"""
+        """Serialize the strategy state to a dictionary"""
         ...
 
     def load_state(self, state: dict):
-        """Load the strategy from a dictionary"""
+        """Load the strategy state from a dictionary"""
 
     def clear(self):
         """Clear the strategy's internal state"""

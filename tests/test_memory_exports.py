@@ -83,6 +83,7 @@ def test_export_base(memory, tmpdir):
         memory.add_sequence(ii, dict(observation=[1, 2, 3, 4, 5], reward=[1, 2, 3, 4]))
 
 
+@pytest.mark.filterwarnings("ignore:.*Legacy memory export")
 def test_export_legacy(memory, tmpdir):
     for ii in range(0, 1000):
         memory.add_sequence(ii, dict(observation=[1, 2, 3, 4, 5], reward=[1, 2, 3, 4]))
@@ -127,3 +128,16 @@ def test_import_v1(memory):
         assert np.all(
             original_reward_data[identity] == loaded_reward_data[identity]
         ), "reward data should be the same"
+
+
+def test_legacy_warnings(tmpdir, memory):
+    for ii in range(0, 100):
+        memory.add_sequence(ii, dict(observation=[1, 2, 3, 4, 5], reward=[1, 2, 3, 4]))
+
+    export_file = os.path.join(tmpdir, "export")
+
+    with pytest.deprecated_call():
+        memory.store(export_file, version=TableSerializationVersion.Legacy)
+
+    with pytest.deprecated_call():
+        memory.restore(export_file)

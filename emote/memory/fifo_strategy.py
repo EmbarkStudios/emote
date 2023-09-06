@@ -60,8 +60,6 @@ class FifoStrategyBase(Strategy):
         self._identities = deque(state["identities"])
         self._sequence_lengths = dict(state["sequence_lengths"])
 
-        self._in_simple_import = True
-
 
 ################################################################################
 

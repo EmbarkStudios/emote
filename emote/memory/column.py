@@ -20,7 +20,7 @@ class Column:
     shape: Tuple[int]
     dtype: type
 
-    def configuration(self):
+    def state(self):
         dtype_name = ""
         if hasattr(self.dtype, "name"):
             dtype_name = self.dtype.name
@@ -32,7 +32,7 @@ class Column:
             "dtype": dtype_name,
         }
 
-    def configure(self, config):
+    def load_state(self, config):
         self.shape = config["shape"]
 
         dtype_name = config["dtype"]
@@ -60,12 +60,12 @@ class VirtualColumn(Column):
     target_name: str
     mapper: Type[VirtualStorage]
 
-    def configuration(self):
-        config = super().configuration()
+    def state(self):
+        config = super().state()
         config["target_name"] = self.target_name
         # TODO: add mapper configuration
         return config
 
-    def configure(self, config):
-        super().configure(config)
+    def load_state(self, config):
+        super().load_state(config)
         self.target_name = config["target_name"]

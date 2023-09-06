@@ -13,6 +13,7 @@ from typing import List, Optional, Protocol, Sequence, Tuple
 import numpy as np
 import torch
 
+from ..utils.deprecated import deprecated
 from ..utils.timed_call import BlockTimers
 from .adaptors import Adaptor
 from .column import Column, TagColumn, VirtualColumn
@@ -295,7 +296,7 @@ class ArrayTable:
                         parts["sampler_state"] = sampler_state
 
                     parts["columns"] = [
-                        (name, column.__class__.__name__, column.configuration())
+                        (name, column.__class__.__name__, column.state())
                         for name, column in self._columns.items()
                     ]
 
@@ -409,7 +410,7 @@ class ArrayTable:
                     )
                     continue
 
-                self._columns[name].configure(column_config)
+                self._columns[name].load_state(column_config)
 
             loaded_data = {}
             ranges = {}
@@ -438,6 +439,10 @@ class ArrayTable:
             self._sampler.end_simple_import()
             self._ejector.end_simple_import()
 
+    @deprecated(
+        reason="Legacy memory export use pickling which add security and stability risks.",
+        version="23.1.0",
+    )
     def _store_legacy(self, path: str) -> bool:
         """Persist the whole table and all metadata into the designated name"""
 
@@ -472,6 +477,10 @@ class ArrayTable:
                 f"{path}.zip", stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
             )
 
+    @deprecated(
+        reason="Legacy memory export uses pickling which add security and stability risks.",
+        version="23.1.0",
+    )
     def _restore_legacy(self, zip_: zipfile.ZipFile) -> bool:
         """Restore the data table from the provided path. This currently implies a "clear" of the data stores."""
 
