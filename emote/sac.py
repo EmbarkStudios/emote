@@ -126,7 +126,6 @@ class QTarget(LoggingMixin, Callback):
         )
 
     def begin_batch(self, next_observation, rewards, masks):
-        # print(next_observation)
         next_p_sample, next_logp_pi = self.policy(**next_observation)
         next_q1t = self.q1t(next_p_sample, **next_observation)
         next_q2t = self.q2t(next_p_sample, **next_observation)
