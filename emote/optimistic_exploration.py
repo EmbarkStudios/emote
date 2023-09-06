@@ -11,11 +11,10 @@ def get_optimistic_exploration_action(obs, policy, q1, q2, beta_ub, delta):
     # Ensure observation is not batched
     assert obs.ndim == 1
 
-    _, _, mean, std = policy(obs, return_mean_std=True)
+    _, _, mean, std = policy(obs.unsqueeze(0), return_mean_std=True)
 
-    # Ensure that mean is not batched
-    assert len(list(mean.shape)) == 1
-    assert len(list(std.shape)) == 1
+    mean = mean.squeeze(0)
+    std = std.squeeze(0)
 
     mean.requires_grad_()
     actions = torch.tanh(mean)

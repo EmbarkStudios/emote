@@ -56,10 +56,7 @@ class GaussianPolicyHead(nn.Module):
             Direct samples (pre-actions) from the policy
             log-probabilities associated to those samples
         """
-        if x.ndim == 1:
-            bsz = 1
-        else:
-            bsz, _ = x.shape
+        bsz, _ = x.shape
 
         mean = self.mean(x).clamp(min=-5, max=5)  # equates to 0.99991 after tanh.
         std = torch.exp(self.log_std(x).clamp(min=-20, max=2))
@@ -69,7 +66,6 @@ class GaussianPolicyHead(nn.Module):
                 transforms.TanhTransform(cache_size=1),
             )
             sample = dist.rsample()
-            sample = sample.unsqueeze(0) if bsz == 1 else sample
 
             log_prob = dist.log_prob(sample).view(bsz, 1)
 
