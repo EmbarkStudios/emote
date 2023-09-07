@@ -23,12 +23,12 @@ class BaseStorage(dict):
         each time the memory is sampled. Will *not* work if the memory is
         sampled from multiple threads.
         """
-        # TODO(klas.henriksson) does it make sense to make a temp for each size?
-        if self._temp_storage is None or self._temp_storage.shape[0] != count * length:
-            d = np.empty((count * length, *self._shape), self._dtype)
+        tot_size = count * length
+        if self._temp_storage is None or self._temp_storage.shape[0] < tot_size:
+            d = np.empty((tot_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage
+        return self._temp_storage[:tot_size, :]
 
     def sequence_length_transform(self, length):
         return length
@@ -69,12 +69,12 @@ class TagStorage(dict):
         each time the memory is sampled. Will *not* work if the memory is
         sampled from multiple threads.
         """
-        # TODO(klas.henriksson) does it make sense to make a temp for each size?
-        if self._temp_storage is None or self._temp_storage.shape[0] != count * length:
-            d = np.empty((count * length, *self._shape), self._dtype)
+        tot_size = count * length
+        if self._temp_storage is None or self._temp_storage.shape[0] < tot_size:
+            d = np.empty((tot_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage
+        return self._temp_storage[:tot_size, :]
 
     def sequence_length_transform(self, length):
         return 1
@@ -132,12 +132,12 @@ class VirtualStorage:
         return length
 
     def get_empty_storage(self, count, length):
-        # TODO(klas.henriksson) does it make sense to make a temp for each size?
-        if self._temp_storage is None or self._temp_storage.shape[0] != count * length:
-            d = np.empty((count * length, *self._shape), self._dtype)
+        tot_size = count * length
+        if self._temp_storage is None or self._temp_storage.shape[0] < tot_size:
+            d = np.empty((tot_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage
+        return self._temp_storage[:tot_size, :]
 
     def post_import(self):
         pass
