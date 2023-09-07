@@ -28,7 +28,7 @@ class BaseStorage(dict):
             d = np.empty((tot_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage[:tot_size, :]
+        return self._temp_storage[:tot_size]
 
     def sequence_length_transform(self, length):
         return length
@@ -74,7 +74,7 @@ class TagStorage(dict):
             d = np.empty((tot_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage[:tot_size, :]
+        return self._temp_storage[:tot_size].reshape((tot_size, *self._shape))
 
     def sequence_length_transform(self, length):
         return 1
@@ -137,7 +137,7 @@ class VirtualStorage:
             d = np.empty((tot_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage[:tot_size, :]
+        return self._temp_storage[:tot_size]
 
     def post_import(self):
         pass
