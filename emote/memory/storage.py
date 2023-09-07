@@ -74,7 +74,7 @@ class TagStorage(dict):
             d = np.empty((tot_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage[:tot_size].reshape((tot_size, *self._shape))
+        return self._temp_storage[:tot_size]
 
     def sequence_length_transform(self, length):
         return 1
