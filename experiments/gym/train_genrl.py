@@ -21,6 +21,8 @@ import numpy as np
 import torch
 
 from experiments.gym.train_lunar_lander import (
+    Policy,
+    QNet,
     _make_env,
     create_complementary_callbacks,
     create_train_callbacks,
@@ -28,11 +30,15 @@ from experiments.gym.train_lunar_lander import (
 from experiments.gym.train_vae import get_conditioning_fn
 from gymnasium.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper
+from tests.test_genrl import FullyConnectedDecoder, FullyConnectedEncoder
 
 from emote import Trainer
-from emote.algos.genrl.nn import GenRLPolicy, GenRLQNet
-from emote.algos.genrl.proxies import MemoryProxyWithEncoder
-from emote.algos.vae.nn import DecoderWrapper, EncoderWrapper
+from emote.algorithms.genrl.proxies import MemoryProxyWithEncoder
+from emote.algorithms.genrl.wrappers import (
+    DecoderWrapper,
+    EncoderWrapper,
+    PolicyWrapper,
+)
 from emote.memory import MemoryLoader
 from emote.memory.builder import DictObsNStepTable
 from emote.sac import FeatureAgentProxy
@@ -82,23 +88,23 @@ def create_actor_critic_agents(
     args,
     num_obs: int,
     num_latent: int,
-    decoder: DecoderWrapper,
-    encoder: EncoderWrapper,
+    decoder_wrapper: DecoderWrapper,
     init_alpha: float = 0.01,
 ):
 
     device = args.device
 
     hidden_dims = [args.hidden_layer_size] * arg.num_hidden_layer
-    q1 = GenRLQNet(encoder, num_obs, num_latent, hidden_dims).to(device)
-    q2 = GenRLQNet(encoder, num_obs, num_latent, hidden_dims).to(device)
-    policy = GenRLPolicy(decoder, num_obs, num_latent, hidden_dims).to(device)
+    q1 = QNet(num_obs, num_latent, hidden_dims).to(device)
+    q2 = QNet(num_obs, num_latent, hidden_dims).to(device)
+    policy = Policy(num_obs, num_latent, hidden_dims).to(device)
+    policy_wrapper = PolicyWrapper(decoder_wrapper, policy)
 
-    policy_proxy = FeatureAgentProxy(policy, device=device)
+    policy_proxy = FeatureAgentProxy(policy_wrapper, device=device)
 
     log_alpha = torch.tensor(np.log(init_alpha), requires_grad=True, device=device)
 
-    return q1, q2, policy_proxy, log_alpha
+    return q1, q2, policy, policy_proxy, log_alpha
 
 
 if __name__ == "__main__":
@@ -141,36 +147,34 @@ if __name__ == "__main__":
     """Create the decoder wrapper"""
     action_latent_size = arg.vae_latent_size
 
-    vae_decoder = DecoderWrapper(
-        latent_size=action_latent_size,
-        output_size=number_of_actions,
-        condition_size=arg.condition_size,
-        condition_fn=condition_func,
-        hidden_sizes=[arg.hidden_layer_size] * arg.num_hidden_layer,
-        device=training_device,
+    decoder = FullyConnectedDecoder(
+        action_latent_size,
+        number_of_actions,
+        training_device,
+        arg.condition_size,
+        [arg.hidden_layer_size] * arg.num_hidden_layer,
     )
-
-    """Create the encoder wrapper"""
-    vae_encoder = EncoderWrapper(
-        latent_size=action_latent_size,
-        action_size=number_of_actions,
-        hidden_sizes=[arg.hidden_layer_size] * arg.num_hidden_layer,
-        condition_size=arg.condition_size,
-        condition_fn=condition_func,
-        device=training_device,
+    decoder_wrapper = DecoderWrapper(decoder, condition_func)
+    encoder = FullyConnectedEncoder(
+        number_of_actions,
+        action_latent_size,
+        training_device,
+        arg.condition_size,
+        [arg.hidden_layer_size] * arg.num_hidden_layer,
     )
+    encoder_wrapper = EncoderWrapper(encoder, condition_func)
 
     checkpoint_filename = f"{arg.vae_checkpoint_dir}_{arg.vae_checkpoint_index}.tar"
 
     state_dict = torch.load(checkpoint_filename, map_location=training_device)
     state = state_dict["callback_state_dicts"]["vae"]
-    vae_encoder.load_state_dict(state.pop("network_state_dict"))
+    encoder_wrapper.load_state_dict(state.pop("network_state_dict"))
 
     state_dict = torch.load(checkpoint_filename)
     state = state_dict["callback_state_dicts"]["vae"]
-    vae_decoder.load_state_dict(state.pop("network_state_dict"))
+    decoder_wrapper.load_state_dict(state.pop("network_state_dict"))
 
-    for model in [vae_encoder, vae_decoder]:
+    for model in [encoder, decoder]:
         for param in model.parameters():
             param.requires_grad = False
 
@@ -182,9 +186,8 @@ if __name__ == "__main__":
     )
 
     """Creating agent and the Q-functions"""
-    qnet1, qnet2, agent_proxy, ln_alpha = create_actor_critic_agents(
-        decoder=vae_decoder,
-        encoder=vae_encoder,
+    qnet1, qnet2, policy, agent_proxy, ln_alpha = create_actor_critic_agents(
+        decoder_wrapper=decoder_wrapper,
         args=arg,
         num_latent=action_latent_size,
         num_obs=number_of_obs,
@@ -193,12 +196,13 @@ if __name__ == "__main__":
     """Creating the memory"""
     gym_memory, dataloader = create_memory(
         space=spaces,
-        encoder=vae_encoder,
+        encoder=encoder_wrapper,
         memory_size=4_000_000,
         len_rollout=arg.rollout_length,
         batch_size=arg.batch_size,
         data_group="rl_buffer",
         device=training_device,
+        observation_key=arg.observation_key,
     )
 
     """Creating the train callbacks"""
@@ -206,6 +210,7 @@ if __name__ == "__main__":
         args=arg,
         q1=qnet1,
         q2=qnet2,
+        policy=policy,
         policy_proxy=agent_proxy,
         ln_alpha=ln_alpha,
         env=gym_wrapper,

@@ -81,7 +81,7 @@ class Policy(nn.Module):
         self.encoder.apply(ortho_init_)
         self.policy.apply(partial(xavier_uniform_init_, gain=0.01))
 
-    def forward(self, obs):
+    def forward(self, obs, epsilon=None):
         sample, log_prob = self.policy(self.encoder(obs))
         # TODO: Investigate the log_prob() logic of the pytorch distribution code.
         # The change below shouldn't be needed but significantly improves training
@@ -169,6 +169,7 @@ def create_train_callbacks(
     args,
     q1: nn.Module,
     q2: nn.Module,
+    policy: nn.Module,
     policy_proxy: FeatureAgentProxy,
     ln_alpha: torch.Tensor,
     env: DictGymWrapper,
@@ -181,6 +182,7 @@ def create_train_callbacks(
         args: the input arguments given by argparser
         q1 (nn.Module): the first Q-network (used for double Q-learning)
         q2 (nn.Module): the second Q-network (used for double Q-learning)
+        policy (nn.Module): the high-level policy
         policy_proxy (FeatureAgentProxy): the wrapper for the policy network
         ln_alpha (Tensor): the log of alpha parameters (trainable)
         env (DictGymWrapper): the Gym wrapper
@@ -210,15 +212,15 @@ def create_train_callbacks(
             data_group=data_group,
         ),
         PolicyLoss(
-            pi=policy_proxy.policy,
+            pi=policy,
             ln_alpha=ln_alpha,
             q=q1,
-            opt=Adam(policy_proxy.policy.parameters(), lr=args.actor_lr),
+            opt=Adam(policy.parameters(), lr=args.actor_lr),
             max_grad_norm=max_grad_norm,
             data_group=data_group,
         ),
         AlphaLoss(
-            pi=policy_proxy.policy,
+            pi=policy,
             ln_alpha=ln_alpha,
             opt=Adam([ln_alpha], lr=args.actor_lr),
             n_actions=num_actions,
@@ -227,7 +229,7 @@ def create_train_callbacks(
             data_group=data_group,
         ),
         QTarget(
-            pi=policy_proxy.policy,
+            pi=policy,
             ln_alpha=ln_alpha,
             q1=q1,
             q2=q2,

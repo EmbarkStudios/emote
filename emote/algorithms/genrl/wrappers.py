@@ -113,7 +113,7 @@ class PolicyWrapper(nn.Module):
         self.decoder = decoder
         self.policy = policy
 
-    def forward(self, features: Tensor, epsilon: Tensor = None):
+    def forward(self, obs: Tensor, epsilon: Tensor = None):
         # we need to discard the extra dimensions of epsilon.
         # the input epsilon is given for the original action space
         # however, the policy outputs latent actions.
@@ -121,8 +121,8 @@ class PolicyWrapper(nn.Module):
             epsilon = epsilon[:, : self.latent_size]
 
         if self.training:
-            sample, log_prob = self.policy.forward(features, epsilon)
-            action = self.decoder(sample, features)
+            sample, log_prob = self.policy.forward(obs, epsilon)
+            action = self.decoder(sample, obs)
             return action, log_prob
 
-        return self.decoder(self.policy.forward(features, epsilon), features)
+        return self.decoder(self.policy.forward(obs, epsilon), obs)

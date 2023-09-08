@@ -29,11 +29,11 @@ from experiments.gym.train_lunar_lander import (
     create_complementary_callbacks,
     create_memory,
 )
+from tests.test_genrl import FullyConnectedDecoder, FullyConnectedEncoder
 from torch.optim import Adam
 
 from emote import Trainer
-from emote.algos.vae.vae import VAELoss, VariationalAutoencoder
-from emote.nn.layers import FullyConnectedDecoder, FullyConnectedEncoder
+from emote.algorithms.genrl.vae import VAELoss, VariationalAutoencoder
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 
@@ -41,6 +41,8 @@ def get_conditioning_fn(len_cond: int = 0):
     assert len_cond >= 0
 
     def conditioning_fn(a):
+        if len(a.shape) == 1:
+            return a[:len_cond]
         return a[:, :len_cond]
 
     return conditioning_fn
