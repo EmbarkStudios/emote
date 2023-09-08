@@ -1,18 +1,13 @@
 import torch
 
+from tests.test_genrl import (
+    FullyConnectedDecoder,
+    FullyConnectedEncoder,
+    get_conditioning_fn,
+)
 from torch.optim import Adam
 
-from emote.algos.vae.vae import VAELoss, VariationalAutoencoder
-from emote.nn.layers import FullyConnectedDecoder, FullyConnectedEncoder
-
-
-def get_conditioning_fn(len_cond: int = 0):
-    assert len_cond >= 0
-
-    def conditioning_fn(a):
-        return a[:, :len_cond]
-
-    return conditioning_fn
+from emote.algorithms.genrl.vae import VAELoss, VariationalAutoencoder
 
 
 def test_vae_training():

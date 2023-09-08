@@ -35,12 +35,12 @@ class MemoryProxyWithEncoder(TableMemoryProxy):
             if np.size(actions) == 0:
                 updated_responses.update({agent_id: response})
             else:
-                actions = torch.from_numpy(actions).unsqueeze(dim=0).to(torch.float)
+                actions = torch.from_numpy(actions).to(torch.float)
                 obs = torch.from_numpy(
                     observations[agent_id].array_data[self._input_key]
                 )
-                obs = obs.unsqueeze(dim=0).to(torch.float)
-                latent = self.encoder(actions, obs).squeeze().detach().cpu().numpy()
+                obs = obs.to(torch.float)
+                latent = self.encoder(actions, obs).detach().cpu().numpy()
                 new_response = DictResponse(
                     list_data={self._action_key: latent}, scalar_data={}
                 )

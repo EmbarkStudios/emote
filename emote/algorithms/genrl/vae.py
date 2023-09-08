@@ -76,7 +76,7 @@ class VAELoss(LossCallback):
         condition = self.conditioning_func(observation[self._input_key])
         samples, dist_mean, dist_log_std, _ = self.vae.forward(actions, condition)
         loss, info = self.vae.loss(actions, samples, dist_mean, dist_log_std)
-        self.log_scalar("genrl/restore_loss", torch.mean(info["restore_loss"]))
-        self.log_scalar("genrl/kl_loss", torch.mean(info["kl_loss"]))
+        self.log_scalar("vae/restore_loss", torch.mean(info["restore_loss"]))
+        self.log_scalar("vae/kl_loss", torch.mean(info["kl_loss"]))
 
         return loss

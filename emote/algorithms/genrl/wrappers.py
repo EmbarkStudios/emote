@@ -2,36 +2,26 @@ from typing import Callable
 
 import torch
 
-from torch import nn
+from torch import Tensor, nn
 
-from emote.nn.layers import FullyConnectedDecoder, FullyConnectedEncoder
+from emote.nn.gaussian_policy import GaussianMlpPolicy
 
 
 class DecoderWrapper(nn.Module):
     def __init__(
         self,
-        latent_size: int,
-        output_size: int,
+        decoder: nn.Module,
         condition_fn: Callable,
-        condition_size: int,
-        device: torch.device,
-        hidden_sizes: list[int],
         latent_multiplier: float = 3.0,
     ):
         super().__init__()
-        self.device = device
+        self.device = decoder.device
         self._latent_multiplier = latent_multiplier
-        self.latent_size = latent_size
-        self.output_size = output_size
-        self.condition_size = condition_size
+        self.latent_size = decoder.input_size
+        self.output_size = decoder.output_size
+        self.condition_size = decoder.condition_size
         self.condition_fn = condition_fn
-        self.decoder = FullyConnectedDecoder(
-            latent_size=latent_size,
-            output_size=output_size,
-            device=device,
-            condition_size=condition_size,
-            hidden_sizes=hidden_sizes,
-        )
+        self.decoder = decoder
 
     def forward(
         self, latent: torch.Tensor, observation: torch.Tensor = None
@@ -47,14 +37,11 @@ class DecoderWrapper(nn.Module):
             Returns:
                 torch.Tensor: the sample (batch x data_size)
         """
-        assert len(latent.shape) == 2
-
         latent = latent * self._latent_multiplier
 
         latent = latent.to(self.device)
         condition = None
         if observation is not None:
-            assert len(observation.shape) == 2
             observation = observation.to(self.device)
             condition = self.condition_fn(observation)
 
@@ -73,29 +60,17 @@ class DecoderWrapper(nn.Module):
 class EncoderWrapper(nn.Module):
     def __init__(
         self,
-        action_size: int,
-        latent_size: int,
-        device: torch.device,
+        encoder: nn.Module,
         condition_fn: Callable,
-        condition_size: int,
-        hidden_sizes: list[int],
     ):
         super().__init__()
-        self.device = device
-
-        self.action_size = action_size
-        self.latent_size = latent_size
+        self.encoder = encoder
+        self.device = encoder.device
+        self.action_size = encoder.input_size
+        self.latent_size = encoder.output_size
+        self.condition_size = encoder.condition_size
 
         self.condition_fn = condition_fn
-        self.condition_size = condition_size
-
-        self.encoder = FullyConnectedEncoder(
-            input_size=action_size,
-            output_size=latent_size,
-            device=device,
-            condition_size=condition_size,
-            hidden_sizes=hidden_sizes,
-        )
 
     def forward(
         self, action: torch.Tensor, observation: torch.Tensor = None
@@ -110,11 +85,9 @@ class EncoderWrapper(nn.Module):
             Returns:
                 torch.Tensor: the mean (batch x data_size)
         """
-        assert len(action.shape) == 2
         action = action.to(self.device)
         condition = None
         if observation is not None:
-            assert len(observation.shape) == 2
             observation = observation.to(self.device)
             condition = self.condition_fn(observation)
 
@@ -127,3 +100,29 @@ class EncoderWrapper(nn.Module):
         assert new_state_dict != {}
         model_dict.update(new_state_dict)
         super().load_state_dict(model_dict)
+
+
+class PolicyWrapper(nn.Module):
+    def __init__(
+        self,
+        decoder: DecoderWrapper,
+        policy: GaussianMlpPolicy,
+    ):
+        super().__init__()
+        self.latent_size = decoder.latent_size
+        self.decoder = decoder
+        self.policy = policy
+
+    def forward(self, features: Tensor, epsilon: Tensor = None):
+        # we need to discard the extra dimensions of epsilon.
+        # the input epsilon is given for the original action space
+        # however, the policy outputs latent actions.
+        if epsilon is not None:
+            epsilon = epsilon[:, : self.latent_size]
+
+        if self.training:
+            sample, log_prob = self.policy.forward(features, epsilon)
+            action = self.decoder(sample, features)
+            return action, log_prob
+
+        return self.decoder(self.policy.forward(features, epsilon), features)
