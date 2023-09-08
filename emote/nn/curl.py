@@ -300,9 +300,9 @@ class CurlLoss(LossCallback):
             # CURL paper but it seems to give better results. This technique is also used
             # in SimCLR v2.
             logits = logits / self._temperature
-
-        # remove max for numerical stability
-        logits = logits - torch.amax(logits, dim=1)
+        else:
+            # remove max for numerical stability
+            logits = logits - torch.amax(logits, dim=1)
 
         # LOSS
         # One neat trick!: Diags are positive examples, off-diag are negative examples!

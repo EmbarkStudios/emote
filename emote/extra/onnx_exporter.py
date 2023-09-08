@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import io
 import logging
 import time
@@ -152,6 +153,11 @@ class OnnxExporter(LoggingMixin, Callback):
             item.process(self)
 
     def _trace(self):
+        with self.scopes.scope("policycopy"):
+            policy = copy.deepcopy(self.policy)
+
+        policy.train(False)
+
         with self.scopes.scope("trace"):
             args = []
 
@@ -162,15 +168,13 @@ class OnnxExporter(LoggingMixin, Callback):
 
                 args.append(arg)
 
-            self.policy.train(False)
-
             # NOTE: This might seem like a good use case for torch.jit.trace,
             # but it unfortunately leaks a full copy of the neural network.
             # See: https://github.com/pytorch/pytorch/issues/82532
 
             with io.BytesIO() as f:
                 torch.onnx.export(
-                    model=self.policy,
+                    model=policy,
                     args=tuple(args),
                     f=f,
                     input_names=list(map(lambda pair: pair[0], self.inputs)),
@@ -181,8 +185,6 @@ class OnnxExporter(LoggingMixin, Callback):
                     },
                     opset_version=13,
                 )
-
-                self.policy.train(True)
 
                 f.seek(0)
                 model_proto = onnx.load_model(f, onnx.ModelProto)

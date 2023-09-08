@@ -25,7 +25,11 @@ class AgentProxy(Protocol):
         pass
 
     @property
-    def input_names(self) -> tuple[str]:
+    def input_names(self) -> tuple[str, ...]:
+        ...
+
+    @property
+    def output_names(self) -> tuple[str, ...]:
         ...
 
 

@@ -14,6 +14,7 @@ from emote.callbacks.loss import LossCallback
 from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
+from emote.utils.deprecated import deprecated
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 from emote.utils.spaces import MDPSpace
 
@@ -86,11 +87,15 @@ class QTarget(LoggingMixin, Callback):
         given the current observations and a given action.
     :param q2 (torch.nn.Module): A deep neural net that outputs the discounted loss
         given the current observations and a given action.
-    :param gamma (float): Discount factor for the rewards in time.
-    :param reward_scale (float): Scale factor for the rewards.
-    :param target_q_tau (float): The weight given to the latest network in the
-        exponential moving average. So NewTargetQ = OldTargetQ * (1-tau) + Q*tau.
-    :param data_group (str): The name of the data group from which this Loss takes its data.
+    :param q1t (torch.nn.Module, optional): target Q network.  (default: None)
+    :param q2t (torch.nn.Module, optional): target Q network. (default: None)
+    :param gamma (float, optional): Discount factor for the rewards in time. (default: 0.99)
+    :param reward_scale (float, optional): Scale factor for the rewards. (default: 1.0)
+    :param target_q_tau (float, optional): The weight given to the latest network in the
+        exponential moving average. So NewTargetQ = OldTargetQ * (1-tau) + Q*tau. (default: 0.005)
+    :param data_group (str, optional): The name of the data group from which this Loss takes its data. (default: "default")
+    :param roll_length (int, optional): Rollout length. (default: 1)
+    :param use_terminal_masking (bool, optional): Whether to use terminal masking  for the next values. (default: False)
     """
 
     def __init__(
@@ -107,6 +112,7 @@ class QTarget(LoggingMixin, Callback):
         target_q_tau: float = 0.005,
         data_group: str = "default",
         roll_length: int = 1,
+        use_terminal_masking: bool = False,
     ):
         super().__init__()
         self._order = 1  # this is to ensure that the data_group is prepared beforehand
@@ -124,6 +130,7 @@ class QTarget(LoggingMixin, Callback):
         self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len).to(
             ln_alpha.device
         )
+        self.use_terminal_masking = use_terminal_masking
 
     def begin_batch(self, next_observation, rewards, masks):
         next_p_sample, next_logp_pi = self.policy(**next_observation)
@@ -138,8 +145,11 @@ class QTarget(LoggingMixin, Callback):
 
         last_step_masks = split_rollouts(masks, self.rollout_len)[:, -1]
         scaled_reward = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
-        next_value_masked = torch.multiply(next_value, last_step_masks)
-        qt = discount(scaled_reward, next_value_masked, self.gamma_matrix).detach()
+
+        if self.use_terminal_masking:
+            next_value = torch.multiply(next_value, last_step_masks)
+
+        qt = discount(scaled_reward, next_value, self.gamma_matrix).detach()
         assert qt.shape == (bsz, 1)
 
         self.log_scalar("training/next_logp_pi", torch.mean(next_logp_pi))
@@ -339,110 +349,45 @@ class AgentProxyWrapper:
     def input_names(self):
         return self._inner.input_names
 
-
-class FeatureAgentProxy:
-    """An agent proxy for basic MLPs.
-
-    This AgentProxy assumes that the observations will contain a single flat array of features.
-    """
-
-    def __init__(self, policy: nn.Module, device: torch.device, input_key: str = "obs"):
-        """Create a new proxy.
-
-        :param policy: The policy to execute for actions.
-        :param device: The device to run on.
-        :param input_key: The name of the features. (default: "obs")
-        """
-        self.policy = policy
-        self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
-        self.device = device
-
-        self._input_key = input_key
-
-    def __call__(
-        self,
-        observations: Dict[AgentId, DictObservation],
-    ) -> Dict[AgentId, DictResponse]:
-        """Runs the policy and returns the actions."""
-        # The network takes observations of size batch x obs for each observation space.
-        assert len(observations) > 0, "Observations must not be empty."
-        active_agents = [
-            agent_id
-            for agent_id, obs in observations.items()
-            if obs.episode_state not in self._end_states
-        ]
-        tensor_obs = torch.tensor(
-            np.array(
-                [
-                    observations[agent_id].array_data[self._input_key]
-                    for agent_id in active_agents
-                ]
-            )
-        ).to(self.device)
-
-        actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
-
-        return {
-            agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
-            for i, agent_id in enumerate(active_agents)
-        }
+    @property
+    def output_names(self):
+        return self._inner.output_names
 
     @property
-    def input_names(self):
-        return (self._input_key,)
+    def policy(self):
+        return self._inner.policy
 
 
-class VisionAgentProxy:
-    """This AgentProxy assumes that the observations will contain image observations 'obs'"""
+class GenericAgentProxy(AgentProxy):
+    """Observations are dicts that contain multiple input and output keys.
 
-    def __init__(self, policy: nn.Module, device: torch.device):
-        self.policy = policy
-        self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
-        self.device = device
-
-    def __call__(
-        self, observations: Dict[AgentId, DictObservation]
-    ) -> Dict[AgentId, DictResponse]:
-        """Runs the policy and returns the actions."""
-        # The network takes observations of size batch x obs for each observation space.
-        assert len(observations) > 0, "Observations must not be empty."
-        active_agents = [
-            agent_id
-            for agent_id, obs in observations.items()
-            if obs.episode_state not in self._end_states
-        ]
-        np_obs = np.array(
-            [observations[agent_id].array_data["obs"] for agent_id in active_agents]
-        )
-        tensor_obs = torch.tensor(np_obs).to(self.device)
-        actions = self.policy(tensor_obs)[0].detach().cpu().numpy()
-        return {
-            agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
-            for i, agent_id in enumerate(active_agents)
-        }
-
-
-class MultiKeyAgentProxy:
-    """Observations are dicts that contain multiple input keys (e.g. both "features" and "images")"""
+    For example, we might have a policy that takes in both "obs" and
+    "goal" and outputs "actions". In order to be able to properly
+    invoke the network it is the responsibility of this proxy to
+    collate the inputs and decollate the outputs per agent.
+    """
 
     def __init__(
         self,
         policy: nn.Module,
         device: torch.device,
         input_keys: tuple,
-        spaces: MDPSpace = None,
+        output_keys: tuple,
+        spaces: MDPSpace | None = None,
     ):
         """Create a new proxy.
 
-        Args:
-            policy (nn.Module): The policy to execute for actions.
-            device (torch.device): The device to run on.
-            input_keys (tuple): The names of the input.
+        :param policy (nn.Module): The policy to invoke
+        :param device (torch.device): The device to run on
+        :param input_keys (tuple): The names of the inputs to the policy
+        :param output_keys (tuple): The names of the outputs of the policy
+        :param spaces (MDPSpace): The spaces of the inputs and outputs
         """
-        self.policy = policy
+        self._policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device
         self.input_keys = input_keys
+        self.output_keys = output_keys
         self._spaces = spaces
 
     def __call__(
@@ -458,7 +403,7 @@ class MultiKeyAgentProxy:
             if obs.episode_state not in self._end_states
         ]
 
-        dict_tensor_obs = {}
+        tensor_obs_list = [None] * len(self.input_keys)
         for input_key in self.input_keys:
             np_obs = np.array(
                 [
@@ -473,15 +418,98 @@ class MultiKeyAgentProxy:
                     np_obs = np.reshape(np_obs, shape)
 
             tensor_obs = torch.tensor(np_obs).to(self.device)
-            dict_tensor_obs[input_key] = tensor_obs
+            index = self.input_keys.index(input_key)
+            tensor_obs_list[index] = tensor_obs
 
-        actions = self.policy(**dict_tensor_obs)[0].detach().cpu().numpy()
+        outputs: tuple[any, ...] = self._policy(*tensor_obs_list)
+        # we remove element 1 as we don't need the logprobs here
+        outputs = outputs[0:1] + outputs[2:]
 
-        return {
-            agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
-            for i, agent_id in enumerate(active_agents)
+        outputs = {
+            key: outputs[i].detach().cpu().numpy()
+            for i, key in enumerate(self.output_keys)
         }
+
+        agent_data = [
+            (agent_id, DictResponse(list_data={}, scalar_data={}))
+            for agent_id in active_agents
+        ]
+
+        for i, (_, response) in enumerate(agent_data):
+            for k, data in outputs.items():
+                response.list_data[k] = data[i]
+
+        return dict(agent_data)
 
     @property
     def input_names(self):
         return self.input_keys
+
+    @property
+    def output_names(self):
+        return self.output_keys
+
+    @property
+    def policy(self):
+        return self._policy
+
+
+class FeatureAgentProxy(GenericAgentProxy):
+    """An agent proxy for basic MLPs.
+
+    This AgentProxy assumes that the observations will contain a single flat array of features.
+    """
+
+    @deprecated(reason="Use GenericAgentProxy instead", version="23.1.0")
+    def __init__(self, policy: nn.Module, device: torch.device, input_key: str = "obs"):
+        """Create a new proxy.
+
+        :param policy: The policy to execute for actions.
+        :param device: The device to run on.
+        :param input_key: The name of the features. (default: "obs")
+        """
+
+        super().__init__(
+            policy=policy,
+            device=device,
+            input_keys=(input_key,),
+            output_keys=("actions",),
+        )
+
+
+class VisionAgentProxy(FeatureAgentProxy):
+    """This AgentProxy assumes that the observations will contain image observations 'obs'"""
+
+    @deprecated(reason="Use GenericAgentProxy instead", version="23.1.0")
+    def __init__(self, policy: nn.Module, device: torch.device):
+        super().__init__(policy=policy, device=device, input_key="obs")
+
+
+class MultiKeyAgentProxy(GenericAgentProxy):
+    """Handles multiple input keys.
+
+    Observations are dicts that contain multiple input keys (e.g. both "features" and "images").
+    """
+
+    @deprecated(reason="Use GenericAgentProxy instead", version="23.1.0")
+    def __init__(
+        self,
+        policy: nn.Module,
+        device: torch.device,
+        input_keys: tuple,
+        spaces: MDPSpace = None,
+    ):
+        """Create a new proxy.
+
+        Args:
+            policy (nn.Module): The policy to execute for actions.
+            device (torch.device): The device to run on.
+            input_keys (tuple): The names of the input.
+        """
+        super().__init__(
+            policy=policy,
+            device=device,
+            input_keys=input_keys,
+            output_keys=("actions",),
+            spaces=spaces,
+        )
