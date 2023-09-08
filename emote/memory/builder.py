@@ -62,7 +62,7 @@ class DictObsTable(DictTable):
         use_terminal_column: bool = False,
         maxlen: int = 1_000_000,
         device: torch.device,
-        dones_dtype=np.bool_,
+        dones_dtype=bool,
         masks_dtype=np.float32,
     ):
         if spaces.rewards is not None:
@@ -153,7 +153,7 @@ class DictObsNStepTable(DictTable):
             ),
             VirtualColumn(
                 name="dones",
-                dtype=np.bool_,
+                dtype=bool,
                 shape=(1,),
                 target_name="actions",
                 mapper=SyntheticDones,

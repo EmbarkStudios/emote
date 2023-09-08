@@ -18,6 +18,7 @@ class UniformStrategyBase(Strategy):
     strategies."""
 
     def __init__(self):
+        super().__init__()
         self._identities = {}
         self._ids = []
         self._prios = []
@@ -40,7 +41,7 @@ class UniformStrategyBase(Strategy):
 
     def post_import(self):
         original_ids = self._identities.copy()
-        for (id, length) in original_ids.items():
+        for id, length in original_ids.items():
             self.forget(id)
             if id >= 0:
                 self.track(-abs(id) - 1, length)

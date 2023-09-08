@@ -12,6 +12,9 @@ class Strategy(ABC):
     """A generalized strategy that may be specialized for sampling or ejection from
     a memory buffer"""
 
+    def __init__(self):
+        self._in_simple_import = False
+
     @abstractmethod
     def track(self, identity: int, sequence_length: int):
         """Track a sequence given by identity and sequence_length that exists in the
@@ -45,6 +48,25 @@ class Strategy(ABC):
         implementation-defined.
         """
         ...
+
+    def state(self) -> dict:
+        """Serialize the strategy state to a dictionary"""
+        ...
+
+    def load_state(self, state: dict):
+        """Load the strategy state from a dictionary"""
+
+    def clear(self):
+        """Clear the strategy's internal state"""
+        ...
+
+    def begin_simple_import(self):
+        """Called before a simple import, to allow the strategy to prepare itself"""
+        self._in_simple_import = True
+
+    def end_simple_import(self):
+        """Called after a simple import, to allow the strategy to cleanup"""
+        self._in_simple_import = False
 
 
 ################################################################################
