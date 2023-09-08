@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Features
+
+- `OnnxExporter.add_metadata` allows setting metadata to export with the policy. The key has to be a string, and the value has to be convertible to string.
+
 ### Changes
 
 #### New memory serialization format.
