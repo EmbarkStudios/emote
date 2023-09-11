@@ -23,6 +23,9 @@ class DecoderWrapper(nn.Module):
         self.condition_fn = condition_fn
         self.decoder = decoder
 
+        for param in self.decoder.parameters():
+            param.requires_grad = False
+
     def forward(
         self, latent: torch.Tensor, observation: torch.Tensor = None
     ) -> torch.Tensor:
@@ -71,6 +74,9 @@ class EncoderWrapper(nn.Module):
         self.condition_size = encoder.condition_size
 
         self.condition_fn = condition_fn
+
+        for param in self.encoder.parameters():
+            param.requires_grad = False
 
     def forward(
         self, action: torch.Tensor, observation: torch.Tensor = None
