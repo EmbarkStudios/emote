@@ -530,7 +530,8 @@ class OACAgentProxy(GenericAgentProxy):
         device: torch.device,
         beta_ub: float = 4.66,
         delta: float = 23.53,
-        input_key: str = "obs",
+        input_keys: tuple = ("obs",),
+        output_keys: tuple = ("actions",),
     ):
         """Create a new proxy.
 
@@ -540,13 +541,14 @@ class OACAgentProxy(GenericAgentProxy):
         :param device: The device to run on.
         :beta_ub: controls the amount of uncertainty used to compute the upper bound. (default: 4.66)
         :delta: controls the maximal allowed divergence between the exploration policy and the target policy. (default: 23.53)
-        :param input_key: The name of the features. (default: "obs")
+        :param input_keys (tuple): The names of the inputs
+        :param output_keys (tuple): The names of the outputs
         """
         super().__init__(
             policy=policy,
             device=device,
-            input_keys=(input_key,),
-            output_keys=("actions",),
+            input_keys=input_keys,
+            output_keys=output_keys,
         )
 
         self.q1 = q1
@@ -567,28 +569,60 @@ class OACAgentProxy(GenericAgentProxy):
             if obs.episode_state not in self._end_states
         ]
 
-        tensor_obs = torch.tensor(
-            np.array(
+        tensor_obs_list = [None] * len(self.input_keys)
+        for input_key in self.input_keys:
+            np_obs = np.array(
                 [
-                    observations[agent_id].array_data[self.input_keys[0]]
+                    observations[agent_id].array_data[input_key]
                     for agent_id in active_agents
                 ]
             )
-        ).to(self.device)
+
+            if self._spaces is not None:
+                shape = (np_obs.shape[0],) + self._spaces.state.spaces[input_key].shape
+                if shape != np_obs.shape:
+                    np_obs = np.reshape(np_obs, shape)
+
+            tensor_obs = torch.tensor(np_obs).to(self.device)
+            index = self.input_keys.index(input_key)
+            tensor_obs_list[index] = tensor_obs
 
         q1_copy = copy.deepcopy(self.q1)
         q2_copy = copy.deepcopy(self.q2)
 
-        actions = (
-            get_optimistic_exploration_action_batch(
-                tensor_obs, self._policy, q1_copy, q2_copy, self.beta_ub, self.delta
-            )
-            .detach()
-            .cpu()
-            .numpy()
+        # outputs = actions, logprobs, mean, std, ...
+        outputs: tuple[any, ...] = self._policy(*tensor_obs_list, return_mean_std=True)
+
+        actions = get_optimistic_exploration_action_batch(
+            obs=tensor_obs_list,
+            mean=outputs[2],
+            std=outputs[3],
+            q1=q1_copy,
+            q2=q2_copy,
+            beta_ub=self.beta_ub,
+            delta=self.delta,
         )
 
-        return {
-            agent_id: DictResponse(list_data={"actions": actions[i]}, scalar_data={})
-            for i, agent_id in enumerate(active_agents)
+        # we remove the first 4 elements (actions, logprobs, mean, std)
+        outputs = (
+            tuple(
+                [actions],
+            )
+            + outputs[4:]
+        )
+
+        outputs = {
+            key: outputs[i].detach().cpu().numpy()
+            for i, key in enumerate(self.output_keys)
         }
+
+        agent_data = [
+            (agent_id, DictResponse(list_data={}, scalar_data={}))
+            for agent_id in active_agents
+        ]
+
+        for i, (_, response) in enumerate(agent_data):
+            for k, data in outputs.items():
+                response.list_data[k] = data[i]
+
+        return dict(agent_data)
