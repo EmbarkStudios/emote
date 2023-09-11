@@ -8,7 +8,7 @@ import warnings
 
 from queue import Empty, Queue
 from threading import Event
-from typing import Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import onnx
 import torch
@@ -20,6 +20,7 @@ from emote.extra.crud_storage import CRUDStorage, StorageItem, StorageItemHandle
 from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
 from emote.utils.spaces import MDPSpace
+from emote.utils.threading import LockedResource
 from emote.utils.timed_call import BlockTimers
 
 
@@ -130,6 +131,24 @@ class OnnxExporter(LoggingMixin, Callback):
 
         self._device = device
 
+        self._metadata = LockedResource({})
+
+    def add_metadata(self, key: str, value: Any):
+        if not isinstance(key, str):
+            raise TypeError(f"key must be a string, but got {type(key)}")
+
+        if not isinstance(value, str):
+            try:
+                value = str(value)
+            except Exception as e:
+                raise TypeError(
+                    f"value must be a string, but got {type(value)} for key {key:r} which is"
+                    " not convertible to a string."
+                ) from e
+
+        with self._metadata as m:
+            m[key] = value
+
     def end_batch(self):
         self.process_pending_exports()
 
@@ -213,6 +232,39 @@ class OnnxExporter(LoggingMixin, Callback):
             return self.storage.create_with_saver(save_inner)
 
     def _export(self, metadata: Optional[Mapping[str, str]], sync: bool) -> StorageItem:
+        cleaned_metadata = {}
+
+        if metadata is not None:
+            for k, v in metadata.items():
+                if not isinstance(k, str):
+                    raise TypeError(
+                        f"metadata keys must be strings, but got {type(k)} for key {k!r}"
+                    )
+
+                if not isinstance(v, str):
+                    try:
+                        v = str(v)
+                    except Exception as e:
+                        raise TypeError(
+                            f"metadata values must be strings, but got {type(v)} for key {k!r}"
+                            " which is not convertible to a string."
+                        ) from e
+
+                cleaned_metadata[k] = v
+
+        metadata = cleaned_metadata
+
+        # nb: order matters here. We want to merge metadata coming in through the function call with
+        # the metadata we have already set on the exporter, with priority given to the metadata
+        # passed in through the function call.
+
+        with self._metadata as m:
+            if metadata is not None:
+                metadata = m | metadata
+
+            else:
+                metadata = copy.copy(m)
+
         # The actual onnx export needs to be done on the main thread.
         item = QueuedExport(metadata)
         self.queued_exports.put(item)
