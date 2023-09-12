@@ -517,10 +517,7 @@ class MultiKeyAgentProxy(GenericAgentProxy):
 
 
 class OACAgentProxy(GenericAgentProxy):
-    """An agent proxy using optimistic exploration (optimistic actor critic).
-
-    This AgentProxy assumes that the observations will contain a single flat array of features.
-    """
+    """An agent proxy using optimistic exploration (optimistic actor critic)."""
 
     def __init__(
         self,
