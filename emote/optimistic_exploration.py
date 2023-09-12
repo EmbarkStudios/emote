@@ -8,10 +8,9 @@ import torch.distributions.transforms as transforms
 
 
 def get_optimistic_exploration_action_batch(obs, mean, std, q1, q2, beta_ub, delta):
-    # Ensure that obs, mean, std are batched
     assert obs[0].ndim == 2
-    assert len(list(mean.shape)) == 2
-    assert len(list(std.shape)) == 2
+    assert mean.ndim == 2
+    assert std.ndim == 2
 
     mean.requires_grad_()
 
@@ -28,17 +27,15 @@ def get_optimistic_exploration_action_batch(obs, mean, std, q1, q2, beta_ub, del
     # dims = B x 1 x B x N
     per_sample_grads = torch.autograd.functional.jacobian(q_ub_fn, mean)
 
-    # there's only one non-zero row per sample
-    # by summing along 2, for each sample we get 1 x N (dims = B x 1 x N)
+    # There's only one non-zero row per sample
+    # By summing along 2, for each sample we get 1 x N (dims = B x 1 x N)
     per_sample_grads = torch.sum(per_sample_grads, dim=2)
 
-    # squeeze to get dims = B x N
+    # Squeeze to get dims = B x N
     per_sample_grads = per_sample_grads.squeeze(1)
-
     assert per_sample_grads is not None
-    assert mean.shape == per_sample_grads.shape
+    assert per_sample_grads.shape == mean.shape
 
-    # Obtain Sigma_T (the covariance of the normal distribution)
     Sigma_T = torch.pow(std, 2)
 
     denom = (
@@ -51,20 +48,17 @@ def get_optimistic_exploration_action_batch(obs, mean, std, q1, q2, beta_ub, del
         + 10e-6
     )
 
-    # Obtain the change in mu
     mean_change = (
         math.sqrt(2.0 * delta)
         * torch.mul(Sigma_T, per_sample_grads)
         / denom.unsqueeze(1)
     )
-
     assert mean_change.shape == mean.shape
 
     mean_exploration = mean + mean_change
-
-    # Construct the tanh normal distribution and sample the exploratory action from it
     assert mean_exploration.shape == std.shape
 
+    # Construct the tanh normal distribution and sample the exploratory action from it
     dist = dists.TransformedDistribution(
         dists.Independent(dists.Normal(mean_exploration, std), 1),
         transforms.TanhTransform(cache_size=1),
