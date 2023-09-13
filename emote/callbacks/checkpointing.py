@@ -61,14 +61,15 @@ class Checkpointer(Callback):
 
     def end_cycle(self):
 
+        name = f"checkpoint_{self._checkpoint_index}.tar"
+        final_path = os.path.join(self._folder_path, name)
         state_dict = {
             "callback_state_dicts": {cb.name: cb.state_dict() for cb in self._cbs},
             "training_state": {
+                "latest_checkpoint": final_path,
                 "checkpoint_index": self._checkpoint_index,
             },
         }
-        name = f"checkpoint_{self._checkpoint_index}.tar"
-        final_path = os.path.join(self._folder_path, name)
         torch.save(state_dict, final_path)
         self._checkpoint_index += 1
 
