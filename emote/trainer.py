@@ -122,6 +122,7 @@ class Trainer:
     def _end_cycle(self, bp_step):
         for cb in self._cyclic_callbacks:
             if bp_step % cb.cycle == 0:
+                # TODO: Luc: Return dict and handle it 
                 if updated_state := cb.end_cycle(**self.state):
                     self.state.update(updated_state)
 
