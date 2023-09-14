@@ -26,7 +26,7 @@ def get_optimistic_exploration_action_batch(obs, mean, std, q1, q2, beta_ub, del
         return q_ub_sample
 
     # dims = B x 1 x B x N
-    per_sample_grads = functorch.jacrev(q_ub_fn)(mean)
+    per_sample_grads = torch.autograd.functional.jacobian(q_ub_fn, mean, vectorize=True)
 
     # There's only one non-zero row per sample
     # By summing along 2, for each sample we get 1 x N (dims = B x 1 x N)
