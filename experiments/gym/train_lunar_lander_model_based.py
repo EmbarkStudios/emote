@@ -122,12 +122,8 @@ if __name__ == "__main__":
     parser.add_argument("--rollout-length", type=int, default=1)
     parser.add_argument("--batch-size", type=int, default=200)
     parser.add_argument("--hidden-layer-size", type=int, default=256)
-    parser.add_argument(
-        "--actor-lr", type=float, default=8e-3, help="The policy learning rate"
-    )
-    parser.add_argument(
-        "--critic-lr", type=float, default=8e-3, help="Q-function learning rate"
-    )
+    parser.add_argument("--actor-lr", type=float, default=8e-3, help="The policy learning rate")
+    parser.add_argument("--critic-lr", type=float, default=8e-3, help="Q-function learning rate")
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--bp-steps", type=int, default=100000)
     parser.add_argument("--use-wandb", action="store_true")
@@ -169,17 +165,13 @@ if __name__ == "__main__":
         default=5000,
         help="The number of BP steps before the model-buffer is completely overwritten",
     )
-    parser.add_argument(
-        "--model-lr", type=float, default=1e-3, help="The model learning rate"
-    )
+    parser.add_argument("--model-lr", type=float, default=1e-3, help="The model learning rate")
 
     input_args = parser.parse_args()
 
     training_device = torch.device(input_args.device)
 
-    gym_wrapper = DictGymWrapper(
-        AsyncVectorEnv([_make_env() for _ in range(input_args.num_envs)])
-    )
+    gym_wrapper = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(input_args.num_envs)]))
     number_of_actions = gym_wrapper.dict_space.actions.shape[0]
     number_of_obs = list(gym_wrapper.dict_space.state.spaces.values())[0].shape[0]
 

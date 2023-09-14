@@ -1,10 +1,6 @@
 import torch
 
-from tests.test_genrl import (
-    FullyConnectedDecoder,
-    FullyConnectedEncoder,
-    get_conditioning_fn,
-)
+from tests.test_genrl import FullyConnectedDecoder, FullyConnectedEncoder, get_conditioning_fn
 from torch.optim import Adam
 
 from emote.algorithms.genrl.vae import VAELoss, VariationalAutoencoder

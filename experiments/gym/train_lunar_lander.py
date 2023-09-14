@@ -282,9 +282,7 @@ def create_complementary_callbacks(
     else:
         logger = TensorboardLogger(
             logged_cbs,
-            SummaryWriter(
-                log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())
-            ),
+            SummaryWriter(log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())),
             100,
         )
 
@@ -294,9 +292,7 @@ def create_complementary_callbacks(
     if cbs_name_to_checkpoint:
         checkpointer = Checkpointer(
             callbacks=[
-                cb
-                for cb in logged_cbs
-                if hasattr(cb, "name") and cb.name in cbs_name_to_checkpoint
+                cb for cb in logged_cbs if hasattr(cb, "name") and cb.name in cbs_name_to_checkpoint
             ],
             run_root=args.checkpoint_dir,
             checkpoint_interval=args.checkpoint_interval,
@@ -314,12 +310,8 @@ if __name__ == "__main__":
     parser.add_argument("--rollout-length", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=200)
     parser.add_argument("--hidden-layer-size", type=int, default=256)
-    parser.add_argument(
-        "--actor-lr", type=float, default=8e-3, help="The policy learning rate"
-    )
-    parser.add_argument(
-        "--critic-lr", type=float, default=8e-3, help="Q-function learning rate"
-    )
+    parser.add_argument("--actor-lr", type=float, default=8e-3, help="The policy learning rate")
+    parser.add_argument("--critic-lr", type=float, default=8e-3, help="Q-function learning rate")
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--bp-steps", type=int, default=10000)
     parser.add_argument("--export-memory", action="store_true")
@@ -335,9 +327,7 @@ if __name__ == "__main__":
     training_device = torch.device(input_args.device)
 
     """Creating a vector of Gym environments """
-    gym_wrapper = DictGymWrapper(
-        AsyncVectorEnv([_make_env() for _ in range(input_args.num_envs)])
-    )
+    gym_wrapper = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(input_args.num_envs)]))
     number_of_actions = gym_wrapper.dict_space.actions.shape[0]
     number_of_obs = list(gym_wrapper.dict_space.state.spaces.values())[0].shape[0]
 
@@ -381,9 +371,7 @@ if __name__ == "__main__":
     )
 
     """Creating the supplementary callbacks and adding them to the training callbacks """
-    all_callbacks = create_complementary_callbacks(
-        args=input_args, logged_cbs=train_callbacks
-    )
+    all_callbacks = create_complementary_callbacks(args=input_args, logged_cbs=train_callbacks)
 
     """Training """
     trainer = Trainer(all_callbacks, dataloader)

@@ -5,11 +5,7 @@ import torch.types
 from torch import nn
 
 from emote.algorithms.genrl.proxies import MemoryProxyWithEncoder
-from emote.algorithms.genrl.wrappers import (
-    DecoderWrapper,
-    EncoderWrapper,
-    PolicyWrapper,
-)
+from emote.algorithms.genrl.wrappers import DecoderWrapper, EncoderWrapper, PolicyWrapper
 from emote.memory.builder import DictObsTable
 from emote.nn.action_value_mlp import ActionValueMlp
 from emote.nn.gaussian_policy import GaussianMlpPolicy

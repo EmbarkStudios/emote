@@ -25,10 +25,7 @@ import os
 import numpy as np
 import torch
 
-from experiments.gym.train_lunar_lander import (
-    create_complementary_callbacks,
-    create_memory,
-)
+from experiments.gym.train_lunar_lander import create_complementary_callbacks, create_memory
 from tests.test_genrl import FullyConnectedDecoder, FullyConnectedEncoder
 from torch.optim import Adam
 
@@ -87,11 +84,7 @@ if __name__ == "__main__":
         rewards=None,
         actions=BoxSpace(dtype=np.float32, shape=(arg.action_size,)),
         state=DictSpace(
-            spaces={
-                arg.observation_key: BoxSpace(
-                    dtype=np.float32, shape=(arg.observation_size,)
-                )
-            }
+            spaces={arg.observation_key: BoxSpace(dtype=np.float32, shape=(arg.observation_size,))}
         ),
     )
     condition_fn = get_conditioning_fn(arg.condition_size)
