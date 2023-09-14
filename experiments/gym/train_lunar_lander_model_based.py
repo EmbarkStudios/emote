@@ -189,7 +189,7 @@ if __name__ == "__main__":
     )
 
     gym_memory, dataloader = create_memory(
-        env=gym_wrapper,
+        space=gym_wrapper.dict_space,
         memory_size=4_000_000,
         len_rollout=input_args.rollout_length,
         batch_size=input_args.batch_size,
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     """The extra functions used only for model-based RL training"""
     memory_init_size = input_args.batch_size * input_args.num_bp_to_retain_model_buffer
     model_memory, model_dataloader = create_memory(
-        env=gym_wrapper,
+        space=gym_wrapper.dict_space,
         memory_size=memory_init_size,
         len_rollout=1,
         batch_size=input_args.batch_size,
