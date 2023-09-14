@@ -15,6 +15,7 @@ from emote.models.ensemble import EnsembleOfGaussian
 from emote.models.model import DynamicModel
 from emote.models.model_env import ModelEnv
 from emote.sac import FeatureAgentProxy
+from emote.utils.spaces import MDPSpace
 
 
 class FakeDataloader:
@@ -56,7 +57,7 @@ class RandomPolicy(nn.Module):
 
 
 def create_memory(
-    env: DictGymWrapper,
+    space: MDPSpace,
     memory_size: int,
     len_rollout: int,
     batch_size: int,
@@ -66,7 +67,7 @@ def create_memory(
     """Creates memory and data_loader for the RL training
 
     Arguments:
-        env (DictGymWrapper): the Gym-env wrapper
+        space (MDPSpace): the MDP space
         memory_size (int): the maximum length of memory
         len_rollout (int): the rollout size for the NStepTable
         batch_size (int): batch size
@@ -77,7 +78,7 @@ def create_memory(
 
     """
     table = DictObsTable(
-        spaces=env.dict_space,
+        spaces=space,
         use_terminal_column=False,
         maxlen=memory_size,
         device=device,
@@ -124,7 +125,7 @@ def test_model_collector():
     policy = RandomPolicy(action_dim=NUM_ACTIONS)
     agent = FeatureAgentProxy(policy, device)
     memory, dataloader = create_memory(
-        env,
+        env.dict_space,
         memory_size=100,
         len_rollout=1,
         batch_size=batch_size,
