@@ -2,7 +2,6 @@
 
 import math
 
-import functorch
 import torch
 import torch.distributions as dists
 import torch.distributions.transforms as transforms
