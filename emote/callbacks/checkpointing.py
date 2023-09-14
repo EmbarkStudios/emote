@@ -45,7 +45,7 @@ class Checkpointer(Callback):
                 names.append(cb.name)
             else:
                 warnings.warn(
-                    f"Checkpointer ignored {cb} because of not " f"having the 'name' field.",
+                    f"Checkpointer ignored {cb} because of not having the 'name' field.",
                     UserWarning,
                 )
 
@@ -59,7 +59,6 @@ class Checkpointer(Callback):
         os.makedirs(self._folder_path, exist_ok=True)
 
     def end_cycle(self):
-
         state_dict = {
             "callback_state_dicts": {cb.name: cb.state_dict() for cb in self._cbs},
             "training_state": {
@@ -119,7 +118,7 @@ class CheckpointLoader(Callback):
                 names.append(cb.name)
             else:
                 warnings.warn(
-                    f"CheckpointLoader ignored {cb} because of not " f"having the 'name' field.",
+                    f"CheckpointLoader ignored {cb} because of not having the 'name' field.",
                     UserWarning,
                 )
 
