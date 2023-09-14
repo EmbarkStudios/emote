@@ -26,9 +26,7 @@ class DecoderWrapper(nn.Module):
         for param in self.decoder.parameters():
             param.requires_grad = False
 
-    def forward(
-        self, latent: torch.Tensor, observation: torch.Tensor = None
-    ) -> torch.Tensor:
+    def forward(self, latent: torch.Tensor, observation: torch.Tensor = None) -> torch.Tensor:
 
         """
         Running decoder
@@ -78,9 +76,7 @@ class EncoderWrapper(nn.Module):
         for param in self.encoder.parameters():
             param.requires_grad = False
 
-    def forward(
-        self, action: torch.Tensor, observation: torch.Tensor = None
-    ) -> torch.Tensor:
+    def forward(self, action: torch.Tensor, observation: torch.Tensor = None) -> torch.Tensor:
         """
         Running encoder
 

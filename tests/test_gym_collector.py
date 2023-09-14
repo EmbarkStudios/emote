@@ -103,9 +103,7 @@ def test_gym_collector():
     agent_proxy = FeatureAgentProxy(policy, device)
     callbacks = [
         HitTheMiddleDataInspector(500, device),
-        SimpleGymCollector(
-            env, agent_proxy, memory_proxy, warmup_steps=500, render=False
-        ),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
     ]
     trainer = Trainer(callbacks, dataloader)
     trainer.train()

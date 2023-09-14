@@ -4,9 +4,7 @@
 import torch
 
 
-def truncated_linear(
-    min_x: float, max_x: float, min_y: float, max_y: float, x: float
-) -> float:
+def truncated_linear(min_x: float, max_x: float, min_y: float, max_y: float, x: float) -> float:
     """Truncated linear function.
     Implements the following function:
         f1(x) = min_y + (x - min_x) / (max_x - min_x) * (max_y - min_y)
@@ -24,9 +22,7 @@ def truncated_linear(
     return y
 
 
-def truncated_normal_(
-    tensor: torch.Tensor, mean: float = 0, std: float = 1
-) -> torch.Tensor:
+def truncated_normal_(tensor: torch.Tensor, mean: float = 0, std: float = 1) -> torch.Tensor:
     """Samples from a truncated normal distribution in-place.
 
     Arguments:
@@ -44,7 +40,5 @@ def truncated_normal_(
         bound_violations = torch.sum(cond).item()
         if bound_violations == 0:
             break
-        tensor[cond] = torch.normal(
-            mean, std, size=(bound_violations,), device=tensor.device
-        )
+        tensor[cond] = torch.normal(mean, std, size=(bound_violations,), device=tensor.device)
     return tensor

@@ -86,9 +86,7 @@ def setup_lunar_lander():
         device=device,
     )
     memory_proxy = TableMemoryProxy(table, use_terminal=True)
-    dataloader = MemoryLoader(
-        table, batch_size // rollout_len, rollout_len, "batch_size"
-    )
+    dataloader = MemoryLoader(table, batch_size // rollout_len, rollout_len, "batch_size")
 
     num_actions = env.dict_space.actions.shape[0]
     num_obs = list(env.dict_space.state.spaces.values())[0].shape[0]

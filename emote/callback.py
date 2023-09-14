@@ -53,9 +53,7 @@ def _make_group_unpack(func, group, arg_names, complex_kwargs):
 
         group_ = kwargs[group]
         inner_args = {v: group_[v] for v in arg_names_ if v in group_}
-        outer_args = {
-            v: kwargs[v] for v in arg_names_ if v not in group_ and v in kwargs
-        }
+        outer_args = {v: kwargs[v] for v in arg_names_ if v not in group_ and v in kwargs}
         for arg_name, key in complex_kwargs.items():
             if key in group_:
                 inner_args[arg_name] = kwargs[key]

@@ -16,9 +16,7 @@ class ActionValueMlp(nn.Module):
         self.encoder = nn.Sequential(
             *[
                 nn.Sequential(nn.Linear(n_in, n_out), nn.ReLU())
-                for n_in, n_out in zip(
-                    [observation_dim + action_dim] + hidden_dims, hidden_dims
-                )
+                for n_in, n_out in zip([observation_dim + action_dim] + hidden_dims, hidden_dims)
             ],
         )
         self.encoder.apply(ortho_init_)

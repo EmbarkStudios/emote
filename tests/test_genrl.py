@@ -5,11 +5,7 @@ import torch.types
 from torch import nn
 
 from emote.algorithms.genrl.proxies import MemoryProxyWithEncoder
-from emote.algorithms.genrl.wrappers import (
-    DecoderWrapper,
-    EncoderWrapper,
-    PolicyWrapper,
-)
+from emote.algorithms.genrl.wrappers import DecoderWrapper, EncoderWrapper, PolicyWrapper
 from emote.memory.builder import DictObsTable
 from emote.nn.action_value_mlp import ActionValueMlp
 from emote.nn.gaussian_policy import GaussianMlpPolicy
@@ -57,12 +53,8 @@ class FullyConnectedEncoder(nn.Module):
                 )
             )
         self.hidden_layers = nn.Sequential(*layers).to(self.device)
-        self.output_mean = nn.Linear(hidden_sizes[num_layers - 1], output_size).to(
-            self.device
-        )
-        self.output_log_std = nn.Linear(hidden_sizes[num_layers - 1], output_size).to(
-            self.device
-        )
+        self.output_mean = nn.Linear(hidden_sizes[num_layers - 1], output_size).to(self.device)
+        self.output_log_std = nn.Linear(hidden_sizes[num_layers - 1], output_size).to(self.device)
 
     def forward(
         self, data: torch.Tensor, condition: torch.Tensor = None
@@ -120,9 +112,7 @@ class FullyConnectedDecoder(nn.Module):
         )
         self.layers = nn.Sequential(*layers).to(self.device)
 
-    def forward(
-        self, latent: torch.Tensor, condition: torch.Tensor = None
-    ) -> torch.Tensor:
+    def forward(self, latent: torch.Tensor, condition: torch.Tensor = None) -> torch.Tensor:
         if condition is not None:
             latent = torch.cat((latent, condition), dim=len(latent.shape) - 1)
         x = self.layers(latent)
@@ -143,13 +133,9 @@ def test_genrl():
     cfn = get_conditioning_fn(CONDITION_SIZE)
     device = torch.device("cpu")
 
-    decoder = FullyConnectedDecoder(
-        LATENT_SIZE, ACTION_SIZE, device, CONDITION_SIZE, HIDDEN_SIZES
-    )
+    decoder = FullyConnectedDecoder(LATENT_SIZE, ACTION_SIZE, device, CONDITION_SIZE, HIDDEN_SIZES)
     decoder_wrapper = DecoderWrapper(decoder, cfn)
-    encoder = FullyConnectedEncoder(
-        ACTION_SIZE, LATENT_SIZE, device, CONDITION_SIZE, HIDDEN_SIZES
-    )
+    encoder = FullyConnectedEncoder(ACTION_SIZE, LATENT_SIZE, device, CONDITION_SIZE, HIDDEN_SIZES)
     encoder_wrapper = EncoderWrapper(encoder, cfn)
 
     q = ActionValueMlp(OBSERVATION_SIZE, LATENT_SIZE, HIDDEN_SIZES).to(device)
@@ -172,17 +158,13 @@ def test_memory_proxy():
     cfn = get_conditioning_fn(CONDITION_SIZE)
     device = torch.device("cpu")
 
-    encoder = FullyConnectedEncoder(
-        ACTION_SIZE, LATENT_SIZE, device, CONDITION_SIZE, HIDDEN_SIZES
-    )
+    encoder = FullyConnectedEncoder(ACTION_SIZE, LATENT_SIZE, device, CONDITION_SIZE, HIDDEN_SIZES)
     encoder_wrapper = EncoderWrapper(encoder, cfn)
 
     space = MDPSpace(
         rewards=None,
         actions=BoxSpace(dtype=np.float32, shape=(ACTION_SIZE,)),
-        state=DictSpace(
-            spaces={"obs": BoxSpace(dtype=np.float32, shape=(OBSERVATION_SIZE,))}
-        ),
+        state=DictSpace(spaces={"obs": BoxSpace(dtype=np.float32, shape=(OBSERVATION_SIZE,))}),
     )
 
     table = DictObsTable(spaces=space, maxlen=1000, device=device)

@@ -34,11 +34,7 @@ from tests.test_genrl import FullyConnectedDecoder, FullyConnectedEncoder
 
 from emote import Trainer
 from emote.algorithms.genrl.proxies import MemoryProxyWithEncoder
-from emote.algorithms.genrl.wrappers import (
-    DecoderWrapper,
-    EncoderWrapper,
-    PolicyWrapper,
-)
+from emote.algorithms.genrl.wrappers import DecoderWrapper, EncoderWrapper, PolicyWrapper
 from emote.memory import MemoryLoader
 from emote.memory.builder import DictObsNStepTable
 from emote.sac import FeatureAgentProxy
@@ -112,9 +108,7 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, default="genrl")
     parser.add_argument("--observation-key", type=str, default="obs")
     parser.add_argument("--log-dir", type=str, default="logs/")
-    parser.add_argument(
-        "--vae-checkpoint-dir", type=str, default="checkpoints/training"
-    )
+    parser.add_argument("--vae-checkpoint-dir", type=str, default="checkpoints/training")
     parser.add_argument("--vae-checkpoint-index", type=int, default=0)
     parser.add_argument("--vae-latent-size", type=int, default=3)
     parser.add_argument("--condition-size", type=int, default=0)
@@ -135,9 +129,7 @@ if __name__ == "__main__":
     training_device = torch.device(arg.device)
 
     """Creating a vector of Gym environments """
-    gym_wrapper = DictGymWrapper(
-        AsyncVectorEnv([_make_env() for _ in range(arg.num_envs)])
-    )
+    gym_wrapper = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(arg.num_envs)]))
 
     number_of_actions = gym_wrapper.dict_space.actions.shape[0]
     number_of_obs = list(gym_wrapper.dict_space.state.spaces.values())[0].shape[0]

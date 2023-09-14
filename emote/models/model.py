@@ -275,12 +275,12 @@ class Normalizer:
             self.mean = data.mean(0, keepdim=True)
             self.std = data.std(0, keepdim=True)
         else:
-            self.mean = (
-                1.0 - self.update_rate
-            ) * self.mean + self.update_rate * data.mean(0, keepdim=True)
-            self.std = (
-                1.0 - self.update_rate
-            ) * self.std + self.update_rate * data.std(0, keepdim=True)
+            self.mean = (1.0 - self.update_rate) * self.mean + self.update_rate * data.mean(
+                0, keepdim=True
+            )
+            self.std = (1.0 - self.update_rate) * self.std + self.update_rate * data.std(
+                0, keepdim=True
+            )
         self.std[self.std < self.eps] = self.eps
         self.update_rate -= 0.01
         if self.update_rate < 0.01:
