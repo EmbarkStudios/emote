@@ -9,9 +9,7 @@ from emote.mixins.logging import LoggingMixin
 try:
     import wandb
 except ImportError as root:
-    raise ImportError(
-        "enable the optional `wandb` feature to use the WBLogger"
-    ) from root
+    raise ImportError("enable the optional `wandb` feature to use the WBLogger") from root
 
 
 class WBLogger(Callback):
@@ -32,9 +30,7 @@ class WBLogger(Callback):
         wandb.init(
             project=self._config["wandb_project"],
             name=self._config["wandb_run"],
-            config=wandb.helper.parse_config(
-                self._config, exclude=("wandb_project", "wandb_run")
-            ),
+            config=wandb.helper.parse_config(self._config, exclude=("wandb_project", "wandb_run")),
         )
 
     def begin_training(self):

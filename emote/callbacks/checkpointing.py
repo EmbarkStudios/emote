@@ -45,8 +45,7 @@ class Checkpointer(Callback):
                 names.append(cb.name)
             else:
                 warnings.warn(
-                    f"Checkpointer ignored {cb} because of not "
-                    f"having the 'name' field.",
+                    f"Checkpointer ignored {cb} because of not " f"having the 'name' field.",
                     UserWarning,
                 )
 
@@ -120,8 +119,7 @@ class CheckpointLoader(Callback):
                 names.append(cb.name)
             else:
                 warnings.warn(
-                    f"CheckpointLoader ignored {cb} because of not "
-                    f"having the 'name' field.",
+                    f"CheckpointLoader ignored {cb} because of not " f"having the 'name' field.",
                     UserWarning,
                 )
 
@@ -144,9 +142,7 @@ class CheckpointLoader(Callback):
 
         for cb in self._cbs:
             state = state_dict["callback_state_dicts"][cb.name]
-            cb.load_state_dict(
-                state, self._load_weights, self._load_optimizers, self._load_hparams
-            )
+            cb.load_state_dict(state, self._load_weights, self._load_optimizers, self._load_hparams)
 
         return_value = {}
         if self._load_hparams:

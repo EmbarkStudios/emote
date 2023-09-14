@@ -141,9 +141,7 @@ def test_model_collector():
         ),
         BackPropStepsTerminator(bp_steps=1),
     ]
-    fake_dataset = FakeDataloader(
-        num_obs=NUM_OBS, data_group="default", batch_size=batch_size
-    )
+    fake_dataset = FakeDataloader(num_obs=NUM_OBS, data_group="default", batch_size=batch_size)
     trainer = Trainer(callbacks, fake_dataset)
     trainer.train()
 
@@ -197,9 +195,7 @@ def test_ensemble_training():
     callbacks = [
         ModelLoss(model=dynamic_model, opt=Adam(dynamic_model.model.parameters())),
         LossProgressCheck(model=dynamic_model, num_bp=500),
-        SimpleGymCollector(
-            env, agent_proxy, memory_proxy, warmup_steps=500, render=False
-        ),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
     ]
     trainer = Trainer(callbacks, dataloader)
     trainer.train()

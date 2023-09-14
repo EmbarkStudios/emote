@@ -58,9 +58,7 @@ def test_alpha_value_ref_valid_after_load():
     state_dict = {"network_state_dict": dummy_load_ln_alpha}
 
     ln_alpha_before_load = loss.ln_alpha
-    loss.load_state_dict(
-        state_dict, load_weights=True, load_optimizer=False, load_hparams=False
-    )
+    loss.load_state_dict(state_dict, load_weights=True, load_optimizer=False, load_hparams=False)
     ln_alpha_after_load = loss.ln_alpha
 
     assert torch.equal(

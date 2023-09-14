@@ -75,9 +75,7 @@ class TableMemoryProxy:
             self._min_length_filter = lambda _: True
         else:
             key = table._length_key
-            self._min_length_filter = (
-                lambda ep: len(ep[key]) >= minimum_length_threshold
-            )
+            self._min_length_filter = lambda ep: len(ep[key]) >= minimum_length_threshold
 
         self._completed_episodes: set[AgentId] = set()
         self._term_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
@@ -120,16 +118,12 @@ class TableMemoryProxy:
                     # treated all terminals as fatal, i.e., truncated bootstrap.
                     # Since this is the terminal mask value, an interrupted
                     # episode should be 1.0 or "infinite bootstrap horizon"
-                    data["terminal"] = float(
-                        observation.episode_state == EpisodeState.INTERRUPTED
-                    )
+                    data["terminal"] = float(observation.episode_state == EpisodeState.INTERRUPTED)
 
                 if agent_id not in self._store:
                     # First warn that this is a new agent id:
                     if agent_id in self._completed_episodes:
-                        logging.warning(
-                            "agent_id has already been completed: %d", agent_id
-                        )
+                        logging.warning("agent_id has already been completed: %d", agent_id)
                     else:
                         logging.warning(
                             "agent_id completed with no previous sequence: %d", agent_id
@@ -146,9 +140,7 @@ class TableMemoryProxy:
                     completed_episodes[agent_id] = ep
 
             else:
-                assert (
-                    agent_id in responses
-                ), "Mismatch between observations and responses!"
+                assert agent_id in responses, "Mismatch between observations and responses!"
                 response = responses[agent_id]
                 data.update(response.list_data)
                 data.update(response.scalar_data)
@@ -291,9 +283,7 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
             self._writer.add_scalar(
                 "env_vs_episode/reward", average_reward, self.completed_episodes
             )
-            self._writer.add_histogram(
-                "episode/reward_distribution", rewards_tensor, inf_step
-            )
+            self._writer.add_histogram("episode/reward_distribution", rewards_tensor, inf_step)
             self._writer.add_histogram(
                 "env_vs_episode/reward_distribution",
                 rewards_tensor,
@@ -426,12 +416,8 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 self._inner.store(export_path)
 
             for name, (mean, var) in self._scopes.stats().items():
-                self.log_scalar(
-                    f"memory/{self._target_memory_name}/{name}/timing/mean", mean
-                )
-                self.log_scalar(
-                    f"memory/{self._target_memory_name}/{name}/timing/var", var
-                )
+                self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/mean", mean)
+                self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/var", var)
             elapsed_time = time.time() - start_time
             logging.info(f"Memory export completed in {elapsed_time} seconds")
 

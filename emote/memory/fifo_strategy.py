@@ -82,9 +82,7 @@ class FifoSampleStrategy(FifoStrategyBase, SampleStrategy):
 
         if self._per_episode:
             for current_episode_offset in range(count):
-                current_episode_id = self._identities[
-                    current_episode_offset % number_episodes
-                ]
+                current_episode_id = self._identities[current_episode_offset % number_episodes]
                 offset = random.randint(
                     0, self._sequence_lengths[current_episode_id] - transition_count
                 )
@@ -95,9 +93,7 @@ class FifoSampleStrategy(FifoStrategyBase, SampleStrategy):
             current_offset = 0
 
             while len(points) < count:
-                current_episode_id = self._identities[
-                    current_episode_offset % number_episodes
-                ]
+                current_episode_id = self._identities[current_episode_offset % number_episodes]
                 if self._random_offset:
                     offset = random.randint(
                         0, self._sequence_lengths[current_episode_id] - transition_count
@@ -108,10 +104,7 @@ class FifoSampleStrategy(FifoStrategyBase, SampleStrategy):
                 points.append((current_episode_id, offset, offset + transition_count))
                 current_offset += transition_count
 
-                if (
-                    current_offset + transition_count
-                    > self._sequence_lengths[current_episode_id]
-                ):
+                if current_offset + transition_count > self._sequence_lengths[current_episode_id]:
                     current_episode_offset += 1
                     current_offset = 0
 

@@ -57,9 +57,7 @@ def test_htm():
     ]
 
     callbacks = logged_cbs + [
-        SimpleGymCollector(
-            env, agent_proxy, memory_proxy, warmup_steps=500, render=False
-        ),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
         TerminalLogger(logged_cbs, 400),
         FinalRewardTestCheck(logged_cbs[4], -5.0, 2000),
     ]
@@ -101,9 +99,7 @@ def test_htm_onnx(tmpdir):
 
     callbacks = logged_cbs + [
         exporter,
-        SimpleGymCollector(
-            env, agent_proxy, memory_proxy, warmup_steps=500, render=False
-        ),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
         TerminalLogger(logged_cbs, 400),
         FinalRewardTestCheck(logged_cbs[4], -5.0, 2000),
     ]

@@ -62,9 +62,7 @@ def test_export_base(memory, tmpdir):
     st = os.stat(res_file)
     # has to be readable by the whole world
     required_perms = stat.S_IRUSR | stat.S_IROTH | stat.S_IRGRP
-    assert (
-        st.st_mode & required_perms
-    ) == required_perms, "file should be readable by everyone"
+    assert (st.st_mode & required_perms) == required_perms, "file should be readable by everyone"
 
     memory.restore(export_file)
 
@@ -99,9 +97,7 @@ def test_export_legacy(memory, tmpdir):
     st = os.stat(res_file)
     # has to be readable by the whole world
     required_perms = stat.S_IRUSR | stat.S_IROTH | stat.S_IRGRP
-    assert (
-        st.st_mode & required_perms
-    ) == required_perms, "file should be readable by everyone"
+    assert (st.st_mode & required_perms) == required_perms, "file should be readable by everyone"
 
     memory.restore(export_file)  # remove .zip
 

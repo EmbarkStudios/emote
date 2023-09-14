@@ -99,9 +99,7 @@ class TimedBlock:
     """Used to track the performance statistics of a block of code, in terms
     of execution time."""
 
-    def __init__(
-        self, tracker_type: Type[StatisticsAccumulator] = MovingWindowAccumulator
-    ):
+    def __init__(self, tracker_type: Type[StatisticsAccumulator] = MovingWindowAccumulator):
         """Create a new timed block instance
 
         :param tracker_type: The statistics integrator to use. Defaults to to MovingWindowStats"""
@@ -128,12 +126,8 @@ class TimedBlock:
 
 
 class BlockTimers:
-    def __init__(
-        self, tracker_type: Type[StatisticsAccumulator] = MovingWindowAccumulator
-    ):
-        self._timers: Dict[str, TimedBlock] = defaultdict(
-            lambda: TimedBlock(tracker_type)
-        )
+    def __init__(self, tracker_type: Type[StatisticsAccumulator] = MovingWindowAccumulator):
+        self._timers: Dict[str, TimedBlock] = defaultdict(lambda: TimedBlock(tracker_type))
 
     def scope(self, name: str) -> TimedBlock:
         return self._timers[name]

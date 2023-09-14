@@ -93,10 +93,11 @@ lines_between_types = 1
 lines_after_imports = 2
 src_paths = ["emote"]
 known_first_party = ["emote"]
-
+line-length = 100
 
 [tool.black]
 target-version = ['py39']
+line-length = 100
 
 [tool.mypy]
 check_untyped_defs = true

@@ -34,9 +34,7 @@ class UniformStrategyBase(Strategy):
 
     def _rebalance(self):
         self._dirty = False
-        self._prios = np.array(tuple(self._identities.values())) / sum(
-            self._identities.values()
-        )
+        self._prios = np.array(tuple(self._identities.values())) / sum(self._identities.values())
         self._ids = np.array(tuple(self._identities.keys()), dtype=np.int64)
 
     def post_import(self):

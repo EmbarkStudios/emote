@@ -40,9 +40,7 @@ class EnsembleLinearLayer(nn.Module):
         self.num_members = num_members
         self.in_size = in_size
         self.out_size = out_size
-        self.weight = nn.Parameter(
-            torch.rand(self.num_members, self.in_size, self.out_size)
-        )
+        self.weight = nn.Parameter(torch.rand(self.num_members, self.in_size, self.out_size))
         self.bias = nn.Parameter(torch.rand(self.num_members, 1, self.out_size))
 
     def forward(self, x):
@@ -86,9 +84,7 @@ class EnsembleOfGaussian(nn.Module):
                 )
             )
         self.hidden_layers = nn.Sequential(*hidden_layers)
-        self.mean_and_logvar = EnsembleLinearLayer(
-            ensemble_size, hidden_size, 2 * out_size
-        )
+        self.mean_and_logvar = EnsembleLinearLayer(ensemble_size, hidden_size, 2 * out_size)
         self.min_logvar = nn.Parameter(
             -10 * torch.ones(1, out_size), requires_grad=learn_logvar_bounds
         )

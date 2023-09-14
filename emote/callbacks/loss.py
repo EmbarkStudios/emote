@@ -76,9 +76,7 @@ class LossCallback(LoggingMixin, Callback):
 
             if self._log_per_param_grads and parameter.grad is not None:
                 g_shape = _friendly_size_str(parameter.grad.shape)
-                self.log_histogram(
-                    f"{param_type}_grads/{log_name}_{g_shape}", parameter.grad
-                )
+                self.log_histogram(f"{param_type}_grads/{log_name}_{g_shape}", parameter.grad)
                 self.log_scalar(
                     f"{param_type}_grads_l2/{log_name}_{g_shape}",
                     torch.norm(parameter.grad, p=2),
@@ -87,9 +85,7 @@ class LossCallback(LoggingMixin, Callback):
             if self._log_per_param_weights:
                 p_shape = _friendly_size_str(parameter.shape)
                 self.log_histogram(f"{param_type}/{log_name}_{p_shape}", parameter)
-                self.log_scalar(
-                    f"{param_type}_l2/{log_name}_{p_shape}", torch.norm(parameter, p=2)
-                )
+                self.log_scalar(f"{param_type}_l2/{log_name}_{p_shape}", torch.norm(parameter, p=2))
 
     def state_dict(self):
         state = super().state_dict()

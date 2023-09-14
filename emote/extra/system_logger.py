@@ -24,9 +24,7 @@ class SystemLogger(LoggingMixin, Callback):
         memory_delta = memory_now - self._previous_memory
         step_delta = bp_step - self._previous_bp_step
         if step_delta > 0:
-            self.log_scalar(
-                "system/ram_usage_growth_mb_step", memory_delta / step_delta
-            )
+            self.log_scalar("system/ram_usage_growth_mb_step", memory_delta / step_delta)
 
         self._previous_memory = memory_now
         self._previous_bp_step = bp_step

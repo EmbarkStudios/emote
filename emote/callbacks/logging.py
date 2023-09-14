@@ -73,9 +73,7 @@ class TensorboardLogger(Callback):
         self._writer.add_scalar(
             "performance/bp_samples_per_sec", bp_samples / time_since_start, bp_step
         )
-        self._writer.add_scalar(
-            "performance/bp_steps_per_sec", bp_step / time_since_start, bp_step
-        )
+        self._writer.add_scalar("performance/bp_steps_per_sec", bp_step / time_since_start, bp_step)
 
         self._writer.flush()
 
