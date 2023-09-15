@@ -34,6 +34,7 @@ tools = [
    "black~=22.1",
    "bandit~=1.7",
    "isort~=5.10",
+   "flake8>=6,<7",
 ]
 
 docs = [
