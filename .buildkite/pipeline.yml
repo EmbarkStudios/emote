@@ -76,7 +76,7 @@ steps:
         command: bash .buildkite/run-bandit.sh
         << : *tiny
 
-      - label: ":bandit: Validate flake8"
+      - label: ":lint-roller: Validate flake8"
         command: bash .buildkite/run-flake8.sh
         << : *tiny
 
