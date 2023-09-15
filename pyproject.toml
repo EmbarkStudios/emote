@@ -53,13 +53,13 @@ docs-serve = "python -m http.server --directory docs/_build/dirhtml"
 
 test = "pytest tests"
 
-flake8 = "flake8 emote experiments tests"
-bandit = "bandit --r -ll emote experiments tests"
-lint.composite = ["bandit", "flake8"]
+flake8_ = "flake8 emote experiments tests"
+bandit_ = "bandit --r -ll emote experiments tests"
+lint.composite = ["bandit_", "flake8_"]
 
-black = "black emote experiments tests"
-isort = "isort emote experiments tests"
-fmt.composite = ["black", "isort"]
+black_ = "black emote experiments tests"
+isort_ = "isort emote experiments tests"
+fmt.composite = ["black_", "isort_"]
 
 precommit.composite = ["fmt", "lint", "test"]
 
