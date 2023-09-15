@@ -51,6 +51,18 @@ post_lock = "pdm torch lock"
 docs = "bash -c 'cd docs && rm -rf _build/dirhtml/ && make dirhtml'"
 docs-serve = "python -m http.server --directory docs/_build/dirhtml"
 
+test = "pytest tests"
+
+flake8 = "flake8 emote experiments tests"
+bandit = "bandit --r -ll emote experiments tests"
+lint.composite = ["bandit", "flake8"]
+
+black = "black emote experiments tests"
+isort = "isort emote experiments tests"
+fmt.composite = ["black", "isort"]
+
+precommit.composite = ["fmt", "lint", "test"]
+
 [[tool.pdm.source]]
 type = "index"
 url = "https://download.pytorch.org/whl/cpu/"

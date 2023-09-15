@@ -314,54 +314,26 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 self.completed_episodes,
             )
 
-        suffix = False
         for k, v in self.scalar_logs.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
             self._writer.add_scalar(k, v, inf_step)
 
         for k, v in self.windowed_scalar.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
-
             k = k.split(":")[1] if k.startswith("windowed[") else k
 
             self._writer.add_scalar(k, sum(v) / len(v), inf_step)
 
         for k, v in self.windowed_scalar_cumulative.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
-
             k = k.split(":")[1] if k.startswith("windowed[") else k
 
             self._writer.add_scalar(f"{k}/cumulative", v, inf_step)
 
         for k, v in self.image_logs.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
             self._writer.add_image(k, v, inf_step, dataformats="HWC")
 
         for k, (video_array, fps) in self.video_logs.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
             self._writer.add_video(k, video_array, inf_step, fps=fps, walltime=None)
 
         for k, v in self.hist_logs.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
-
             if isinstance(v, deque):
                 v = np.array(v)
 
