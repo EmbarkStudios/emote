@@ -15,7 +15,7 @@ import warnings
 
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -199,15 +199,39 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
     ):
         super().__init__(inner=inner, default_window_length=1000)
 
+        self.completed_inferences = 0
+        self.completed_episodes = 0
+
         self._writer = writer
         self._log_interval = log_interval
         self._counter = 0
         self._start_time = time.monotonic()
-        self.completed_inferences = 0
-        self.completed_episodes = 0
         self._cycle_start_infs = self.completed_inferences
         self._cycle_start_time = time.perf_counter()
-        self._infs = 0
+
+        self._infs_at_start = 0
+
+    def state_dict(self) -> dict[str, Any]:
+        return {
+            "completed_inferences": self.completed_inferences,
+            "completed_episodes": self.completed_episodes,
+            "inference_steps": self._total_infs,
+        }
+
+    def load_state_dict(
+        self,
+        state_dict: Dict[str, Any],
+        load_network: bool = True,
+        load_optimizer: bool = True,
+        load_hparams: bool = True,
+    ) -> dict[str, Any]:
+        if load_hparams:
+            self.completed_inferences = state_dict.get(
+                "completed_inferences", self.completed_inferences
+            )
+            self.completed_episodes = state_dict.get("completed_episodes", self.completed_episodes)
+            self._total_infs = state_dict.get("inference_steps", self._total_infs)
+            self._infs_at_start = self.completed_inferences
 
     def add(
         self,
@@ -346,7 +370,9 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         time_since_start = time.monotonic() - self._start_time
 
         self._writer.add_scalar(
-            "performance/inf_steps_per_sec", inf_step / time_since_start, inf_step
+            "performance/inf_steps_per_sec",
+            (inf_step - self._infs_at_start) / time_since_start,
+            inf_step,
         )
 
         self._writer.flush()

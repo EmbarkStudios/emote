@@ -22,7 +22,7 @@ class MemoryImporterCallback(Callback):
         self._load_fname_override = load_fname_override
         self._load_dir = experiment_load_dir
 
-    def begin_training(self):
+    def restore_state(self):
         if self._load_fname_override not in (None, ""):
             restore_path = os.path.join(self._load_dir, self._load_fname_override)
         else:
