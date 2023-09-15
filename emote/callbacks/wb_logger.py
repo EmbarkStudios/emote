@@ -33,8 +33,14 @@ class WBLogger(Callback):
             config=wandb.helper.parse_config(self._config, exclude=("wandb_project", "wandb_run")),
         )
 
-    def begin_training(self):
+        self._bp_samples_at_start = 0
+        self._bp_step_at_start = 0
+
+    def begin_training(self, bp_step, bp_samples):
         self._start_time = time.monotonic()
+
+        self._bp_samples_at_start = bp_samples
+        self._bp_step_at_start = bp_step
 
     def end_cycle(self, bp_step, bp_samples):
         log_dict = {}
@@ -81,8 +87,12 @@ class WBLogger(Callback):
                 log_dict[k] = wandb.Video(video_array, fps=fps)
 
         time_since_start = time.monotonic() - self._start_time
-        log_dict["performance/bp_samples_per_sec"] = bp_samples / time_since_start
-        log_dict["performance/bp_steps_per_sec"] = bp_step / time_since_start
+        samples_since_start = bp_samples - self._bp_samples_at_start
+        log_dict["performance/bp_samples_per_sec"] = samples_since_start / time_since_start
+
+        steps_since_start = bp_step - self._bp_step_at_start
+        log_dict["performance/bp_steps_per_sec"] = steps_since_start / time_since_start
+
         log_dict["log/bp_step"] = bp_step
         wandb.log(log_dict)
 

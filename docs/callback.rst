@@ -11,7 +11,7 @@ inspired by that system - but adapted for RL and our use-cases.
 The `Callback` interface
 ########################
 
-The callback is the core interface used to hook into the Emote framework. You can think of these as events - when the training loop starts, we'll invoke `begin_training` on all callback objects. Then we'll start a new cycle, and call :meth:`Callback.begin_cycle`.
+The callback is the core interface used to hook into the Emote framework. You can think of these as events - when the training loop starts, we'll invoke `begin_training` on all callback objects. Then we'll start a new cycle, and call :meth:`Callback.begin_cycle` for those that need it.
 
 All in all, the flow of callbacks is like this:
 
@@ -20,11 +20,12 @@ All in all, the flow of callbacks is like this:
     digraph foo {
       rankdir=LR;
       node [shape=rectangle,style="rounded"]
-	  
+
       newrank=true;
       { rank=same;  begin_cycle;  begin_batch; }
       { rank=same;  end_batch; end_cycle; }
-	  
+
+	  restore_state;
       begin_training;
       subgraph cluster_cycle {
         label = "while cycles left"
@@ -39,8 +40,8 @@ All in all, the flow of callbacks is like this:
         end_cycle;
       }
 	  end_training;
-	  
-      begin_training -> begin_cycle -> begin_batch -> backward -> end_batch;
+
+      restore_state -> begin_training -> begin_cycle -> begin_batch -> backward -> end_batch;
 
       end_batch -> begin_batch [constraint=no];
       end_cycle -> begin_cycle [constraint=no];

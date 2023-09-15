@@ -58,10 +58,12 @@ class Checkpointer(Callback):
     def begin_training(self):
         os.makedirs(self._folder_path, exist_ok=True)
 
-    def end_cycle(self):
+    def end_cycle(self, bp_step, bp_samples):
         state_dict = {
             "callback_state_dicts": {cb.name: cb.state_dict() for cb in self._cbs},
             "training_state": {
+                "bp_step": bp_step,
+                "bp_samples": bp_samples,
                 "checkpoint_index": self._checkpoint_index,
             },
         }
@@ -128,7 +130,7 @@ class CheckpointLoader(Callback):
                 "two callbacks with identical names"
             )
 
-    def begin_training(self):
+    def restore_state(self):
         start_time = time.time()
         if not os.path.exists(self._folder_path):
             raise InvalidCheckpointLocation(

@@ -24,8 +24,14 @@ class TensorboardLogger(Callback):
         self._writer = writer
         self._log_samples = log_by_samples
 
-    def begin_training(self):
+        self._bp_samples_at_start = 0
+        self._bp_step_at_start = 0
+
+    def begin_training(self, bp_step, bp_samples):
         self._start_time = time.monotonic()
+
+        self._bp_samples_at_start = bp_samples
+        self._bp_step_at_start = bp_step
 
     def end_cycle(self, bp_step, bp_samples):
         suffix = "bp_step"
@@ -71,9 +77,16 @@ class TensorboardLogger(Callback):
 
         time_since_start = time.monotonic() - self._start_time
         self._writer.add_scalar(
-            "performance/bp_samples_per_sec", bp_samples / time_since_start, bp_step
+            "performance/bp_samples_per_sec",
+            (bp_samples - self._bp_samples_at_start) / time_since_start,
+            bp_step,
         )
-        self._writer.add_scalar("performance/bp_steps_per_sec", bp_step / time_since_start, bp_step)
+
+        self._writer.add_scalar(
+            "performance/bp_steps_per_sec",
+            (bp_step - self._bp_step_at_start) / time_since_start,
+            bp_step,
+        )
 
         self._writer.flush()
 
