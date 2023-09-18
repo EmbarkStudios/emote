@@ -72,12 +72,8 @@ class ModifiedAdamW(torch.optim.AdamW):
         network: torch.nn.Module,
         lr: float,
         weight_decay: float,
-        whitelist_weight_modules: tuple[Type[torch.nn.Module], ...] = (
-            torch.nn.Linear,
-        ),
-        blacklist_weight_modules: tuple[Type[torch.nn.Module], ...] = (
-            torch.nn.LayerNorm,
-        ),
+        whitelist_weight_modules: tuple[Type[torch.nn.Module], ...] = (torch.nn.Linear,),
+        blacklist_weight_modules: tuple[Type[torch.nn.Module], ...] = (torch.nn.LayerNorm,),
         layers_to_exclude: set[str] | None = None,
     ):
         decay, no_decay = separate_modules_for_weight_decay(

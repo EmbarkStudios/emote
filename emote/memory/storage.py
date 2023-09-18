@@ -120,9 +120,7 @@ class VirtualStorage:
     def __getitem__(self, key: Union[int, Tuple[int, ...], slice]):
         pass
 
-    def __setitem__(
-        self, key: Union[int, Tuple[int, ...], slice], value: Sequence[Number]
-    ):
+    def __setitem__(self, key: Union[int, Tuple[int, ...], slice], value: Sequence[Number]):
         pass
 
     def __delitem__(self, key: Union[int, Tuple[int, ...], slice]):
@@ -191,9 +189,7 @@ class NextElementMapper(VirtualStorage):
     def __init__(self, storage, shape, dtype, only_last: bool = False):
         super().__init__(storage, shape, dtype)
         self._only_last = only_last
-        self._wrapper = (
-            NextElementMapper.LastWrapper if only_last else NextElementMapper.Wrapper
-        )
+        self._wrapper = NextElementMapper.LastWrapper if only_last else NextElementMapper.Wrapper
 
     def __getitem__(self, key: Union[int, Tuple[int, ...], slice]):
         return self._wrapper(self._storage[key])
@@ -251,9 +247,7 @@ class SyntheticDones(VirtualStorage):
 
     def __getitem__(self, key: Union[int, Tuple[int, ...], slice]):
         if self._mask:
-            return SyntheticDones.MaskWrapper(
-                len(self._storage[key]), self._shape, self._dtype
-            )
+            return SyntheticDones.MaskWrapper(len(self._storage[key]), self._shape, self._dtype)
 
         return SyntheticDones.Wrapper(len(self._storage[key]), self._shape, self._dtype)
 

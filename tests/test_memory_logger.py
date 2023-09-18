@@ -66,9 +66,7 @@ def test_add_multiple(table_proxy, tmpdir):
         proxy.add(
             {
                 0: DictObservation(
-                    episode_state=EpisodeState.INITIAL
-                    if idx == 0
-                    else EpisodeState.RUNNING,
+                    episode_state=EpisodeState.INITIAL if idx == 0 else EpisodeState.RUNNING,
                     array_data={"obs": [1.0]},
                     rewards={"reward": None},
                     metadata=MetaData(info={"episode/reward": 10.0}, info_lists={}),
@@ -131,9 +129,7 @@ def test_report(table_proxy, tmpdir):
     assert "ones" in proxy.hist_logs
     assert "one" in proxy.windowed_scalar and "one" in proxy.windowed_scalar_cumulative
     assert proxy.windowed_scalar_cumulative["one"] == 3
-    assert (
-        "three" in proxy.windowed_scalar and "three" in proxy.windowed_scalar_cumulative
-    )
+    assert "three" in proxy.windowed_scalar and "three" in proxy.windowed_scalar_cumulative
     assert proxy.windowed_scalar_cumulative["three"] == 6
     assert "twos" in proxy.hist_logs and len(proxy.hist_logs["twos"]) == 2
 

@@ -15,6 +15,7 @@ from emote.models.ensemble import EnsembleOfGaussian
 from emote.models.model import DynamicModel
 from emote.models.model_env import ModelEnv
 from emote.sac import FeatureAgentProxy
+from emote.utils.spaces import MDPSpace
 
 
 class FakeDataloader:
@@ -56,7 +57,7 @@ class RandomPolicy(nn.Module):
 
 
 def create_memory(
-    env: DictGymWrapper,
+    space: MDPSpace,
     memory_size: int,
     len_rollout: int,
     batch_size: int,
@@ -66,7 +67,7 @@ def create_memory(
     """Creates memory and data_loader for the RL training
 
     Arguments:
-        env (DictGymWrapper): the Gym-env wrapper
+        space (MDPSpace): the MDP space
         memory_size (int): the maximum length of memory
         len_rollout (int): the rollout size for the NStepTable
         batch_size (int): batch size
@@ -77,7 +78,7 @@ def create_memory(
 
     """
     table = DictObsTable(
-        spaces=env.dict_space,
+        spaces=space,
         use_terminal_column=False,
         maxlen=memory_size,
         device=device,
@@ -124,7 +125,7 @@ def test_model_collector():
     policy = RandomPolicy(action_dim=NUM_ACTIONS)
     agent = FeatureAgentProxy(policy, device)
     memory, dataloader = create_memory(
-        env,
+        env.dict_space,
         memory_size=100,
         len_rollout=1,
         batch_size=batch_size,
@@ -140,9 +141,7 @@ def test_model_collector():
         ),
         BackPropStepsTerminator(bp_steps=1),
     ]
-    fake_dataset = FakeDataloader(
-        num_obs=NUM_OBS, data_group="default", batch_size=batch_size
-    )
+    fake_dataset = FakeDataloader(num_obs=NUM_OBS, data_group="default", batch_size=batch_size)
     trainer = Trainer(callbacks, fake_dataset)
     trainer.train()
 
@@ -156,14 +155,14 @@ def test_model_collector():
     batch = next(data_iter)
 
     if RL_DATA_GROUP not in batch.keys():
-        raise Exception(f"The RL data group does not exist in the keys\n")
+        raise Exception("The RL data group does not exist in the keys\n")
     batch = batch[RL_DATA_GROUP]
 
     model_in = torch.cat((batch["observation"]["obs"], batch["actions"]), dim=1)
     model_out = torch.cat((batch["next_observation"]["obs"], batch["rewards"]), dim=1)
 
     if torch.mean(torch.abs(rand_multiplier * model_in - model_out)) > 0.001:
-        raise Exception(f"The loaded samples do not look correct.")
+        raise Exception("The loaded samples do not look correct.")
 
 
 def test_ensemble_training():
@@ -196,9 +195,7 @@ def test_ensemble_training():
     callbacks = [
         ModelLoss(model=dynamic_model, opt=Adam(dynamic_model.model.parameters())),
         LossProgressCheck(model=dynamic_model, num_bp=500),
-        SimpleGymCollector(
-            env, agent_proxy, memory_proxy, warmup_steps=500, render=False
-        ),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
     ]
     trainer = Trainer(callbacks, dataloader)
     trainer.train()

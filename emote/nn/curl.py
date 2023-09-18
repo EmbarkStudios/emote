@@ -58,23 +58,15 @@ class ImageAugmentor:
         image_size_y: int,
         num_slices: List[int],  # the number of unique index slices to return
     ):
-        size = rand_uniform(
-            minval=self._min_mask_size, maxval=self._max_mask_size, shape=[1]
-        )[0]
+        size = rand_uniform(minval=self._min_mask_size, maxval=self._max_mask_size, shape=[1])[0]
         mask_size: List[int] = [int(image_size_x * size), int(image_size_y * size)]
-        start_i = torch.randint(
-            low=0, high=image_size_x - mask_size[0], size=num_slices
-        )
-        start_j = torch.randint(
-            low=0, high=image_size_y - mask_size[1], size=num_slices
-        )
+        start_i = torch.randint(low=0, high=image_size_x - mask_size[0], size=num_slices)
+        start_j = torch.randint(low=0, high=image_size_y - mask_size[1], size=num_slices)
         end_i = start_i + mask_size[0]
         end_j = start_j + mask_size[1]
         return start_i, start_j, end_i, end_j
 
-    def _maybe_add_noise(
-        self, image: torch.Tensor, noise_std: float, noise_prob: float
-    ):
+    def _maybe_add_noise(self, image: torch.Tensor, noise_std: float, noise_prob: float):
         prob_sample = rand_uniform(minval=0.0, maxval=1.0, shape=[1])[0]
         # Add noise to the image from a normal distribution.
         if prob_sample < noise_prob:
@@ -88,18 +80,14 @@ class ImageAugmentor:
         batch_size, im_x, im_y, _ = images.shape
 
         for i in range(batch_size):
-            start_i, start_j, end_i, end_j = self._get_mask_indices(
-                im_x, im_y, num_slices=[1]
-            )
+            start_i, start_j, end_i, end_j = self._get_mask_indices(im_x, im_y, num_slices=[1])
             images[i, start_i:end_i, start_j:end_j, :] = 0
         return images
 
     def _cutout_per_batch_mask_size(self, images: torch.Tensor):
         batch_size, im_x, im_y, _ = images.shape
 
-        start_i, start_j, end_i, end_j = self._get_mask_indices(
-            im_x, im_y, num_slices=[batch_size]
-        )
+        start_i, start_j, end_i, end_j = self._get_mask_indices(im_x, im_y, num_slices=[batch_size])
 
         for i in range(batch_size):
             images[i, start_i[i] : end_i[i], start_j[i] : end_j[i], :] = 0
@@ -107,9 +95,7 @@ class ImageAugmentor:
 
     def _cutout_per_batch_pos_and_mask_size(self, images: torch.Tensor):
         _, im_x, im_y, _ = images.shape
-        start_i, start_j, end_i, end_j = self._get_mask_indices(
-            im_x, im_y, num_slices=[1]
-        )
+        start_i, start_j, end_i, end_j = self._get_mask_indices(im_x, im_y, num_slices=[1])
         images[:, start_i:end_i, start_j:end_j, :] = 0
         return images
 
@@ -192,25 +178,17 @@ class CurlLoss(LossCallback):
             self._zdim = desired_zdim
 
             # Add projection layer to the encoder.
-            encoder_proj_layer = nn.Linear(
-                encoder_output_size, desired_zdim, device=device
-            )
+            encoder_proj_layer = nn.Linear(encoder_output_size, desired_zdim, device=device)
             self._proj_layer_source_vars = encoder_proj_layer.parameters()
             encoder_model = nn.Sequential(encoder_model, encoder_proj_layer, nn.ReLU())
 
             # Add projection layer to the target encoder.
-            target_proj_layer = nn.Linear(
-                encoder_output_size, desired_zdim, device=device
-            )
+            target_proj_layer = nn.Linear(encoder_output_size, desired_zdim, device=device)
             self._proj_layer_target_vars = target_proj_layer.parameters()
-            target_encoder_model = nn.Sequential(
-                target_encoder_model, target_proj_layer, nn.ReLU()
-            )
+            target_encoder_model = nn.Sequential(target_encoder_model, target_proj_layer, nn.ReLU())
 
             # Update the projection layers on the target to match the source
-            soft_update_from_to(
-                self._proj_layer_source_vars, self._proj_layer_target_vars, tau=1.0
-            )
+            soft_update_from_to(self._proj_layer_source_vars, self._proj_layer_target_vars, tau=1.0)
         else:
             self._zdim = encoder_output_size
 
@@ -259,9 +237,7 @@ class CurlLoss(LossCallback):
         images = observation["images"]
         image_aug1 = self._augment(images.clone())
         image_aug2 = (
-            self._augment(images.clone())
-            if self._augment_anchor_and_pos
-            else images.clone()
+            self._augment(images.clone()) if self._augment_anchor_and_pos else images.clone()
         )
 
         self.optimizer.zero_grad()
@@ -306,9 +282,7 @@ class CurlLoss(LossCallback):
 
         # LOSS
         # One neat trick!: Diags are positive examples, off-diag are negative examples!
-        labels = F.one_hot(
-            torch.arange(batch_size, device=self._device), batch_size
-        ).float()
+        labels = F.one_hot(torch.arange(batch_size, device=self._device), batch_size).float()
         loss = (-labels * F.log_softmax(logits, dim=-1)).sum(dim=-1)
         return torch.mean(loss)
 

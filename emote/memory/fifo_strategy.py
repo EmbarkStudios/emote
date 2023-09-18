@@ -19,12 +19,17 @@ class FifoStrategyBase(Strategy):
 
     def __init__(self):
         """Create a FIFO-based strategy."""
+        super().__init__()
         self._sequence_lengths = {}
         self._identities = deque()
 
     def track(self, identity: int, sequence_length: int):
         # N.b. this is most likely a client bug causing us to have a repeat ID,
         # but it can occur when stopping/starting a data generator
+
+        if self._in_simple_import:
+            return
+
         assert identity not in self._sequence_lengths
         self._identities.append(identity)
         self._sequence_lengths[identity] = sequence_length
@@ -42,6 +47,18 @@ class FifoStrategyBase(Strategy):
                 # This is a guard to prevent recursive memory imports/exports,
                 # as that'd make it very hard to uphold variants over time.
                 self.track(-abs(id) - 1, length)
+
+    def state(self) -> dict:
+        """Serialize the strategy to a JSON-serializable dictionary"""
+        return {
+            "identities": list(self._identities),
+            "sequence_lengths": list(self._sequence_lengths.items()),
+        }
+
+    def load_state(self, state: dict):
+        """Load the strategy from a dictionary"""
+        self._identities = deque(state["identities"])
+        self._sequence_lengths = dict(state["sequence_lengths"])
 
 
 ################################################################################
@@ -65,9 +82,7 @@ class FifoSampleStrategy(FifoStrategyBase, SampleStrategy):
 
         if self._per_episode:
             for current_episode_offset in range(count):
-                current_episode_id = self._identities[
-                    current_episode_offset % number_episodes
-                ]
+                current_episode_id = self._identities[current_episode_offset % number_episodes]
                 offset = random.randint(
                     0, self._sequence_lengths[current_episode_id] - transition_count
                 )
@@ -78,9 +93,7 @@ class FifoSampleStrategy(FifoStrategyBase, SampleStrategy):
             current_offset = 0
 
             while len(points) < count:
-                current_episode_id = self._identities[
-                    current_episode_offset % number_episodes
-                ]
+                current_episode_id = self._identities[current_episode_offset % number_episodes]
                 if self._random_offset:
                     offset = random.randint(
                         0, self._sequence_lengths[current_episode_id] - transition_count
@@ -91,10 +104,7 @@ class FifoSampleStrategy(FifoStrategyBase, SampleStrategy):
                 points.append((current_episode_id, offset, offset + transition_count))
                 current_offset += transition_count
 
-                if (
-                    current_offset + transition_count
-                    > self._sequence_lengths[current_episode_id]
-                ):
+                if current_offset + transition_count > self._sequence_lengths[current_episode_id]:
                     current_episode_offset += 1
                     current_offset = 0
 

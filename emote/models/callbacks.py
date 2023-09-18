@@ -97,18 +97,13 @@ class LossProgressCheck(LoggingMixin, BatchCallback):
         self.prediction_err.append([obs_prediction_err, reward_prediction_err])
 
         if len(self.prediction_err) >= self.len_averaging_window:
-            self.prediction_average_err.append(
-                np.mean(np.array(self.prediction_err), axis=0)
-            )
+            self.prediction_average_err.append(np.mean(np.array(self.prediction_err), axis=0))
             self.prediction_err = []
 
     def end_cycle(self):
         for i in range(len(self.prediction_average_err) - 4):
             for j in range(2):
-                if (
-                    self.prediction_average_err[i + 4][j]
-                    > self.prediction_average_err[i][j]
-                ):
+                if self.prediction_average_err[i + 4][j] > self.prediction_average_err[i][j]:
                     raise Exception(
                         f"The loss is not decreasing: \n"
                         f"Loss at {i}: {self.prediction_average_err[i]}"
@@ -167,9 +162,7 @@ class BatchSampler(BatchCallback):
         Returns:
             (dict): the batch of data
         """
-        self.log_scalar(
-            "training/prob_sampling_from_model", self.prob_of_sampling_model_data
-        )
+        self.log_scalar("training/prob_sampling_from_model", self.prob_of_sampling_model_data)
         if self.use_model_batch():
             return self.sample_model_batch()
         else:
@@ -271,8 +264,6 @@ class ModelBasedCollector(LoggingMixin, BatchCallback):
         if self.len_rollout != len_rollout:
             self.len_rollout = len_rollout
             new_memory_size = (
-                self.len_rollout
-                * self.model_env.num_envs
-                * self.num_bp_to_retain_buffer
+                self.len_rollout * self.model_env.num_envs * self.num_bp_to_retain_buffer
             )
             self.memory.resize(new_memory_size)

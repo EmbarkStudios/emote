@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List
 
 import torch
 

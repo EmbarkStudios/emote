@@ -36,9 +36,7 @@ class DictObsAdaptor:
         self.key_map = list(zip(keys, output_keys))
         self.with_next = with_next
 
-    def __call__(
-        self, result: SampleResult, count: int, sequence_length: int
-    ) -> SampleResult:
+    def __call__(self, result: SampleResult, count: int, sequence_length: int) -> SampleResult:
         obs_dict = {}
         next_obs_dict = {}
         for (key, out_key) in self.key_map:
@@ -62,9 +60,7 @@ class KeyScaleAdaptor:
         self.key = key
         self.scale = torch.tensor(scale)
 
-    def __call__(
-        self, result: SampleResult, count: int, sequence_length: int
-    ) -> SampleResult:
+    def __call__(self, result: SampleResult, count: int, sequence_length: int) -> SampleResult:
         result[self.key] *= self.scale
         return result
 
@@ -80,9 +76,7 @@ class KeyCastAdaptor:
         self.key = key
         self.dtype = dtype
 
-    def __call__(
-        self, result: SampleResult, count: int, sequence_length: int
-    ) -> SampleResult:
+    def __call__(self, result: SampleResult, count: int, sequence_length: int) -> SampleResult:
         result[self.key].to(self.dtype)
         return result
 
@@ -99,9 +93,7 @@ class TerminalAdaptor:
         self.target_key = target_key
         self.value_key = value_key
 
-    def __call__(
-        self, result: SampleResult, count: int, sequence_length: int
-    ) -> SampleResult:
+    def __call__(self, result: SampleResult, count: int, sequence_length: int) -> SampleResult:
         # Note: The below code assumes that both terminal tags and the masks are
         # always 1.0 or 0.0.
 

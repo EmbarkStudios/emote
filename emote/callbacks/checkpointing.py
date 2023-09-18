@@ -45,8 +45,7 @@ class Checkpointer(Callback):
                 names.append(cb.name)
             else:
                 warnings.warn(
-                    f"Checkpointer ignored {cb} because of not "
-                    f"having the 'name' field.",
+                    f"Checkpointer ignored {cb} because of not having the 'name' field.",
                     UserWarning,
                 )
 
@@ -59,11 +58,12 @@ class Checkpointer(Callback):
     def begin_training(self):
         os.makedirs(self._folder_path, exist_ok=True)
 
-    def end_cycle(self):
-
+    def end_cycle(self, bp_step, bp_samples):
         state_dict = {
             "callback_state_dicts": {cb.name: cb.state_dict() for cb in self._cbs},
             "training_state": {
+                "bp_step": bp_step,
+                "bp_samples": bp_samples,
                 "checkpoint_index": self._checkpoint_index,
             },
         }
@@ -120,8 +120,7 @@ class CheckpointLoader(Callback):
                 names.append(cb.name)
             else:
                 warnings.warn(
-                    f"CheckpointLoader ignored {cb} because of not "
-                    f"having the 'name' field.",
+                    f"CheckpointLoader ignored {cb} because of not having the 'name' field.",
                     UserWarning,
                 )
 
@@ -131,7 +130,7 @@ class CheckpointLoader(Callback):
                 "two callbacks with identical names"
             )
 
-    def begin_training(self):
+    def restore_state(self):
         start_time = time.time()
         if not os.path.exists(self._folder_path):
             raise InvalidCheckpointLocation(
@@ -144,9 +143,7 @@ class CheckpointLoader(Callback):
 
         for cb in self._cbs:
             state = state_dict["callback_state_dicts"][cb.name]
-            cb.load_state_dict(
-                state, self._load_weights, self._load_optimizers, self._load_hparams
-            )
+            cb.load_state_dict(state, self._load_weights, self._load_optimizers, self._load_hparams)
 
         return_value = {}
         if self._load_hparams:

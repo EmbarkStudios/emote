@@ -82,9 +82,7 @@ class LoggingMixin:
         value: Union[torch.Tensor, float, Iterable[Union[torch.Tensor, float]]],
     ):
         if isinstance(value, Iterable):
-            self.hist_logs[key] = (
-                value.detach() if isinstance(value, torch.Tensor) else value
-            )
+            self.hist_logs[key] = value.detach() if isinstance(value, torch.Tensor) else value
         else:
             if key not in self.hist_logs:
                 self.hist_logs[key] = deque(maxlen=self._default_window_length)
@@ -118,8 +116,6 @@ class LoggingMixin:
             self.windowed_scalar = {
                 k: deque(v[0], maxlen=v[1]) for (k, v) in self.windowed_scalar.items()
             }
-            self.windowed_scalar_cumulative = state_dict.pop(
-                "windowed_scalar_cumulative"
-            )
+            self.windowed_scalar_cumulative = state_dict.pop("windowed_scalar_cumulative")
 
         super().load_state_dict(state_dict, load_network, load_optimizer, load_hparams)

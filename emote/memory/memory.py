@@ -15,7 +15,7 @@ import warnings
 
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -75,9 +75,7 @@ class TableMemoryProxy:
             self._min_length_filter = lambda _: True
         else:
             key = table._length_key
-            self._min_length_filter = (
-                lambda ep: len(ep[key]) >= minimum_length_threshold
-            )
+            self._min_length_filter = lambda ep: len(ep[key]) >= minimum_length_threshold
 
         self._completed_episodes: set[AgentId] = set()
         self._term_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
@@ -120,16 +118,12 @@ class TableMemoryProxy:
                     # treated all terminals as fatal, i.e., truncated bootstrap.
                     # Since this is the terminal mask value, an interrupted
                     # episode should be 1.0 or "infinite bootstrap horizon"
-                    data["terminal"] = float(
-                        observation.episode_state == EpisodeState.INTERRUPTED
-                    )
+                    data["terminal"] = float(observation.episode_state == EpisodeState.INTERRUPTED)
 
                 if agent_id not in self._store:
                     # First warn that this is a new agent id:
                     if agent_id in self._completed_episodes:
-                        logging.warning(
-                            "agent_id has already been completed: %d", agent_id
-                        )
+                        logging.warning("agent_id has already been completed: %d", agent_id)
                     else:
                         logging.warning(
                             "agent_id completed with no previous sequence: %d", agent_id
@@ -146,9 +140,7 @@ class TableMemoryProxy:
                     completed_episodes[agent_id] = ep
 
             else:
-                assert (
-                    agent_id in responses
-                ), "Mismatch between observations and responses!"
+                assert agent_id in responses, "Mismatch between observations and responses!"
                 response = responses[agent_id]
                 data.update(response.list_data)
                 data.update(response.scalar_data)
@@ -207,15 +199,39 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
     ):
         super().__init__(inner=inner, default_window_length=1000)
 
+        self.completed_inferences = 0
+        self.completed_episodes = 0
+
         self._writer = writer
         self._log_interval = log_interval
         self._counter = 0
         self._start_time = time.monotonic()
-        self.completed_inferences = 0
-        self.completed_episodes = 0
         self._cycle_start_infs = self.completed_inferences
         self._cycle_start_time = time.perf_counter()
-        self._infs = 0
+
+        self._infs_at_start = 0
+
+    def state_dict(self) -> dict[str, Any]:
+        return {
+            "completed_inferences": self.completed_inferences,
+            "completed_episodes": self.completed_episodes,
+            "inference_steps": self._total_infs,
+        }
+
+    def load_state_dict(
+        self,
+        state_dict: Dict[str, Any],
+        load_network: bool = True,
+        load_optimizer: bool = True,
+        load_hparams: bool = True,
+    ) -> dict[str, Any]:
+        if load_hparams:
+            self.completed_inferences = state_dict.get(
+                "completed_inferences", self.completed_inferences
+            )
+            self.completed_episodes = state_dict.get("completed_episodes", self.completed_episodes)
+            self._total_infs = state_dict.get("inference_steps", self._total_infs)
+            self._infs_at_start = self.completed_inferences
 
     def add(
         self,
@@ -291,63 +307,33 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
             self._writer.add_scalar(
                 "env_vs_episode/reward", average_reward, self.completed_episodes
             )
-            self._writer.add_histogram(
-                "episode/reward_distribution", rewards_tensor, inf_step
-            )
+            self._writer.add_histogram("episode/reward_distribution", rewards_tensor, inf_step)
             self._writer.add_histogram(
                 "env_vs_episode/reward_distribution",
                 rewards_tensor,
                 self.completed_episodes,
             )
 
-        suffix = False
         for k, v in self.scalar_logs.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
             self._writer.add_scalar(k, v, inf_step)
 
         for k, v in self.windowed_scalar.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
-
             k = k.split(":")[1] if k.startswith("windowed[") else k
 
             self._writer.add_scalar(k, sum(v) / len(v), inf_step)
 
         for k, v in self.windowed_scalar_cumulative.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
-
             k = k.split(":")[1] if k.startswith("windowed[") else k
 
             self._writer.add_scalar(f"{k}/cumulative", v, inf_step)
 
         for k, v in self.image_logs.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
             self._writer.add_image(k, v, inf_step, dataformats="HWC")
 
         for k, (video_array, fps) in self.video_logs.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
             self._writer.add_video(k, video_array, inf_step, fps=fps, walltime=None)
 
         for k, v in self.hist_logs.items():
-            if suffix:
-                k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
-                k = "/".join(k_split)
-
             if isinstance(v, deque):
                 v = np.array(v)
 
@@ -356,7 +342,9 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         time_since_start = time.monotonic() - self._start_time
 
         self._writer.add_scalar(
-            "performance/inf_steps_per_sec", inf_step / time_since_start, inf_step
+            "performance/inf_steps_per_sec",
+            (inf_step - self._infs_at_start) / time_since_start,
+            inf_step,
         )
 
         self._writer.flush()
@@ -426,12 +414,8 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 self._inner.store(export_path)
 
             for name, (mean, var) in self._scopes.stats().items():
-                self.log_scalar(
-                    f"memory/{self._target_memory_name}/{name}/timing/mean", mean
-                )
-                self.log_scalar(
-                    f"memory/{self._target_memory_name}/{name}/timing/var", var
-                )
+                self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/mean", mean)
+                self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/var", var)
             elapsed_time = time.time() - start_time
             logging.info(f"Memory export completed in {elapsed_time} seconds")
 

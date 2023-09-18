@@ -116,9 +116,7 @@ class CRUDStorage(Generic[T]):
         The function will be called with the path at which the file should be saved.
         """
         if not os.path.isdir(self._directory):
-            raise Exception(
-                f"The storage directory ({self._directory}) has been deleted"
-            )
+            raise Exception(f"The storage directory ({self._directory}) has been deleted")
 
         # Get the local time
         date = datetime.now()

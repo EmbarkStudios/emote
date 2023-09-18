@@ -38,9 +38,7 @@ def test_memory_export(tmpdir):
     agent_proxy = FeatureAgentProxy(policy, device)
 
     callbacks = [
-        SimpleGymCollector(
-            env, agent_proxy, memory_proxy, warmup_steps=500, render=False
-        ),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
         BackPropStepsTerminator(2500),
     ]
 
@@ -58,10 +56,9 @@ def test_memory_export(tmpdir):
     for column in importer.memory._columns.values():
         if isinstance(importer.memory._data[column.name], BaseStorage):
             for key in importer.memory._data[column.name]:
-                reverted_key = -(key + 1)
                 assert (
                     importer.memory._data[column.name][key].all()
-                    == memory_proxy._inner._table._data[column.name][reverted_key].all()
+                    == memory_proxy._inner._table._data[column.name][key].all()
                 )
 
     env.close()
@@ -85,9 +82,7 @@ def test_memory_export_permissions(tmpdir):
     agent_proxy = FeatureAgentProxy(policy, device)
 
     callbacks = [
-        SimpleGymCollector(
-            env, agent_proxy, memory_proxy, warmup_steps=500, render=False
-        ),
+        SimpleGymCollector(env, agent_proxy, memory_proxy, warmup_steps=500, render=False),
         BackPropStepsTerminator(2500),
     ]
 
@@ -98,6 +93,4 @@ def test_memory_export_permissions(tmpdir):
     st = os.stat(os.path.join(tmpdir, "memory_export.zip"))
     # has to be readable by the whole world
     required_perms = stat.S_IRUSR | stat.S_IROTH | stat.S_IRGRP
-    assert (
-        st.st_mode & required_perms
-    ) == required_perms, "file should be readable by everyone"
+    assert (st.st_mode & required_perms) == required_perms, "file should be readable by everyone"

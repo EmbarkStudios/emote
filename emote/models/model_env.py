@@ -2,7 +2,7 @@
 # https://github.com/facebookresearch/mbrl-lib
 
 from itertools import count
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import torch
@@ -59,9 +59,7 @@ class ModelEnv:
 
         self.rng = generator if generator else torch.Generator(device=self.device)
         self._next_agent = count()
-        self._agent_ids: list[AgentId] = [
-            next(self._next_agent) for i in range(self.num_envs)
-        ]
+        self._agent_ids: list[AgentId] = [next(self._next_agent) for i in range(self.num_envs)]
 
     def reset(
         self,
@@ -106,9 +104,7 @@ class ModelEnv:
                 rng=self.rng,
             )
             rewards = (
-                pred_rewards
-                if self.reward_fn is None
-                else self.reward_fn(actions, next_observs)
+                pred_rewards if self.reward_fn is None else self.reward_fn(actions, next_observs)
             )
             dones = self.termination_fn(next_observs)
 
@@ -142,9 +138,7 @@ class ModelEnv:
 
         for env_id, (done, timed_out) in enumerate(zip(dones, reached_max_len)):
             if done or timed_out:
-                episode_state = (
-                    EpisodeState.TERMINAL if done else EpisodeState.INTERRUPTED
-                )
+                episode_state = EpisodeState.TERMINAL if done else EpisodeState.INTERRUPTED
                 results[self._agent_ids[env_id]] = DictObservation(
                     episode_state=episode_state,
                     array_data={self._input_key: to_numpy(next_obs[env_id])},

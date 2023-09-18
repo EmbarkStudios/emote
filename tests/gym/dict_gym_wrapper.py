@@ -14,28 +14,26 @@ class DictGymWrapper(VectorEnvWrapper):
     def __init__(self, env: VectorEnv):
         super().__init__(env)
         self._next_agent = count()
-        self._agent_ids: List[AgentId] = [
-            next(self._next_agent) for i in range(self.num_envs)
-        ]
+        self._agent_ids: List[AgentId] = [next(self._next_agent) for i in range(self.num_envs)]
         self._episode_rewards: List[float] = [0.0 for i in range(self.num_envs)]
         assert isinstance(env.single_observation_space, gymnasium.spaces.Box)
         os: gymnasium.spaces.Box = env.single_observation_space
+
         if len(env.single_action_space.shape) > 0:
             action_space_shape = env.single_action_space.shape
         else:
             action_space_shape = (1,)
+
         self.dict_space = MDPSpace(
             BoxSpace(np.float32, (1,)),
-            BoxSpace(env.single_action_space.dtype, env.single_action_space.shape),
+            BoxSpace(env.single_action_space.dtype, action_space_shape),
             DictSpace({"obs": BoxSpace(os.dtype, os.shape)}),
         )
 
     def render(self):
         self.env.envs[0].render()
 
-    def dict_step(
-        self, actions: Dict[AgentId, DictResponse]
-    ) -> Dict[AgentId, DictObservation]:
+    def dict_step(self, actions: Dict[AgentId, DictResponse]) -> Dict[AgentId, DictObservation]:
         batched_actions = np.stack(
             [actions[agent].list_data["actions"] for agent in self._agent_ids]
         )
@@ -81,9 +79,7 @@ class DictGymWrapper(VectorEnvWrapper):
 
         ep_info = {}
         if len(completed_episode_rewards) > 0:
-            ep_info["reward"] = sum(completed_episode_rewards) / len(
-                completed_episode_rewards
-            )
+            ep_info["reward"] = sum(completed_episode_rewards) / len(completed_episode_rewards)
 
         return results, ep_info
 

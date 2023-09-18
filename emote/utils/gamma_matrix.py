@@ -27,9 +27,7 @@ def make_gamma_matrix(gamma: float, roll_length: int):
     for cc in range(roll_length + 1):
         gamma_vector[cc] = pow(gamma, cc)
     for cc in range(roll_length):
-        gamma_matrix[cc : (roll_length + 1), cc] = gamma_vector[
-            0 : roll_length + 1 - cc
-        ]
+        gamma_matrix[cc : (roll_length + 1), cc] = gamma_vector[0 : roll_length + 1 - cc]
     return gamma_matrix
 
 
@@ -47,9 +45,7 @@ def discount(rewards: torch.tensor, values: torch.tensor, gamma_matrix: torch.te
     # [num_rolls, roll_length]
     discount_matrix = torch.matmul(reward_matrix, gamma_matrix)  # dot product
     # Discount vector: [num_rolls * roll_length]
-    return torch.reshape(
-        discount_matrix, (discount_matrix.shape[0] * discount_matrix.shape[1], 1)
-    )
+    return torch.reshape(discount_matrix, (discount_matrix.shape[0] * discount_matrix.shape[1], 1))
 
 
 def split_rollouts(data: torch.tensor, rollout_len: int):

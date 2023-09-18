@@ -34,6 +34,7 @@ tools = [
    "black~=22.1",
    "bandit~=1.7",
    "isort~=5.10",
+   "flake8>=6,<7",
 ]
 
 docs = [
@@ -49,6 +50,18 @@ post_install = "pdm plugin add pdm-plugin-torch>=23.1.1"
 post_lock = "pdm torch lock"
 docs = "bash -c 'cd docs && rm -rf _build/dirhtml/ && make dirhtml'"
 docs-serve = "python -m http.server --directory docs/_build/dirhtml"
+
+test = "pytest tests"
+
+flake8_ = "flake8 emote experiments tests"
+bandit_ = "bandit --r -ll emote experiments tests"
+lint.composite = ["bandit_", "flake8_"]
+
+black_ = "black emote experiments tests"
+isort_ = "isort emote experiments tests"
+fmt.composite = ["black_", "isort_"]
+
+precommit.composite = ["fmt", "lint", "test"]
 
 [[tool.pdm.source]]
 type = "index"
@@ -93,10 +106,11 @@ lines_between_types = 1
 lines_after_imports = 2
 src_paths = ["emote"]
 known_first_party = ["emote"]
-
+line_length = 100
 
 [tool.black]
 target-version = ['py39']
+line-length = 100
 
 [tool.mypy]
 check_untyped_defs = true

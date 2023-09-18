@@ -127,9 +127,7 @@ class QTarget(LoggingMixin, Callback):
         self.tau = target_q_tau
         self.gamma = torch.tensor(gamma)
         self.rollout_len = roll_length
-        self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len).to(
-            ln_alpha.device
-        )
+        self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len).to(ln_alpha.device)
         self.use_terminal_masking = use_terminal_masking
 
     def begin_batch(self, next_observation, rewards, masks):
@@ -223,9 +221,7 @@ class PolicyLoss(LossCallback):
     def loss(self, observation):
         p_sample, logp_pi = self.policy(**observation)
         if self.q2 is not None:
-            q_pi_min = torch.min(
-                self.q1(p_sample, **observation), self.q2(p_sample, **observation)
-            )
+            q_pi_min = torch.min(self.q1(p_sample, **observation), self.q2(p_sample, **observation))
         else:
             # We don't actually need to be pessimistic in the policy update.
             q_pi_min = self.q1(p_sample, **observation)
@@ -289,9 +285,7 @@ class AlphaLoss(LossCallback):
         self._max_ln_alpha = torch.log(torch.tensor(max_alpha, device=ln_alpha.device))
         # TODO(singhblom) Check number of actions
         # self.t_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
-        self.t_entropy = (
-            n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
-        )
+        self.t_entropy = n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
         self.ln_alpha = ln_alpha  # This is log(alpha)
 
     def loss(self, observation):
@@ -390,9 +384,7 @@ class GenericAgentProxy(AgentProxy):
         self.output_keys = output_keys
         self._spaces = spaces
 
-    def __call__(
-        self, observations: dict[AgentId, DictObservation]
-    ) -> dict[AgentId, DictResponse]:
+    def __call__(self, observations: dict[AgentId, DictObservation]) -> dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
         assert len(observations) > 0, "Observations must not be empty."
@@ -406,10 +398,7 @@ class GenericAgentProxy(AgentProxy):
         tensor_obs_list = [None] * len(self.input_keys)
         for input_key in self.input_keys:
             np_obs = np.array(
-                [
-                    observations[agent_id].array_data[input_key]
-                    for agent_id in active_agents
-                ]
+                [observations[agent_id].array_data[input_key] for agent_id in active_agents]
             )
 
             if self._spaces is not None:
@@ -425,14 +414,10 @@ class GenericAgentProxy(AgentProxy):
         # we remove element 1 as we don't need the logprobs here
         outputs = outputs[0:1] + outputs[2:]
 
-        outputs = {
-            key: outputs[i].detach().cpu().numpy()
-            for i, key in enumerate(self.output_keys)
-        }
+        outputs = {key: outputs[i].detach().cpu().numpy() for i, key in enumerate(self.output_keys)}
 
         agent_data = [
-            (agent_id, DictResponse(list_data={}, scalar_data={}))
-            for agent_id in active_agents
+            (agent_id, DictResponse(list_data={}, scalar_data={})) for agent_id in active_agents
         ]
 
         for i, (_, response) in enumerate(agent_data):
