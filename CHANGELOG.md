@@ -33,6 +33,7 @@ have new arguments to handle versioning.
   - Now targetting torch version 1.12, up from 1.11.
   - `OnnxExporter` accepts a `device` argument to enable tracing on other devices.
   - `FinalRewardTestCheck` can now be configured with another key and to use windowed data.
+  - `begin_training` has been split into `restore_state` followed by `begin_training`
 
 ### Deprecations
 

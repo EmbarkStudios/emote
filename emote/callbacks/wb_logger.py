@@ -48,41 +48,37 @@ class WBLogger(Callback):
 
         for cb in self._cbs:
             for k, v in cb.scalar_logs.items():
-                if suffix:
-                    k_split = k.split("/")
-                    k_split[0] = k_split[0] + "_" + suffix
-                    k = "/".join(k_split)
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
 
                 log_dict[k] = v
 
             for k, v in cb.windowed_scalar.items():
-                if suffix:
-                    k_split = k.split("/")
-                    k_split[0] = k_split[0] + "_" + suffix
-                    k = "/".join(k_split)
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
 
                 log_dict[k] = sum(v) / len(v)
 
             for k, v in cb.windowed_scalar_cumulative.items():
-                if suffix:
-                    k_split = k.split("/")
-                    k_split[0] = k_split[0] + "_" + suffix
-                    k = "/".join(k_split)
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
 
                 log_dict[f"{k}/cumulative"] = v
 
             for k, v in cb.image_logs.items():
-                if suffix:
-                    k_split = k.split("/")
-                    k_split[0] = k_split[0] + "_" + suffix
-                    k = "/".join(k_split)
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
+
                 log_dict[k] = wandb.Image(v)
 
             for k, (video_array, fps) in cb.video_logs.items():
-                if suffix:
-                    k_split = k.split("/")
-                    k_split[0] = k_split[0] + "_" + suffix
-                    k = "/".join(k_split)
+                k_split = k.split("/")
+                k_split[0] = k_split[0] + "_" + suffix
+                k = "/".join(k_split)
 
                 log_dict[k] = wandb.Video(video_array, fps=fps)
 

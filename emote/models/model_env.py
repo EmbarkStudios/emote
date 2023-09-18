@@ -2,7 +2,7 @@
 # https://github.com/facebookresearch/mbrl-lib
 
 from itertools import count
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import torch

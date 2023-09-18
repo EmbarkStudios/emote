@@ -18,13 +18,15 @@ class DictGymWrapper(VectorEnvWrapper):
         self._episode_rewards: List[float] = [0.0 for i in range(self.num_envs)]
         assert isinstance(env.single_observation_space, gymnasium.spaces.Box)
         os: gymnasium.spaces.Box = env.single_observation_space
+
         if len(env.single_action_space.shape) > 0:
             action_space_shape = env.single_action_space.shape
         else:
             action_space_shape = (1,)
+
         self.dict_space = MDPSpace(
             BoxSpace(np.float32, (1,)),
-            BoxSpace(env.single_action_space.dtype, env.single_action_space.shape),
+            BoxSpace(env.single_action_space.dtype, action_space_shape),
             DictSpace({"obs": BoxSpace(os.dtype, os.shape)}),
         )
 

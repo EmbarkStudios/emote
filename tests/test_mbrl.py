@@ -155,14 +155,14 @@ def test_model_collector():
     batch = next(data_iter)
 
     if RL_DATA_GROUP not in batch.keys():
-        raise Exception(f"The RL data group does not exist in the keys\n")
+        raise Exception("The RL data group does not exist in the keys\n")
     batch = batch[RL_DATA_GROUP]
 
     model_in = torch.cat((batch["observation"]["obs"], batch["actions"]), dim=1)
     model_out = torch.cat((batch["next_observation"]["obs"], batch["rewards"]), dim=1)
 
     if torch.mean(torch.abs(rand_multiplier * model_in - model_out)) > 0.001:
-        raise Exception(f"The loaded samples do not look correct.")
+        raise Exception("The loaded samples do not look correct.")
 
 
 def test_ensemble_training():
