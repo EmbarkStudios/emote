@@ -23,11 +23,12 @@ class BaseStorage(dict):
         each time the memory is sampled. Will *not* work if the memory is
         sampled from multiple threads.
         """
-        if self._temp_storage is None:
-            d = np.empty((count * length, *self._shape), self._dtype)
+        total_size = count * length
+        if self._temp_storage is None or self._temp_storage.shape[0] < total_size:
+            d = np.empty((total_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage
+        return self._temp_storage[:total_size]
 
     def sequence_length_transform(self, length):
         return length
@@ -68,11 +69,12 @@ class TagStorage(dict):
         each time the memory is sampled. Will *not* work if the memory is
         sampled from multiple threads.
         """
-        if self._temp_storage is None:
-            d = np.empty((count * length, *self._shape), self._dtype)
+        total_size = count * length
+        if self._temp_storage is None or self._temp_storage.shape[0] < total_size:
+            d = np.empty((total_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage
+        return self._temp_storage[:total_size]
 
     def sequence_length_transform(self, length):
         return 1
@@ -128,11 +130,12 @@ class VirtualStorage:
         return length
 
     def get_empty_storage(self, count, length):
-        if self._temp_storage is None:
-            d = np.empty((count * length, *self._shape), self._dtype)
+        total_size = count * length
+        if self._temp_storage is None or self._temp_storage.shape[0] < total_size:
+            d = np.empty((total_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage
+        return self._temp_storage[:total_size]
 
     def post_import(self):
         pass
