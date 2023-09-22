@@ -72,7 +72,12 @@ class Checkpointer(Callback):
         }
         torch.save(state_dict, final_path)
         self._checkpoint_index += 1
-        return state_dict
+
+        subset = {
+            key: value for key, value in state_dict["training_state"].items()
+            if key not in ["bp_step", "bp_samples"]
+        }
+        return subset
 
 
 class CheckpointLoader(Callback):
