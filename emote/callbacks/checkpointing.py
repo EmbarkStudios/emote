@@ -66,7 +66,7 @@ class Checkpointer(Callback):
             "callback_state_dicts": {cb.name: cb.state_dict() for cb in self._cbs},
             "training_state": {
                 "latest_checkpoint": final_path,
-                "checkpoint_index": self._checkpoint_index - 1,
+                "checkpoint_index": self._checkpoint_index,
             },
         }
         torch.save(state_dict, final_path)
