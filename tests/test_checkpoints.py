@@ -70,6 +70,8 @@ def test_networks_checkpoint():
     t1.train()
     n2 = nn.Linear(1, 1)
     test_data = torch.rand(5, 1)
+
+    assert "latest_checkpoint" in t1.state["training_state"]
     assert not torch.allclose(n1(test_data), n2(test_data))
 
     c2 = [

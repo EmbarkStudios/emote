@@ -71,6 +71,7 @@ class Checkpointer(Callback):
         }
         torch.save(state_dict, final_path)
         self._checkpoint_index += 1
+        return state_dict
 
 
 class CheckpointLoader(Callback):
