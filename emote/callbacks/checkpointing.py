@@ -74,8 +74,8 @@ class Checkpointer(Callback):
         self._checkpoint_index += 1
 
         subset = {
-            key: value for key, value in state_dict["training_state"].items()
-            if key not in ["bp_step", "bp_samples"]
+            "latest_checkpoint": state_dict["training_state"]["latest_checkpoint"],
+            "checkpoint_index": state_dict["training_state"]["checkpoint_index"]
         }
         return subset
 
