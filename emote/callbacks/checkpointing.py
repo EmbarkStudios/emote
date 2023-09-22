@@ -73,11 +73,10 @@ class Checkpointer(Callback):
         torch.save(state_dict, final_path)
         self._checkpoint_index += 1
 
-        subset = {
+        return {
             "latest_checkpoint": state_dict["training_state"]["latest_checkpoint"],
             "checkpoint_index": state_dict["training_state"]["checkpoint_index"]
         }
-        return subset
 
 
 class CheckpointLoader(Callback):
