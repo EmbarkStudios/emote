@@ -97,9 +97,7 @@ def train_carracing(args):
 
     # Create box2d vector env environment wrapper.
     env = DictGymWrapper(
-        AsyncVectorEnv(
-            [make_vision_box2d_env(cfg.env_name, rank) for rank in range(cfg.n_env)]
-        )
+        AsyncVectorEnv([make_vision_box2d_env(cfg.env_name, rank) for rank in range(cfg.n_env)])
     )
     num_actions = env.dict_space.actions.shape[0]
 
@@ -122,9 +120,7 @@ def train_carracing(args):
         flat_shared_conv_enc, flat_enc_out_size, num_actions, cfg.hidden_dims
     )
 
-    policy = Policy(
-        flat_shared_conv_enc, flat_enc_out_size, num_actions, cfg.hidden_dims
-    )
+    policy = Policy(flat_shared_conv_enc, flat_enc_out_size, num_actions, cfg.hidden_dims)
 
     ln_alpha = torch.tensor(np.log(cfg.init_alpha), requires_grad=True, device=device)
 
@@ -194,9 +190,7 @@ def train_carracing(args):
     callbacks = logged_cbs + [
         TensorboardLogger(
             logged_cbs,
-            SummaryWriter(
-                log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())
-            ),
+            SummaryWriter(log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())),
             100,
         ),
     ]

@@ -23,11 +23,12 @@ class BaseStorage(dict):
         each time the memory is sampled. Will *not* work if the memory is
         sampled from multiple threads.
         """
-        if self._temp_storage is None:
-            d = np.empty((count * length, *self._shape), self._dtype)
+        total_size = count * length
+        if self._temp_storage is None or self._temp_storage.shape[0] < total_size:
+            d = np.empty((total_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage
+        return self._temp_storage[:total_size]
 
     def sequence_length_transform(self, length):
         return length
@@ -68,11 +69,12 @@ class TagStorage(dict):
         each time the memory is sampled. Will *not* work if the memory is
         sampled from multiple threads.
         """
-        if self._temp_storage is None:
-            d = np.empty((count * length, *self._shape), self._dtype)
+        total_size = count * length
+        if self._temp_storage is None or self._temp_storage.shape[0] < total_size:
+            d = np.empty((total_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage
+        return self._temp_storage[:total_size]
 
     def sequence_length_transform(self, length):
         return 1
@@ -118,9 +120,7 @@ class VirtualStorage:
     def __getitem__(self, key: Union[int, Tuple[int, ...], slice]):
         pass
 
-    def __setitem__(
-        self, key: Union[int, Tuple[int, ...], slice], value: Sequence[Number]
-    ):
+    def __setitem__(self, key: Union[int, Tuple[int, ...], slice], value: Sequence[Number]):
         pass
 
     def __delitem__(self, key: Union[int, Tuple[int, ...], slice]):
@@ -130,11 +130,12 @@ class VirtualStorage:
         return length
 
     def get_empty_storage(self, count, length):
-        if self._temp_storage is None:
-            d = np.empty((count * length, *self._shape), self._dtype)
+        total_size = count * length
+        if self._temp_storage is None or self._temp_storage.shape[0] < total_size:
+            d = np.empty((total_size, *self._shape), self._dtype)
             self._temp_storage = d
 
-        return self._temp_storage
+        return self._temp_storage[:total_size]
 
     def post_import(self):
         pass
@@ -188,9 +189,7 @@ class NextElementMapper(VirtualStorage):
     def __init__(self, storage, shape, dtype, only_last: bool = False):
         super().__init__(storage, shape, dtype)
         self._only_last = only_last
-        self._wrapper = (
-            NextElementMapper.LastWrapper if only_last else NextElementMapper.Wrapper
-        )
+        self._wrapper = NextElementMapper.LastWrapper if only_last else NextElementMapper.Wrapper
 
     def __getitem__(self, key: Union[int, Tuple[int, ...], slice]):
         return self._wrapper(self._storage[key])
@@ -248,9 +247,7 @@ class SyntheticDones(VirtualStorage):
 
     def __getitem__(self, key: Union[int, Tuple[int, ...], slice]):
         if self._mask:
-            return SyntheticDones.MaskWrapper(
-                len(self._storage[key]), self._shape, self._dtype
-            )
+            return SyntheticDones.MaskWrapper(len(self._storage[key]), self._shape, self._dtype)
 
         return SyntheticDones.Wrapper(len(self._storage[key]), self._shape, self._dtype)
 

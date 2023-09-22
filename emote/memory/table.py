@@ -70,9 +70,7 @@ class Table(Protocol):
         """Persist the whole table and all metadata into the designated name"""
         ...
 
-    def restore(
-        self, path: str, override_version: TableSerializationVersion | None = None
-    ) -> bool:
+    def restore(self, path: str, override_version: TableSerializationVersion | None = None) -> bool:
         """Restore the data table from the provided path. This also clears the data stores."""
         ...
 
@@ -154,17 +152,13 @@ class ArrayTable:
         for key, store in self._data.items():
             lines.append(f"\t{key} -> {store[episode_id].shape}")
 
-        lines.append(
-            f"and an error occurred when slicing the range {slice_begin}..{slice_end}"
-        )
+        lines.append(f"and an error occurred when slicing the range {slice_begin}..{slice_end}")
 
         raise ValueError("\n".join(lines))
 
     ################################################################################
 
-    def _execute_gather(
-        self, count: int, sequence_length: int, sample_points: List[Tuple[int]]
-    ):
+    def _execute_gather(self, count: int, sequence_length: int, sample_points: List[Tuple[int]]):
         with self._timers.scope("gather"):
             out = {}
             for key, store in self._data.items():
@@ -336,9 +330,7 @@ class ArrayTable:
                         with zip_.open(f"{key}.npy", "w", force_zip64=True) as npz:
                             np.save(npz, data, allow_pickle=False)
 
-            os.chmod(
-                f"{path}.zip", stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-            )
+            os.chmod(f"{path}.zip", stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
 
     def _deserialize(self, zip_: "zipfile.ZipFile") -> bool:
         """Restore the data table from the provided path. This currently implies a "clear" of the data stores."""
@@ -418,9 +410,7 @@ class ArrayTable:
                 with zip_.open(f"{key}.ranges.npy", "r") as f:
                     tuplized = np.load(f, allow_pickle=False)
 
-                    ranges[key] = {
-                        identity: (start, size) for identity, start, size in tuplized
-                    }
+                    ranges[key] = {identity: (start, size) for identity, start, size in tuplized}
 
                 with zip_.open(f"{key}.npy", "r") as npz:
                     loaded_data[key] = np.load(npz, allow_pickle=False)
@@ -473,9 +463,7 @@ class ArrayTable:
                         with zip_.open(f"{key}.npy", "w", force_zip64=True) as npz:
                             np.save(npz, data)
 
-            os.chmod(
-                f"{path}.zip", stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-            )
+            os.chmod(f"{path}.zip", stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
 
     @deprecated(
         reason="Legacy memory export uses pickling which add security and stability risks.",
@@ -542,9 +530,7 @@ class ArrayTable:
         else:
             raise ValueError(f"Unknown serialization version {version}")
 
-    def restore(
-        self, path: str, override_version: TableSerializationVersion | None = None
-    ) -> bool:
+    def restore(self, path: str, override_version: TableSerializationVersion | None = None) -> bool:
         with zipfile.ZipFile(f"{path}.zip", "r") as zip_:
             version = TableSerializationVersion.LATEST
             if override_version is not None:

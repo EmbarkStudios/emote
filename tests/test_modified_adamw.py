@@ -52,13 +52,9 @@ def num_groups(param_groups):
         else:
             no_wd += 1
 
-    assert (
-        wd == 1
-    ), f"There should be one group that has weight decay, but there are {wd}"
+    assert wd == 1, f"There should be one group that has weight decay, but there are {wd}"
 
-    assert (
-        no_wd == 1
-    ), f"There should be one group that has no weight decay, but there are {no_wd}"
+    assert no_wd == 1, f"There should be one group that has no weight decay, but there are {no_wd}"
 
 
 def test_module_separation():

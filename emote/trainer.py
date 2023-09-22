@@ -40,6 +40,9 @@ class Trainer:
         dataloader: Iterable,
         batch_size_key: str = "batch_size",
     ):
+        for cb in callbacks:
+            assert isinstance(cb, Callback), f"{cb} is not a Callback"
+
         self.callbacks = sorted(callbacks, key=lambda cb: cb._order)
         self._cyclic_callbacks = [
             cb for cb in self.callbacks if cb.cycle is not None and cb.cycle > 0
@@ -58,7 +61,11 @@ class Trainer:
         """
         shutdown_signal = shutdown_signal or (lambda: False)
 
+        self.state["bp_samples"] = 0
+        self.state["bp_step"] = 1
+
         try:
+            self._restore_state()
             self._begin_training()
 
         except TrainingShutdownException:
@@ -68,10 +75,9 @@ class Trainer:
         except Exception as ex:
             raise Exception("Error in begin_training, aborting") from ex
 
-        self.state["bp_samples"] = 0
-
         try:
-            for bp_step, batch in zip(count(1), self.dataloader):
+            counter = count(self.state["bp_step"])
+            for bp_step, batch in zip(counter, self.dataloader):
                 self.state.update(batch)
                 self.state["bp_step"] = bp_step
                 self.state["bp_samples"] += self.state[self._batch_size_key]
@@ -91,6 +97,11 @@ class Trainer:
         except Exception as ex:
             self._end_training(ex)
             raise ex
+
+    def _restore_state(self):
+        for cb in self.callbacks:
+            if updated_state := cb.restore_state(**self.state):
+                self.state.update(updated_state)
 
     def _begin_training(self):
         for cb in self.callbacks:

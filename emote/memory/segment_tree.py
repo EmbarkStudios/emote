@@ -68,9 +68,7 @@ class SegmentTree:
         self._value[idx] = val
         idx //= 2
         while idx >= 1:
-            self._value[idx] = self._operation(
-                self._value[2 * idx], self._value[2 * idx + 1]
-            )
+            self._value[idx] = self._operation(self._value[2 * idx], self._value[2 * idx + 1])
             idx //= 2
 
     def __getitem__(self, idx):

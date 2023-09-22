@@ -2,7 +2,7 @@
 
 
 """
-Thread-related utilties and tools.
+Thread-related utilities and tools.
 
 .. note::
 
@@ -57,7 +57,7 @@ class LockedResource(Generic[T]):
 
         .. note::
 
-           Will propagate any errors occuring inside the locked scope.
+           Will propagate any errors occurring inside the locked scope.
         """
         self._lock.release()
 
