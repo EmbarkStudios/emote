@@ -75,7 +75,7 @@ class Checkpointer(Callback):
 
         return {
             "latest_checkpoint": state_dict["training_state"]["latest_checkpoint"],
-            "checkpoint_index": state_dict["training_state"]["checkpoint_index"]
+            "checkpoint_index": state_dict["training_state"]["checkpoint_index"],
         }
 
 
