@@ -55,6 +55,8 @@ class QLoss(LossCallback):
         self.q_network = q
         self.mse = nn.MSELoss()
 
+    # TODO: Luc: Entrypoint: Setup test on mountain car with dqn on this repo
+
     # TODO: Luc: We also need a custom GenericAgentProxy, because its infer function uses log probs, 
     # which we don't have here. We need to use the q values instead.
     # TODO: Luc: Move this and sac to emote/algorithms/
