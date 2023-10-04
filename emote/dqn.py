@@ -59,10 +59,10 @@ class QLoss(LossCallback):
     # which we don't have here. We need to use the q values instead.
     # TODO: Luc: Move this and sac to emote/algorithms/
 
-    # TODO: Luc: Why do we have rollout_length amount of observations? 
-    # TODO: Luc: Why does the q value of one look like (rollout_len, 1) while the other is (rollout_len, 3)?
-    def loss(self, observation, q_target):
-        q_value = self.q_network(**observation)
+    def loss(self, observation, q_target, actions):
+        indices = actions.to(torch.int64)
+        indices = indices.argmax(dim=1).unsqueeze(1)
+        q_value = self.q_network(**observation).gather(1, indices)
         self.log_scalar(f"training/{self.name}_prediction", torch.mean(q_value))
         return self.mse(q_value, q_target)
 
