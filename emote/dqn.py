@@ -14,6 +14,7 @@ from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
 from emote.sac import soft_update_from_to
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
+from emote.utils.gamma_matrix import split_rollouts
 from emote.utils.spaces import MDPSpace
 
 class QLoss(LossCallback):
@@ -57,9 +58,11 @@ class QLoss(LossCallback):
     # TODO: Luc: We also need a custom GenericAgentProxy, because its infer function uses log probs, 
     # which we don't have here. We need to use the q values instead.
     # TODO: Luc: Move this and sac to emote/algorithms/
-    # TODO: Luc: Where do we invoke the arguments of this function?
+
+    # TODO: Luc: Why do we have rollout_length amount of observations? 
+    # TODO: Luc: Why does the q value of one look like (rollout_len, 1) while the other is (rollout_len, 3)?
     def loss(self, observation, q_target):
-        q_value = self.q_network(observation)
+        q_value = self.q_network(**observation)
         self.log_scalar(f"training/{self.name}_prediction", torch.mean(q_value))
         return self.mse(q_value, q_target)
 
@@ -75,21 +78,30 @@ class QTarget(LoggingMixin, Callback):
         q_net: nn.Module,
         target_q_net: Optional[nn.Module] = None,
         gamma: float = 0.99,
+        reward_scale: float = 1.0,
         target_q_tau: float = 0.005,
         data_group: str = "default",
+        roll_length: int = 1,
     ):
         super().__init__()
         self._order = 1  # this is to ensure that the data_group is prepared beforehand
         self.data_group = data_group
         self.q_net = q_net
         self.target_q_net = copy.deepcopy(q_net) if target_q_net is None else target_q_net
+        self.reward_scale = reward_scale
         self.tau = target_q_tau
         self.gamma = gamma
+        self.rollout_len = roll_length
 
     def begin_batch(self, next_observation, rewards):
-        next_q_values = self.target_q_net(next_observation)
+        next_q_values = self.target_q_net(**next_observation)
         max_next_q_values = next_q_values.max(1)[0].detach()
-        q_target = discount(rewards, max_next_q_values, self.gamma)
+        bsz = rewards.shape[0]
+        scaled_reward = self.reward_scale * rewards
+        scaled_reward = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
+
+        q_target = discount(rewards, max_next_q_values, self.gamma).detach()
+        assert q_target.shape == (bsz, 1)
         
         return {self.data_group: {"q_target": q_target}}
     
@@ -129,6 +141,8 @@ class GenericAgentProxy(AgentProxy):
         self.output_keys = output_keys
         self._spaces = spaces
 
+    # TODO: Luc: How much of this is really needed? Can we generalise with SAC overall in a helper method, where we branch?
+    # There is a lot of code duplication here.
     def __call__(self, observations: dict[AgentId, DictObservation]) -> dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
@@ -156,10 +170,8 @@ class GenericAgentProxy(AgentProxy):
             tensor_obs_list[index] = tensor_obs
 
         outputs: tuple[any, ...] = self._policy(*tensor_obs_list)
-        # # we remove element 1 as we don't need the logprobs here
-        # outputs = outputs[0:1] + outputs[2:]
-
-        outputs = {key: outputs[i].detach().cpu().numpy() for i, key in enumerate(self.output_keys)}
+        # TODO: Luc: We removed the [0], because output is already (envs, actions)
+        outputs = {key: outputs.detach().cpu().numpy() for i, key in enumerate(self.output_keys)}
 
         agent_data = [
             (agent_id, DictResponse(list_data={}, scalar_data={})) for agent_id in active_agents
@@ -167,7 +179,7 @@ class GenericAgentProxy(AgentProxy):
 
         for i, (_, response) in enumerate(agent_data):
             for k, data in outputs.items():
-                response.list_data[k] = data[i]
+                response.list_data[k] = np.asarray(data[i])
 
         return dict(agent_data)
 
