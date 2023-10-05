@@ -238,7 +238,6 @@ class ArrayTable:
             if size_after_add > self._maxlen:
                 self._eject_count(size_after_add - self._maxlen)
 
-            # TODO: Luc: Remove
             for name, value in sequence.items():
                 self._data[name][identity] = np.array(
                     value, dtype=self._columns[name].dtype

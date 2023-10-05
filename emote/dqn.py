@@ -14,7 +14,7 @@ from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
 from emote.sac import soft_update_from_to
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
-from emote.utils.gamma_matrix import split_rollouts
+from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 from emote.utils.spaces import MDPSpace
 
 class QLoss(LossCallback):
@@ -66,11 +66,10 @@ class QLoss(LossCallback):
         indices = indices.argmax(dim=1).unsqueeze(1)
         q_value = self.q_network(**observation).gather(1, indices)
         self.log_scalar(f"training/{self.name}_prediction", torch.mean(q_value))
+        print("q_value", q_value.shape)
+        print("q_target", q_target.shape)
+        assert False
         return self.mse(q_value, q_target)
-
-
-def discount(rewards, next_value, gamma):
-    return rewards + gamma * next_value
 
 
 class QTarget(LoggingMixin, Callback):
@@ -92,18 +91,27 @@ class QTarget(LoggingMixin, Callback):
         self.target_q_net = copy.deepcopy(q_net) if target_q_net is None else target_q_net
         self.reward_scale = reward_scale
         self.tau = target_q_tau
-        self.gamma = gamma
         self.rollout_len = roll_length
+        self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len)
 
-    def begin_batch(self, next_observation, rewards):
+    def begin_batch(self, next_observation, rewards, observation):
+        # print("Shape of observations", observation['obs'].shape)
+        print("len of next_observation", next_observation['obs'].shape)
+        print("len of rewards", rewards.shape)
         next_q_values = self.target_q_net(**next_observation)
-        max_next_q_values = next_q_values.max(1)[0].detach()
-        bsz = rewards.shape[0]
+        print("next_q_values", next_q_values.shape)
+        max_next_q_values = next_q_values.max(1)[0].unsqueeze(1).detach()
+        print("max_next_q_values", max_next_q_values.shape)
         scaled_reward = self.reward_scale * rewards
-        scaled_reward = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
-
-        q_target = discount(rewards, max_next_q_values, self.gamma).detach()
-        assert q_target.shape == (bsz, 1)
+        print("scaled reward shape", scaled_reward.shape)
+        print("rollout length", self.rollout_len)
+        scaled_rewards = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
+        print("scaled reward shape", scaled_reward.shape)
+        print("gamma ", self.gamma_matrix.shape)
+        print("max_next_q_values", max_next_q_values.shape)
+        q_target = discount(scaled_rewards, max_next_q_values, self.gamma_matrix).detach()
+        print("q_target", q_target.shape)
+        assert False
         
         return {self.data_group: {"q_target": q_target}}
     
@@ -143,8 +151,6 @@ class GenericAgentProxy(AgentProxy):
         self.output_keys = output_keys
         self._spaces = spaces
 
-    # TODO: Luc: How much of this is really needed? Can we generalise with SAC overall in a helper method, where we branch?
-    # There is a lot of code duplication here.
     def __call__(self, observations: dict[AgentId, DictObservation]) -> dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
@@ -172,8 +178,7 @@ class GenericAgentProxy(AgentProxy):
             tensor_obs_list[index] = tensor_obs
 
         outputs: tuple[any, ...] = self._policy(*tensor_obs_list)
-        # TODO: Luc: We removed the [0], because output is already (envs, actions)
-        outputs = {key: outputs.detach().cpu().numpy() for i, key in enumerate(self.output_keys)}
+        outputs = {key: outputs for i, key in enumerate(self.output_keys)}
 
         agent_data = [
             (agent_id, DictResponse(list_data={}, scalar_data={})) for agent_id in active_agents
@@ -181,7 +186,7 @@ class GenericAgentProxy(AgentProxy):
 
         for i, (_, response) in enumerate(agent_data):
             for k, data in outputs.items():
-                response.list_data[k] = np.asarray(data[i])
+                response.list_data[k] = data[i]
 
         return dict(agent_data)
 
