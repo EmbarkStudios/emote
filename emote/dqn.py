@@ -55,10 +55,6 @@ class QLoss(LossCallback):
         self.q_network = q
         self.mse = nn.MSELoss()
 
-    # TODO: Luc: Entrypoint: Setup test on mountain car with dqn on this repo
-
-    # TODO: Luc: We also need a custom GenericAgentProxy, because its infer function uses log probs, 
-    # which we don't have here. We need to use the q values instead.
     # TODO: Luc: Move this and sac to emote/algorithms/
 
     def loss(self, observation, q_target, actions):
@@ -66,9 +62,6 @@ class QLoss(LossCallback):
         indices = indices.argmax(dim=1).unsqueeze(1)
         q_value = self.q_network(**observation).gather(1, indices)
         self.log_scalar(f"training/{self.name}_prediction", torch.mean(q_value))
-        print("q_value", q_value.shape)
-        print("q_target", q_target.shape)
-        assert False
         return self.mse(q_value, q_target)
 
 
@@ -95,23 +88,11 @@ class QTarget(LoggingMixin, Callback):
         self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len)
 
     def begin_batch(self, next_observation, rewards, observation):
-        # print("Shape of observations", observation['obs'].shape)
-        print("len of next_observation", next_observation['obs'].shape)
-        print("len of rewards", rewards.shape)
         next_q_values = self.target_q_net(**next_observation)
-        print("next_q_values", next_q_values.shape)
         max_next_q_values = next_q_values.max(1)[0].unsqueeze(1).detach()
-        print("max_next_q_values", max_next_q_values.shape)
         scaled_reward = self.reward_scale * rewards
-        print("scaled reward shape", scaled_reward.shape)
-        print("rollout length", self.rollout_len)
         scaled_rewards = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
-        print("scaled reward shape", scaled_reward.shape)
-        print("gamma ", self.gamma_matrix.shape)
-        print("max_next_q_values", max_next_q_values.shape)
         q_target = discount(scaled_rewards, max_next_q_values, self.gamma_matrix).detach()
-        print("q_target", q_target.shape)
-        assert False
         
         return {self.data_group: {"q_target": q_target}}
     
