@@ -58,15 +58,22 @@ class QNet(nn.Module):
         return self.network(obs)
 
 class DQNPolicy(nn.Module):
-    def __init__(self, q_net, epsilon=0.1):
+    def __init__(self, q_net, epsilon=1.0):
         super(DQNPolicy, self).__init__()
         self.q_net = q_net
         self.epsilon = epsilon
+        self.epsilon_peaked = False
+
+        # TODO: Luc: This is hacky, just test it for testings sake
 
     # Returns the index of the chosen action
-    # TODO: Luc: Translate this to erupt too
     def forward(self, state):
         with torch.no_grad():
+            if not self.epsilon_peaked:
+                self.epsilon -= 0.00001
+                if self.epsilon <= 0.1:
+                    print("Epsilon peaked")
+                    self.epsilon_peaked = True
             q_values = self.q_net(state)  # Shape should be (num_envs, action_dim)
             num_envs, action_dim = q_values.shape
             actions = []
@@ -102,7 +109,6 @@ def create_memory(
         (tuple[TableMemoryProxy, MemoryLoader]): A proxy for the memory and a dataloader
 
     """
-    # TODO: Luc: The table in the memoryloader and the table in the memory proxy are not the same???
     table = DictObsNStepTable(
         spaces=space,
         use_terminal_column=False,
@@ -178,12 +184,12 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, default="cartpole")
     parser.add_argument("--log-dir", type=str, default="./mllogs/emote/cartpole")
     parser.add_argument("--num-envs", type=int, default=4)
-    parser.add_argument("--rollout-length", type=int, default=20)
-    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--rollout-length", type=int, default=5)
+    parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--hidden-dims", type=list, default=[256, 256])
     parser.add_argument("--lr", type=float, default=8e-3, help="The learning rate")
     parser.add_argument("--device", type=str, default="cpu")
-    parser.add_argument("--bp-steps", type=int, default=10000)
+    parser.add_argument("--bp-steps", type=int, default=500_000)
     parser.add_argument("--export-memory", action="store_true", default=False)
     parser.add_argument("--use-wandb", action="store_true")
     parser.add_argument(
@@ -282,3 +288,7 @@ if __name__ == "__main__":
 
     trainer = Trainer(all_callbacks, dataloader)
     trainer.train()
+
+# TODO: Luc: Check the loss
+# TODO: Luc: Use an epsilon schedule
+# TODO: Luc: We changed a lot of things here, translate this from scratch in erupt!

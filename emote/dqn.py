@@ -62,6 +62,9 @@ class QLoss(LossCallback):
         indices = indices.argmax(dim=1).unsqueeze(1)
         q_value = self.q_network(**observation).gather(1, indices)
         self.log_scalar(f"training/{self.name}_prediction", torch.mean(q_value))
+        # out = self.mse(q_value, q_target)
+        # print("QLOSS", out)
+        # return out
         return self.mse(q_value, q_target)
 
 
@@ -87,7 +90,7 @@ class QTarget(LoggingMixin, Callback):
         self.rollout_len = roll_length
         self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len)
 
-    def begin_batch(self, next_observation, rewards, observation):
+    def begin_batch(self, next_observation, rewards):
         next_q_values = self.target_q_net(**next_observation)
         max_next_q_values = next_q_values.max(1)[0].unsqueeze(1).detach()
         scaled_reward = self.reward_scale * rewards

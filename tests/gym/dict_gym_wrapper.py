@@ -64,10 +64,11 @@ class DictGymWrapper(VectorEnvWrapper):
                 new_agents.append(new_agent)
                 completed_episode_rewards.append(self._episode_rewards[env_id])
                 self._agent_ids[env_id] = new_agent
-                self.counter += 1
-                if self.counter % 100 == 0 and env_id == 0:
-                    print(f"Episode reward: {self._episode_rewards[env_id]}")
-                    self.counter = 0
+                if env_id == 0:
+                    self.counter += 1
+                    if self.counter % 1000 == 0:
+                        print("Episode: ", self.counter)
+                        print(f"Episode reward: {self._episode_rewards[env_id]}")
                     
                 self._episode_rewards[env_id] = 0.0
 
