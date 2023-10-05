@@ -70,8 +70,8 @@ class DQNPolicy(nn.Module):
     def forward(self, state):
         with torch.no_grad():
             if not self.epsilon_peaked:
-                self.epsilon -= 0.00001
-                if self.epsilon <= 0.1:
+                self.epsilon -= 0.000005
+                if self.epsilon <= 0.05:
                     print("Epsilon peaked")
                     self.epsilon_peaked = True
             q_values = self.q_net(state)  # Shape should be (num_envs, action_dim)
@@ -185,9 +185,9 @@ if __name__ == "__main__":
     parser.add_argument("--log-dir", type=str, default="./mllogs/emote/cartpole")
     parser.add_argument("--num-envs", type=int, default=4)
     parser.add_argument("--rollout-length", type=int, default=5)
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--hidden-dims", type=list, default=[256, 256])
-    parser.add_argument("--lr", type=float, default=8e-3, help="The learning rate")
+    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--hidden-dims", type=list, default=[128, 128])
+    parser.add_argument("--lr", type=float, default=1e-4, help="The learning rate")
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--bp-steps", type=int, default=500_000)
     parser.add_argument("--export-memory", action="store_true", default=False)
