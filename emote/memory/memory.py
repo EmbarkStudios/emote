@@ -438,13 +438,6 @@ class MemoryLoader:
 
     def is_ready(self):
         """True if the data loader has enough data to start providing data"""
-        print("Table size")
-        print(self.table.size())
-        print("Rollout count")
-        print(self.rollout_count)
-        print("Rollout length")
-        print(self.rollout_length)
-
         return self.table.size() >= (self.rollout_count * self.rollout_length)
 
     def __iter__(self):

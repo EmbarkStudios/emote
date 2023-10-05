@@ -30,7 +30,9 @@ import numpy as np
 
 def _make_env():
     def _thunk():
-        env = gym.make("MountainCar-v0")
+        env = gym.make("CartPole-v1")
+        # env = gym.make("MountainCar-v0")
+        # env = gym.make("MountainCar-v0", render_mode="human")
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
         return env
@@ -184,7 +186,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=8e-3, help="The learning rate")
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--bp-steps", type=int, default=10000)
-    parser.add_argument("--export-memory", action="store_true", default=True)
+    parser.add_argument("--export-memory", action="store_true", default=False)
     parser.add_argument("--use-wandb", action="store_true")
     parser.add_argument(
         "--wandb-run",
@@ -235,8 +237,8 @@ if __name__ == "__main__":
             min_time_per_export=0,
         )
         
-    online_q_net = QNet(num_obs, 3, arg.hidden_dims)  # TODO: Luc: How can we softcode this and line below?
-    target_q_net = QNet(num_obs, 3, arg.hidden_dims)
+    online_q_net = QNet(num_obs, 2, arg.hidden_dims)  # TODO: Luc: How can we softcode this and line below?
+    target_q_net = QNet(num_obs, 2, arg.hidden_dims)
     policy = DQNPolicy(online_q_net)
 
     online_q_net = online_q_net.to(device)
