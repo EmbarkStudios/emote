@@ -31,8 +31,6 @@ import numpy as np
 def _make_env():
     def _thunk():
         env = gym.make("CartPole-v1")
-        # env = gym.make("MountainCar-v0")
-        # env = gym.make("MountainCar-v0", render_mode="human")
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
         return env
@@ -177,8 +175,8 @@ def create_complementary_callbacks(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--name", type=str, default="mountain_car")
-    parser.add_argument("--log-dir", type=str, default="./mllogs/emote/mountain_car")
+    parser.add_argument("--name", type=str, default="cartpole")
+    parser.add_argument("--log-dir", type=str, default="./mllogs/emote/cartpole")
     parser.add_argument("--num-envs", type=int, default=4)
     parser.add_argument("--rollout-length", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=128)
