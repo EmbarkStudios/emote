@@ -1,5 +1,3 @@
-
-
 from __future__ import annotations
 import copy
 
@@ -16,6 +14,7 @@ from emote.algorithms.sac import soft_update_from_to
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 from emote.utils.spaces import MDPSpace
+
 
 class GenericAgentProxy(AgentProxy):
     """Observations are dicts that contain multiple input and output keys.
@@ -71,7 +70,6 @@ class GenericAgentProxy(AgentProxy):
                 shape = (np_obs.shape[0],) + self._spaces.state.spaces[input_key].shape
                 if shape != np_obs.shape:
                     np_obs = np.reshape(np_obs, shape)
-                
 
             tensor_obs = torch.tensor(np_obs).to(self.device)
             index = self.input_keys.index(input_key)
@@ -101,6 +99,7 @@ class GenericAgentProxy(AgentProxy):
     @property
     def policy(self):
         return self._policy
+
 
 class QTarget(LoggingMixin, Callback):
     def __init__(
@@ -146,9 +145,9 @@ class QTarget(LoggingMixin, Callback):
         scaled_reward = self.reward_scale * rewards
         scaled_rewards = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
         q_target = discount(scaled_rewards, max_next_q_values, self.gamma_matrix).detach()
-        
+
         return {self.data_group: {"q_target": q_target}}
-    
+
     def end_batch(self):
         super().end_batch()
         soft_update_from_to(self.q_net, self.target_q_net, self.tau)
@@ -167,6 +166,7 @@ class QLoss(LossCallback):
         log_per_param_weights (bool): Whether to log weights per parameter.
         log_per_param_grads (bool): Whether to log gradients per parameter.
     """
+
     def __init__(
         self,
         *,

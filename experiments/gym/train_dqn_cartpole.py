@@ -298,7 +298,6 @@ if __name__ == "__main__":
     trainer = Trainer(all_callbacks, dataloader)
     trainer.train()
 
-# TODO: Luc: Get the mps device to work
 # TODO: Luc: Run black, linter etc
 
 
