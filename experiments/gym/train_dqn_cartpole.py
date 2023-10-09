@@ -29,7 +29,7 @@ import numpy as np
 
 def _make_env():
     def _thunk():
-        env = gym.make("CartPole-v1", render_mode = "human")
+        env = gym.make("CartPole-v1")
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
         return env
