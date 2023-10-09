@@ -34,14 +34,6 @@ class GenericAgentProxy(AgentProxy):
         output_keys: tuple,
         spaces: MDPSpace | None = None,
     ):
-        """Create a new proxy.
-
-        :param policy (nn.Module): The policy to invoke
-        :param device (torch.device): The device to run on
-        :param input_keys (tuple): The names of the inputs to the policy
-        :param output_keys (tuple): The names of the outputs of the policy
-        :param spaces (MDPSpace): The spaces of the inputs and outputs
-        """
         self._policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device
@@ -122,7 +114,6 @@ class QTarget(LoggingMixin, Callback):
         self.tau = target_q_tau
         self.rollout_len = roll_length
         self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len)
-        self.step_counter = 0
 
     # TODO: Luc: Compare Q target estimation with Torch example
     def begin_batch(self, next_observation, rewards, masks):
@@ -138,26 +129,10 @@ class QTarget(LoggingMixin, Callback):
     
     def end_batch(self):
         super().end_batch()
-        # self.step_counter += 1
-        # if self.step_counter % 500 == 0 and self.step_counter > 0:
-        #     self.target_q_net = copy.deepcopy(self.q_net)
-
         soft_update_from_to(self.q_net, self.target_q_net, self.tau)
 
 
 class QLoss(LossCallback):
-    r"""
-    :param name (str): The name of the module. Used e.g. while logging.
-    :param q (torch.nn.Module): A deep neural net that outputs the discounted loss
-        given the current observations and a given action.
-    :param opt (torch.optim.Optimizer): An optimizer for q.
-    :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning rate schedule
-        for the optimizer of q.
-    :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
-    :param data_group (str): The name of the data group from which this Loss takes its data.
-    :param log_per_param_weights (bool): If true, log each individual policy parameter that is optimized (norm and value histogram).
-    :param log_per_param_grads (bool): If true, log the gradients of each individual policy parameter that is optimized (norm and histogram).
-    """
     def __init__(
         self,
         *,
@@ -184,15 +159,8 @@ class QLoss(LossCallback):
         self.mse = nn.MSELoss()
 
     # TODO: Luc: Move this and sac to emote/algorithms/
-
-    # TODO: Luc: Check whether this is properly implemented
-    # TODO: Luc: Properly implement the epsilon schedule
     def loss(self, observation, q_target, actions):
         indices = actions.to(torch.int64)
-        indices = indices.argmax(dim=1).unsqueeze(1)
         q_value = self.q_network(**observation).gather(1, indices)
         self.log_scalar(f"training/{self.name}_prediction", torch.mean(q_value))
-        # out = self.mse(q_value, q_target)
-        # print("QLOSS", out)
-        # return out
         return self.mse(q_value, q_target)

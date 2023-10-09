@@ -68,7 +68,7 @@ class DictGymWrapper(VectorEnvWrapper):
                 if env_id == 0:
                     self.rewards.append(self._episode_rewards[env_id])
                     self.counter += 1
-                    if self.counter % 1000 == 0:
+                    if self.counter % 100 == 0:
                         print("Episode: ", self.counter)
                         print(f"Episode reward: {sum(self.rewards) / len(self.rewards)}")
                         self.rewards = []
