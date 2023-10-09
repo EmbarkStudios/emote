@@ -1,16 +1,19 @@
 from __future__ import annotations
+
 import copy
 
 from typing import Optional
-import numpy as np
 
+import numpy as np
 import torch
+
 from torch import nn, optim
+
+from emote.algorithms.sac import soft_update_from_to
 from emote.callback import Callback
 from emote.callbacks.loss import LossCallback
 from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
-from emote.algorithms.sac import soft_update_from_to
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 from emote.utils.spaces import MDPSpace

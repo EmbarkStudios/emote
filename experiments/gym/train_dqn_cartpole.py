@@ -4,14 +4,10 @@ import random
 import time
 
 import gymnasium as gym
+import numpy as np
 import torch
 
 from gymnasium.vector import AsyncVectorEnv
-from emote.callbacks.checkpointing import Checkpointer
-from emote.callbacks.generic import BackPropStepsTerminator
-from emote.algorithms.dqn import GenericAgentProxy, QLoss, QTarget
-from emote.mixins.logging import LoggingMixin
-from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import nn
@@ -19,12 +15,15 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
+from emote.algorithms.dqn import GenericAgentProxy, QLoss, QTarget
+from emote.callbacks.checkpointing import Checkpointer
+from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.logging import TensorboardLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
+from emote.mixins.logging import LoggingMixin
 from emote.nn.initialization import ortho_init_
-
-import numpy as np
+from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 
 def _make_env():

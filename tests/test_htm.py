@@ -5,13 +5,13 @@ from torch import nn
 from torch.optim import Adam
 
 from emote import Trainer
+from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 from emote.callbacks.logging import TerminalLogger
 from emote.callbacks.testing import FinalRewardTestCheck
 from emote.extra.onnx_exporter import OnnxExporter
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
-from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 from .gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
 

@@ -14,13 +14,13 @@ from torch import nn
 from torch.optim import Adam
 
 from emote import Trainer
+from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.wb_logger import WBLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
-from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 
 def _make_env():

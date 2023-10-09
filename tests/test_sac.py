@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 import torch
 
-from emote.nn.gaussian_policy import GaussianMlpPolicy
 from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy
+from emote.nn.gaussian_policy import GaussianMlpPolicy
 from emote.typing import DictObservation, EpisodeState
 
 

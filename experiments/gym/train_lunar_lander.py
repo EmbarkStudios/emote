@@ -15,6 +15,7 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
+from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 from emote.callbacks import Checkpointer
 from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.logging import TensorboardLogger
@@ -23,7 +24,6 @@ from emote.memory.builder import DictObsNStepTable
 from emote.mixins.logging import LoggingMixin
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
-from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 from emote.utils.spaces import MDPSpace
 
 

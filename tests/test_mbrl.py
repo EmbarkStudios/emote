@@ -6,6 +6,7 @@ from torch import nn
 from torch.optim import Adam
 
 from emote import Trainer
+from emote.algorithms.sac import FeatureAgentProxy
 from emote.callbacks import BackPropStepsTerminator
 from emote.extra.schedules import BPStepScheduler
 from emote.memory import MemoryLoader, TableMemoryProxy
@@ -14,7 +15,6 @@ from emote.models.callbacks import LossProgressCheck, ModelBasedCollector, Model
 from emote.models.ensemble import EnsembleOfGaussian
 from emote.models.model import DynamicModel
 from emote.models.model_env import ModelEnv
-from emote.algorithms.sac import FeatureAgentProxy
 from emote.utils.spaces import MDPSpace
 
 

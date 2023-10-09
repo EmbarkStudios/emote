@@ -35,9 +35,9 @@ from tests.test_genrl import FullyConnectedDecoder, FullyConnectedEncoder
 from emote import Trainer
 from emote.algorithms.genrl.proxies import MemoryProxyWithEncoder
 from emote.algorithms.genrl.wrappers import DecoderWrapper, EncoderWrapper, PolicyWrapper
+from emote.algorithms.sac import FeatureAgentProxy
 from emote.memory import MemoryLoader
 from emote.memory.builder import DictObsNStepTable
-from emote.algorithms.sac import FeatureAgentProxy
 from emote.utils.spaces import BoxSpace, MDPSpace
 
 

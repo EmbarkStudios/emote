@@ -16,6 +16,7 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
+from emote.algorithms.sac import AlphaLoss, PolicyLoss, QLoss, QTarget, VisionAgentProxy
 from emote.callback import Callback
 from emote.callbacks.logging import TensorboardLogger
 from emote.env.box2d import make_vision_box2d_env
@@ -26,7 +27,6 @@ from emote.nn import GaussianPolicyHead
 from emote.nn.action_value_mlp import SharedEncoderActionValueNet
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 from emote.nn.layers import Conv2dEncoder
-from emote.algorithms.sac import AlphaLoss, PolicyLoss, QLoss, QTarget, VisionAgentProxy
 
 
 class Policy(nn.Module):
