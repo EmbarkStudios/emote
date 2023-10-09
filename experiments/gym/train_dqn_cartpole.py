@@ -22,7 +22,6 @@ from emote.callbacks.logging import TensorboardLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.mixins.logging import LoggingMixin
-from emote.nn.initialization import ortho_init_
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 
