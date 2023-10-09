@@ -298,8 +298,4 @@ if __name__ == "__main__":
     trainer = Trainer(all_callbacks, dataloader)
     trainer.train()
 
-# TODO: Luc: Run black, linter etc
-
-
-
 # pdm run python experiments/gym/train_dqn_cartpole.py
