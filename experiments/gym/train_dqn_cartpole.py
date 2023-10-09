@@ -8,6 +8,7 @@ import numpy as np
 import torch
 
 from gymnasium.vector import AsyncVectorEnv
+from emote.algorithms.generic_agent_proxy import GenericAgentProxy
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import nn
@@ -15,7 +16,7 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
-from emote.algorithms.dqn import GenericAgentProxy, QLoss, QTarget
+from emote.algorithms.dqn import QLoss, QTarget
 from emote.callbacks.checkpointing import Checkpointer
 from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.logging import TensorboardLogger
@@ -93,7 +94,7 @@ class DQNPolicy(nn.Module):
                 else:
                     action_idx = q_values[i].argmax().item()
                 actions.append(action_idx)
-            return actions
+            return torch.tensor(actions)
 
 
 def create_memory(
@@ -264,6 +265,7 @@ if __name__ == "__main__":
         device=device,
         input_keys=tuple(input_shapes.keys()),
         output_keys=tuple(output_shapes.keys()),
+        uses_logprobs=False,
         spaces=spaces,
     )
 

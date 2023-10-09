@@ -4,7 +4,6 @@ import copy
 
 from typing import Optional
 
-import numpy as np
 import torch
 
 from torch import nn, optim
@@ -13,96 +12,7 @@ from emote.algorithms.sac import soft_update_from_to
 from emote.callback import Callback
 from emote.callbacks.loss import LossCallback
 from emote.mixins.logging import LoggingMixin
-from emote.proxies import AgentProxy
-from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
-from emote.utils.spaces import MDPSpace
-
-
-class GenericAgentProxy(AgentProxy):
-    """Observations are dicts that contain multiple input and output keys.
-
-    For example, we might have a policy that takes in both "obs" and
-    "goal" and outputs "actions". In order to be able to properly
-    invoke the network it is the responsibility of this proxy to
-    collate the inputs and decollate the outputs per agent.
-    """
-
-    def __init__(
-        self,
-        policy: nn.Module,
-        device: torch.device,
-        input_keys: tuple,
-        output_keys: tuple,
-        spaces: MDPSpace | None = None,
-    ):
-        r"""Handle multi-input multi-output policy networks.
-
-        Parameters:
-            policy (nn.Module): The neural network policy that takes observations and returns actions.
-            device (torch.device): The device to run the policy on.
-            input_keys (tuple): Keys specifying what fields from the observation to pass to the policy.
-            output_keys (tuple): Keys for the fields in the output dictionary that the policy is responsible for.
-            spaces (MDPSpace, optional): A utility for managing observation and action spaces, for validation.
-        """
-        self._policy = policy
-        self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
-        self.device = device
-        self.input_keys = input_keys
-        self.output_keys = output_keys
-        self._spaces = spaces
-
-    def __call__(self, observations: dict[AgentId, DictObservation]) -> dict[AgentId, DictResponse]:
-        """Runs the policy and returns the actions."""
-        # The network takes observations of size batch x obs for each observation space.
-        assert len(observations) > 0, "Observations must not be empty."
-
-        active_agents = [
-            agent_id
-            for agent_id, obs in observations.items()
-            if obs.episode_state not in self._end_states
-        ]
-
-        tensor_obs_list = [None] * len(self.input_keys)
-        for input_key in self.input_keys:
-            np_obs = np.array(
-                [observations[agent_id].array_data[input_key] for agent_id in active_agents]
-            )
-
-            if self._spaces is not None:
-                shape = (np_obs.shape[0],) + self._spaces.state.spaces[input_key].shape
-                if shape != np_obs.shape:
-                    np_obs = np.reshape(np_obs, shape)
-
-            tensor_obs = torch.tensor(np_obs).to(self.device)
-            index = self.input_keys.index(input_key)
-            tensor_obs_list[index] = tensor_obs
-
-        outputs: tuple[any, ...] = self._policy(*tensor_obs_list)
-        outputs = {key: outputs for i, key in enumerate(self.output_keys)}
-
-        agent_data = [
-            (agent_id, DictResponse(list_data={}, scalar_data={})) for agent_id in active_agents
-        ]
-
-        for i, (_, response) in enumerate(agent_data):
-            for k, data in outputs.items():
-                response.list_data[k] = data[i]
-
-        return dict(agent_data)
-
-    @property
-    def input_names(self):
-        return self.input_keys
-
-    @property
-    def output_names(self):
-        return self.output_keys
-
-    @property
-    def policy(self):
-        return self._policy
-
 
 class QTarget(LoggingMixin, Callback):
     def __init__(
