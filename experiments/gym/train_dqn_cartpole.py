@@ -29,7 +29,7 @@ import numpy as np
 
 def _make_env():
     def _thunk():
-        env = gym.make("CartPole-v1")
+        env = gym.make("CartPole-v1", render_mode = "human")
         env = gym.wrappers.FrameStack(env, 3)
         env = gym.wrappers.FlattenObservation(env)
         return env
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--hidden-dims", type=list, default=[128, 128])
     parser.add_argument("--lr", type=float, default=1e-3, help="The learning rate")
-    parser.add_argument("--device", type=str, default="mps")
+    parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--bp-steps", type=int, default=50_000)
     parser.add_argument("--memory-size", type=int, default=50_000)
     parser.add_argument("--export-memory", action="store_true", default=False)
