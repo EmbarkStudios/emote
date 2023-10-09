@@ -8,8 +8,8 @@ import numpy as np
 import torch
 
 from torch import nn, optim
-from emote.algorithms.generic_agent_proxy import GenericAgentProxy
 
+from emote.algorithms.generic_agent_proxy import GenericAgentProxy
 from emote.callback import Callback
 from emote.callbacks.loss import LossCallback
 from emote.mixins.logging import LoggingMixin

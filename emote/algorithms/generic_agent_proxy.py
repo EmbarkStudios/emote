@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import numpy as np
-import torch 
+import torch
 
 from torch import nn
+
 from emote.proxies import AgentProxy
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.spaces import MDPSpace
+
 
 class GenericAgentProxy(AgentProxy):
     """Observations are dicts that contain multiple input and output keys.
@@ -73,7 +75,9 @@ class GenericAgentProxy(AgentProxy):
             outputs: tuple[any, ...] = self._policy(*tensor_obs_list)
             # we remove element 1 as we don't need the logprobs here
             outputs = outputs[0:1] + outputs[2:]
-            outputs = {key: outputs[i].detach().cpu().numpy() for i, key in enumerate(self.output_keys)}
+            outputs = {
+                key: outputs[i].detach().cpu().numpy() for i, key in enumerate(self.output_keys)
+            }
         else:
             outputs = self._policy(*tensor_obs_list)
             outputs = {key: outputs.detach().cpu().numpy() for key in self.output_keys}

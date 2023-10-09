@@ -8,7 +8,6 @@ import numpy as np
 import torch
 
 from gymnasium.vector import AsyncVectorEnv
-from emote.algorithms.generic_agent_proxy import GenericAgentProxy
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import nn
@@ -17,6 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
 from emote.algorithms.dqn import QLoss, QTarget
+from emote.algorithms.generic_agent_proxy import GenericAgentProxy
 from emote.callbacks.checkpointing import Checkpointer
 from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.logging import TensorboardLogger

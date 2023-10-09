@@ -14,6 +14,7 @@ from emote.callbacks.loss import LossCallback
 from emote.mixins.logging import LoggingMixin
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 
+
 class QTarget(LoggingMixin, Callback):
     def __init__(
         self,
