@@ -17,7 +17,7 @@ from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.nn.gaussian_policy import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_
-from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
+from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 
 def _make_env():

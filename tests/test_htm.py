@@ -11,7 +11,7 @@ from emote.extra.onnx_exporter import OnnxExporter
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
-from emote.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
+from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 
 from .gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
 

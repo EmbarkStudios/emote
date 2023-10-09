@@ -16,7 +16,8 @@ by a Trainer.
 
 """
 
-from . import nn, sac, utils
+from .algorithms import sac
+from . import nn, utils
 from .callback import Callback
 from .trainer import Trainer, WeakReference
 

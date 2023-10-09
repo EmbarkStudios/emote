@@ -6,7 +6,7 @@ from gymnasium.vector import AsyncVectorEnv
 
 from emote.extra.onnx_exporter import OnnxExporter
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
-from emote.sac import GenericAgentProxy
+from emote.algorithms.sac import GenericAgentProxy
 
 from .gym import DictGymWrapper, HitTheMiddle
 

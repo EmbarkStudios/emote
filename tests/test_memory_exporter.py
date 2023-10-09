@@ -14,7 +14,7 @@ from emote.memory.builder import DictObsTable
 from emote.memory.callbacks import MemoryImporterCallback
 from emote.memory.storage import BaseStorage
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
-from emote.sac import FeatureAgentProxy
+from emote.algorithms.sac import FeatureAgentProxy
 
 
 N_HIDDEN = 10

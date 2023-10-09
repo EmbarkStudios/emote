@@ -12,7 +12,7 @@ from emote.callback import Callback
 from emote.callbacks.loss import LossCallback
 from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy
-from emote.sac import soft_update_from_to
+from emote.algorithms.sac import soft_update_from_to
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 from emote.utils.spaces import MDPSpace
@@ -34,6 +34,15 @@ class GenericAgentProxy(AgentProxy):
         output_keys: tuple,
         spaces: MDPSpace | None = None,
     ):
+        r"""Handle multi-input multi-output policy networks.
+
+        Parameters:
+            policy (nn.Module): The neural network policy that takes observations and returns actions.
+            device (torch.device): The device to run the policy on.
+            input_keys (tuple): Keys specifying what fields from the observation to pass to the policy.
+            output_keys (tuple): Keys for the fields in the output dictionary that the policy is responsible for.
+            spaces (MDPSpace, optional): A utility for managing observation and action spaces, for validation.
+        """
         self._policy = policy
         self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self.device = device
@@ -105,6 +114,20 @@ class QTarget(LoggingMixin, Callback):
         data_group: str = "default",
         roll_length: int = 1,
     ):
+        """Compute and manage the target Q-values for Q-Learning algorithms.
+
+        Parameters:
+            q_net (nn.Module): The Q-network.
+            target_q_net (nn.Module, optional): The target Q-network. Defaults to a copy of q_net.
+            gamma (float): Discount factor for future rewards.
+            reward_scale (float): A scaling factor for the reward values.
+            target_q_tau (float): A soft update rate for target Q-network.
+            data_group (str): The data group to store the computed Q-target.
+            roll_length (int): The rollout length for a batch.
+
+        Methods:
+            begin_batch: Compute the target Q-value for a batch.
+        """
         super().__init__()
         self._order = 1  # this is to ensure that the data_group is prepared beforehand
         self.data_group = data_group
@@ -115,7 +138,6 @@ class QTarget(LoggingMixin, Callback):
         self.rollout_len = roll_length
         self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len)
 
-    # TODO: Luc: Compare Q target estimation with Torch example
     def begin_batch(self, next_observation, rewards, masks):
         next_q_values = self.target_q_net(**next_observation)
         max_next_q_values = next_q_values.max(1)[0].unsqueeze(1)
@@ -133,6 +155,18 @@ class QTarget(LoggingMixin, Callback):
 
 
 class QLoss(LossCallback):
+    """Compute the Q-Learning loss.
+
+    Parameters:
+        name (str): Identifier for this loss component.
+        q (nn.Module): The Q-network.
+        opt (optim.Optimizer): The optimizer to use for the Q-network.
+        lr_schedule (optim.lr_scheduler._LRScheduler, optional): Learning rate scheduler.
+        max_grad_norm (float): Maximum gradient norm for gradient clipping.
+        data_group (str): The data group from which to pull data.
+        log_per_param_weights (bool): Whether to log weights per parameter.
+        log_per_param_grads (bool): Whether to log gradients per parameter.
+    """
     def __init__(
         self,
         *,
@@ -158,7 +192,6 @@ class QLoss(LossCallback):
         self.q_network = q
         self.mse = nn.MSELoss()
 
-    # TODO: Luc: Move this and sac to emote/algorithms/
     def loss(self, observation, q_target, actions):
         indices = actions.to(torch.int64)
         q_value = self.q_network(**observation).gather(1, indices)

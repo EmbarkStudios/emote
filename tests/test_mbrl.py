@@ -14,7 +14,7 @@ from emote.models.callbacks import LossProgressCheck, ModelBasedCollector, Model
 from emote.models.ensemble import EnsembleOfGaussian
 from emote.models.model import DynamicModel
 from emote.models.model_env import ModelEnv
-from emote.sac import FeatureAgentProxy
+from emote.algorithms.sac import FeatureAgentProxy
 from emote.utils.spaces import MDPSpace
 
 

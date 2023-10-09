@@ -9,7 +9,7 @@ import torch
 from gymnasium.vector import AsyncVectorEnv
 from emote.callbacks.checkpointing import Checkpointer
 from emote.callbacks.generic import BackPropStepsTerminator
-from emote.dqn import GenericAgentProxy, QLoss, QTarget
+from emote.algorithms.dqn import GenericAgentProxy, QLoss, QTarget
 from emote.mixins.logging import LoggingMixin
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 from tests.gym import DictGymWrapper
@@ -295,7 +295,9 @@ if __name__ == "__main__":
     trainer = Trainer(all_callbacks, dataloader)
     trainer.train()
 
-# TODO: Luc: Check the loss
-# TODO: Luc: We changed a lot of things here, translate this from scratch in erupt!
+# TODO: Luc: Get the mps device to work
+# TODO: Luc: Run black, linter etc
+
+
 
 # pdm run python experiments/gym/train_dqn_cartpole.py

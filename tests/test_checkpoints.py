@@ -11,7 +11,7 @@ from emote import Trainer
 from emote.callbacks.checkpointing import Checkpointer, CheckpointLoader
 from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.loss import LossCallback
-from emote.sac import QLoss
+from emote.algorithms.sac import QLoss
 from emote.trainer import TrainingShutdownException
 
 

@@ -8,7 +8,7 @@ from emote import Trainer
 from emote.callback import BatchCallback
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
-from emote.sac import FeatureAgentProxy
+from emote.algorithms.sac import FeatureAgentProxy
 from emote.trainer import TrainingShutdownException
 
 

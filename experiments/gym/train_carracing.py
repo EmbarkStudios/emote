@@ -26,7 +26,7 @@ from emote.nn import GaussianPolicyHead
 from emote.nn.action_value_mlp import SharedEncoderActionValueNet
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 from emote.nn.layers import Conv2dEncoder
-from emote.sac import AlphaLoss, PolicyLoss, QLoss, QTarget, VisionAgentProxy
+from emote.algorithms.sac import AlphaLoss, PolicyLoss, QLoss, QTarget, VisionAgentProxy
 
 
 class Policy(nn.Module):

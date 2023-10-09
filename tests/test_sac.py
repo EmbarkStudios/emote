@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from emote.nn.gaussian_policy import GaussianMlpPolicy
-from emote.sac import AlphaLoss, FeatureAgentProxy
+from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy
 from emote.typing import DictObservation, EpisodeState
 
 
