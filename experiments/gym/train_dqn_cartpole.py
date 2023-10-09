@@ -195,8 +195,9 @@ if __name__ == "__main__":
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--hidden-dims", type=list, default=[128, 128])
     parser.add_argument("--lr", type=float, default=1e-3, help="The learning rate")
-    parser.add_argument("--device", type=str, default="cpu")
-    parser.add_argument("--bp-steps", type=int, default=500_000)
+    parser.add_argument("--device", type=str, default="mps")
+    parser.add_argument("--bp-steps", type=int, default=50_000)
+    parser.add_argument("--memory-size", type=int, default=50_000)
     parser.add_argument("--export-memory", action="store_true", default=False)
     parser.add_argument("--use-wandb", action="store_true")
     parser.add_argument(
@@ -211,7 +212,7 @@ if __name__ == "__main__":
     device = torch.device(arg.device)
 
     input_shapes = {k: v.shape for k, v in env.dict_space.state.spaces.items()}
-    output_shapes = {"actions": (1,)}  # TODO: Luc: retrieve this from env
+    output_shapes = {"actions": env.dict_space.actions.shape}  
     action_shape = output_shapes["actions"]
     spaces = MDPSpace(
         rewards=None,
@@ -228,7 +229,7 @@ if __name__ == "__main__":
 
     memory_proxy, dataloader = create_memory(
         space=spaces,
-        memory_size=50_000,
+        memory_size=arg.memory_size,
         len_rollout=arg.rollout_length,
         batch_size=arg.batch_size,
         data_group="default",
@@ -246,9 +247,11 @@ if __name__ == "__main__":
             experiment_root_path=arg.log_dir,
             min_time_per_export=0,
         )
+
+    num_actions = env.action_space.nvec[0]
         
-    online_q_net = QNet(num_obs, 2, arg.hidden_dims)  # TODO: Luc: How can we softcode this and line below?
-    target_q_net = QNet(num_obs, 2, arg.hidden_dims)
+    online_q_net = QNet(num_obs, num_actions, arg.hidden_dims)  
+    target_q_net = QNet(num_obs, num_actions, arg.hidden_dims)
     policy = DQNPolicy(online_q_net)
 
     online_q_net = online_q_net.to(device)
