@@ -49,6 +49,7 @@ class GenericAgentProxy(AgentProxy):
         self.output_keys = output_keys
         self._spaces = spaces
 
+    # TODO: Luc: Check the output transformation, whether everything is as it should be
     def __call__(self, observations: dict[AgentId, DictObservation]) -> dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
@@ -123,6 +124,7 @@ class QTarget(LoggingMixin, Callback):
         self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len)
         self.step_counter = 0
 
+    # TODO: Luc: Compare Q target estimation with Torch example
     def begin_batch(self, next_observation, rewards):
         next_q_values = self.target_q_net(**next_observation)
         max_next_q_values = next_q_values.max(1)[0].unsqueeze(1)
@@ -137,7 +139,6 @@ class QTarget(LoggingMixin, Callback):
         self.step_counter += 1
         if self.step_counter % 500 == 0 and self.step_counter > 0:
             self.target_q_net = copy.deepcopy(self.q_net)
-            print("Updated target network at step ", self.step_counter)
 
         # soft_update_from_to(self.q_net, self.target_q_net, self.tau)
 
@@ -182,6 +183,8 @@ class QLoss(LossCallback):
 
     # TODO: Luc: Move this and sac to emote/algorithms/
 
+    # TODO: Luc: Check whether this is properly implemented
+    # TODO: Luc: Properly implement the epsilon schedule
     def loss(self, observation, q_target, actions):
         indices = actions.to(torch.int64)
         indices = indices.argmax(dim=1).unsqueeze(1)

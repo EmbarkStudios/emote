@@ -1,4 +1,5 @@
 import argparse
+import math
 import random
 import time
 
@@ -58,28 +59,30 @@ class QNet(nn.Module):
         return self.network(obs)
 
 class DQNPolicy(nn.Module):
-    def __init__(self, q_net, epsilon=1.0):
+    def __init__(self, 
+                 q_net, 
+                 epsilon_range=[1.0, 0.05], 
+                 epsilon_decay_duration=10_000):
         super(DQNPolicy, self).__init__()
         self.q_net = q_net
-        self.epsilon = epsilon
-        self.epsilon_peaked = False
 
-        # TODO: Luc: This is hacky, just test it for testings sake
+        self.initial_epsilon = epsilon_range[0]
+        self.target_epsilon = epsilon_range[1]
+        self.step_count = 0
+        self.epsilon_target_duration = epsilon_decay_duration
 
     # Returns the index of the chosen action
     def forward(self, state):
         with torch.no_grad():
-            if not self.epsilon_peaked:
-                self.epsilon -= 0.000005
-                if self.epsilon <= 0.05:
-                    print("Epsilon peaked")
-                    self.epsilon_peaked = True
+            epsilon = self.target_epsilon + (self.initial_epsilon - self.target_epsilon) * \
+              math.exp(-1. * self.step_count / self.epsilon_decay_duration)
+
             q_values = self.q_net(state)  # Shape should be (num_envs, action_dim)
             num_envs, action_dim = q_values.shape
             actions = []
 
             for i in range(num_envs):
-                if np.random.rand() < self.epsilon:
+                if np.random.rand() < epsilon:
                     action_idx = random.randint(0, action_dim - 1)
                 else:
                     action_idx = q_values[i].argmax().item()
