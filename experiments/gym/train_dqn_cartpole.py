@@ -55,12 +55,11 @@ class QNet(nn.Module):
     def forward(self, obs):
         return self.network(obs)
 
+
 class DQNPolicy(nn.Module):
-    def __init__(self, 
-                 q_net, 
-                 epsilon_range=[0.9, 0.05], 
-                 epsilon_decay_duration=10_000,
-                 log_epsilon=True):
+    def __init__(
+        self, q_net, epsilon_range=[0.9, 0.05], epsilon_decay_duration=10_000, log_epsilon=True
+    ):
         super(DQNPolicy, self).__init__()
         self.q_net = q_net
 
@@ -73,13 +72,18 @@ class DQNPolicy(nn.Module):
     # Returns the index of the chosen action
     def forward(self, state):
         with torch.no_grad():
-            epsilon = self.target_epsilon + (self.initial_epsilon - self.target_epsilon) * \
-              math.exp(-1. * self.step_count / self.epsilon_decay_duration)
+            epsilon = self.target_epsilon + (self.initial_epsilon - self.target_epsilon) * math.exp(
+                -1.0 * self.step_count / self.epsilon_decay_duration
+            )
 
             self.step_count += 1
-            if self.step_count % 50_000 == 0 and self.log_epsilon and epsilon > self.target_epsilon + 0.01:
+            if (
+                self.step_count % 50_000 == 0
+                and self.log_epsilon
+                and epsilon > self.target_epsilon + 0.01
+            ):
                 print("Epsilon: ", epsilon)
-              
+
             q_values = self.q_net(state)  # Shape should be (num_envs, action_dim)
             num_envs, action_dim = q_values.shape
             actions = []
@@ -91,6 +95,7 @@ class DQNPolicy(nn.Module):
                     action_idx = q_values[i].argmax().item()
                 actions.append(action_idx)
             return actions
+
 
 def create_memory(
     space: MDPSpace,
@@ -130,6 +135,7 @@ def create_memory(
         data_group=data_group,
     )
     return memory_proxy, data_loader
+
 
 def create_complementary_callbacks(
     args,
@@ -211,16 +217,13 @@ if __name__ == "__main__":
     device = torch.device(arg.device)
 
     input_shapes = {k: v.shape for k, v in env.dict_space.state.spaces.items()}
-    output_shapes = {"actions": env.dict_space.actions.shape}  
+    output_shapes = {"actions": env.dict_space.actions.shape}
     action_shape = output_shapes["actions"]
     spaces = MDPSpace(
         rewards=None,
         actions=BoxSpace(dtype=np.float32, shape=action_shape),
         state=DictSpace(
-            spaces={
-                k: BoxSpace(dtype=np.float32, shape=tuple(v))
-                for k, v in input_shapes.items()
-            }
+            spaces={k: BoxSpace(dtype=np.float32, shape=tuple(v)) for k, v in input_shapes.items()}
         ),
     )
     num_actions = spaces.actions.shape[0]
@@ -248,8 +251,8 @@ if __name__ == "__main__":
         )
 
     num_actions = env.action_space.nvec[0]
-        
-    online_q_net = QNet(num_obs, num_actions, arg.hidden_dims)  
+
+    online_q_net = QNet(num_obs, num_actions, arg.hidden_dims)
     target_q_net = QNet(num_obs, num_actions, arg.hidden_dims)
     policy = DQNPolicy(online_q_net)
 
