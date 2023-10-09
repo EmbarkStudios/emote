@@ -25,7 +25,7 @@ class GenericAgentProxy(AgentProxy):
         device: torch.device,
         input_keys: tuple,
         output_keys: tuple,
-        uses_logprobs: bool = False,
+        uses_logprobs: bool = True,
         spaces: MDPSpace | None = None,
     ):
         r"""Handle multi-input multi-output policy networks.
