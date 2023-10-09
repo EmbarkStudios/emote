@@ -30,6 +30,7 @@ class DictGymWrapper(VectorEnvWrapper):
             DictSpace({"obs": BoxSpace(os.dtype, os.shape)}),
         )
         self.counter = 0
+        self.rewards = []
 
     def render(self):
         self.env.envs[0].render()
@@ -65,10 +66,12 @@ class DictGymWrapper(VectorEnvWrapper):
                 completed_episode_rewards.append(self._episode_rewards[env_id])
                 self._agent_ids[env_id] = new_agent
                 if env_id == 0:
+                    self.rewards.append(self._episode_rewards[env_id])
                     self.counter += 1
                     if self.counter % 1000 == 0:
                         print("Episode: ", self.counter)
-                        print(f"Episode reward: {self._episode_rewards[env_id]}")
+                        print(f"Episode reward: {sum(self.rewards) / len(self.rewards)}")
+                        self.rewards = []
                     
                 self._episode_rewards[env_id] = 0.0
 

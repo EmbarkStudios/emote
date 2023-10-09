@@ -49,7 +49,6 @@ class GenericAgentProxy(AgentProxy):
         self.output_keys = output_keys
         self._spaces = spaces
 
-    # TODO: Luc: Check the output transformation, whether everything is as it should be
     def __call__(self, observations: dict[AgentId, DictObservation]) -> dict[AgentId, DictResponse]:
         """Runs the policy and returns the actions."""
         # The network takes observations of size batch x obs for each observation space.
@@ -71,6 +70,7 @@ class GenericAgentProxy(AgentProxy):
                 shape = (np_obs.shape[0],) + self._spaces.state.spaces[input_key].shape
                 if shape != np_obs.shape:
                     np_obs = np.reshape(np_obs, shape)
+                
 
             tensor_obs = torch.tensor(np_obs).to(self.device)
             index = self.input_keys.index(input_key)
@@ -109,7 +109,7 @@ class QTarget(LoggingMixin, Callback):
         target_q_net: Optional[nn.Module] = None,
         gamma: float = 0.99,
         reward_scale: float = 1.0,
-        # target_q_tau: float = 0.005,
+        target_q_tau: float = 0.005,
         data_group: str = "default",
         roll_length: int = 1,
     ):
@@ -119,15 +119,17 @@ class QTarget(LoggingMixin, Callback):
         self.q_net = q_net
         self.target_q_net = copy.deepcopy(q_net) if target_q_net is None else target_q_net
         self.reward_scale = reward_scale
-        # self.tau = target_q_tau
+        self.tau = target_q_tau
         self.rollout_len = roll_length
         self.gamma_matrix = make_gamma_matrix(gamma, self.rollout_len)
         self.step_counter = 0
 
     # TODO: Luc: Compare Q target estimation with Torch example
-    def begin_batch(self, next_observation, rewards):
+    def begin_batch(self, next_observation, rewards, masks):
         next_q_values = self.target_q_net(**next_observation)
         max_next_q_values = next_q_values.max(1)[0].unsqueeze(1)
+        last_step_masks = split_rollouts(masks, self.rollout_len)[:, -1]
+        max_next_q_values = torch.multiply(max_next_q_values, last_step_masks)
         scaled_reward = self.reward_scale * rewards
         scaled_rewards = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
         q_target = discount(scaled_rewards, max_next_q_values, self.gamma_matrix).detach()
@@ -136,11 +138,11 @@ class QTarget(LoggingMixin, Callback):
     
     def end_batch(self):
         super().end_batch()
-        self.step_counter += 1
-        if self.step_counter % 500 == 0 and self.step_counter > 0:
-            self.target_q_net = copy.deepcopy(self.q_net)
+        # self.step_counter += 1
+        # if self.step_counter % 500 == 0 and self.step_counter > 0:
+        #     self.target_q_net = copy.deepcopy(self.q_net)
 
-        # soft_update_from_to(self.q_net, self.target_q_net, self.tau)
+        soft_update_from_to(self.q_net, self.target_q_net, self.tau)
 
 
 class QLoss(LossCallback):

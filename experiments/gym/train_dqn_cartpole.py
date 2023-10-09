@@ -20,10 +20,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
 from emote.callbacks.logging import TensorboardLogger
-from emote.callbacks.testing import FinalLossTestCheck
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
-from emote.nn.gaussian_policy import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_
 
 import numpy as np
@@ -61,15 +59,15 @@ class QNet(nn.Module):
 class DQNPolicy(nn.Module):
     def __init__(self, 
                  q_net, 
-                 epsilon_range=[1.0, 0.05], 
-                 epsilon_decay_duration=10_000):
+                 epsilon_range=[1.0, 0.01], 
+                 epsilon_decay_duration=50_000):
         super(DQNPolicy, self).__init__()
         self.q_net = q_net
 
         self.initial_epsilon = epsilon_range[0]
         self.target_epsilon = epsilon_range[1]
         self.step_count = 0
-        self.epsilon_target_duration = epsilon_decay_duration
+        self.epsilon_decay_duration = epsilon_decay_duration
 
     # Returns the index of the chosen action
     def forward(self, state):
@@ -77,6 +75,10 @@ class DQNPolicy(nn.Module):
             epsilon = self.target_epsilon + (self.initial_epsilon - self.target_epsilon) * \
               math.exp(-1. * self.step_count / self.epsilon_decay_duration)
 
+            self.step_count += 1
+            if self.step_count % 50_000 == 0:
+                print("Epsilon: ", epsilon)
+              
             q_values = self.q_net(state)  # Shape should be (num_envs, action_dim)
             num_envs, action_dim = q_values.shape
             actions = []
@@ -188,9 +190,9 @@ if __name__ == "__main__":
     parser.add_argument("--log-dir", type=str, default="./mllogs/emote/cartpole")
     parser.add_argument("--num-envs", type=int, default=4)
     parser.add_argument("--rollout-length", type=int, default=5)
-    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--hidden-dims", type=list, default=[128, 128])
-    parser.add_argument("--lr", type=float, default=1e-4, help="The learning rate")
+    parser.add_argument("--lr", type=float, default=1e-2, help="The learning rate")
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--bp-steps", type=int, default=500_000)
     parser.add_argument("--export-memory", action="store_true", default=False)
@@ -221,7 +223,6 @@ if __name__ == "__main__":
     )
     num_actions = spaces.actions.shape[0]
     num_obs = list(spaces.state.spaces.values())[0].shape[0]
-
 
     memory_proxy, dataloader = create_memory(
         space=spaces,
@@ -293,5 +294,6 @@ if __name__ == "__main__":
     trainer.train()
 
 # TODO: Luc: Check the loss
-# TODO: Luc: Use an epsilon schedule
 # TODO: Luc: We changed a lot of things here, translate this from scratch in erupt!
+
+# pdm run python experiments/gym/train_dqn_cartpole.py
