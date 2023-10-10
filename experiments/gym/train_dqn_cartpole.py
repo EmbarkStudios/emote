@@ -221,7 +221,7 @@ def main(args):
     if args.export_memory:
         from emote.memory.memory import MemoryExporterProxyWrapper
 
-        gym_memory_proxy = MemoryExporterProxyWrapper(
+        memory_proxy = MemoryExporterProxyWrapper(
             memory=memory_proxy,
             target_memory_name=dataloader.data_group,
             inf_steps_per_memory_export=10_000,
