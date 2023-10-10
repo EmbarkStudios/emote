@@ -17,7 +17,8 @@ reinforcement learning
 [![Docs status](https://img.shields.io/badge/Docs-latest-brightgreen)](https://embarkstudios.github.io/emote/)
 [![pdm-managed](https://img.shields.io/badge/PDM-v2.5.6-blueviolet)](https://pdm.fming.dev)
 
-🚧 This project is very much **work in progress and not yet ready for production use.** 🚧
+> [!WARNING]
+> 🚧 This project is very much **work in progress and not yet ready for production use.** 🚧
 
 </div>
 
