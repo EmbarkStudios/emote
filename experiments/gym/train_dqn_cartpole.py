@@ -190,6 +190,7 @@ def create_complementary_callbacks(
 
     return callbacks
 
+
 def main(args):
     env = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(args.num_envs)]))
     device = torch.device(args.device)
