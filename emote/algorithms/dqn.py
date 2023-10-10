@@ -59,6 +59,8 @@ class QTarget(LoggingMixin, Callback):
         scaled_reward = self.reward_scale * rewards
         scaled_rewards = split_rollouts(scaled_reward, self.rollout_len).squeeze(2)
         q_target = discount(scaled_rewards, max_next_q_values, self.gamma_matrix).detach()
+        self.log_scalar("training/scaled_reward", torch.mean(scaled_reward))
+        self.log_scalar("training/q_target", torch.mean(q_target))
 
         return {self.data_group: {"q_target": q_target}}
 
