@@ -162,7 +162,7 @@ def create_actor_critic_agents(
     policy = policy.to(device)
     policy_proxy = FeatureAgentProxy(policy, device=device)
     ln_alpha = torch.tensor(np.log(init_alpha), requires_grad=True, device=device)
-    return q1, q2, policy_proxy, ln_alpha
+    return q1, q2, policy_proxy, ln_alpha, policy
 
 
 def create_train_callbacks(
@@ -354,7 +354,7 @@ if __name__ == "__main__":
         )
 
     """Creating the actor (policy) and critics (the two Q-functions) agents """
-    qnet1, qnet2, agent_proxy, ln_alpha = create_actor_critic_agents(
+    qnet1, qnet2, agent_proxy, ln_alpha, policy = create_actor_critic_agents(
         args=input_args, num_actions=number_of_actions, num_obs=number_of_obs
     )
 
@@ -363,6 +363,7 @@ if __name__ == "__main__":
         args=input_args,
         q1=qnet1,
         q2=qnet2,
+        policy=policy,
         policy_proxy=agent_proxy,
         ln_alpha=ln_alpha,
         env=gym_wrapper,
