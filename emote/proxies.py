@@ -4,11 +4,13 @@ Proxies are bridges between the world the agent acts in and the algorithm traini
 
 
 from __future__ import annotations
+
 from typing import Dict, Protocol
 
-from torch import nn
-import torch
 import numpy as np
+import torch
+
+from torch import nn
 
 from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
 from emote.utils.spaces import MDPSpace

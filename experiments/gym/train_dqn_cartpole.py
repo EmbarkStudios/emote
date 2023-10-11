@@ -16,13 +16,13 @@ from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
 from emote.algorithms.dqn import QLoss, QTarget
-from emote.proxies import GenericAgentProxy
 from emote.callbacks.checkpointing import Checkpointer
 from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.logging import TensorboardLogger
 from emote.memory import MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsNStepTable
 from emote.mixins.logging import LoggingMixin
+from emote.proxies import GenericAgentProxy
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 
