@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from gymnasium.vector import AsyncVectorEnv
-from tests.gym import DictGymWrapper
+from tests.gym.dict_gym_wrapper import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import nn
 from torch.optim import Adam
@@ -267,7 +267,7 @@ def main(args):
             env,
             agent_proxy,
             memory_proxy,
-            warmup_steps=args.batch_size * 2000,
+            warmup_steps=args.batch_size * 200,
             render=False,
         ),
     ]

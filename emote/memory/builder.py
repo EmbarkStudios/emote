@@ -183,7 +183,7 @@ class DictObsNStepTable(DictTable):
                     ),
                 ]
             )
-
+        
         super().__init__(
             use_terminal_column=use_terminal_column,
             maxlen=maxlen,
