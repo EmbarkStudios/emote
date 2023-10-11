@@ -8,13 +8,13 @@ from gymnasium.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
 
 from emote import Trainer
+from emote.algorithms.sac import FeatureAgentProxy
 from emote.callbacks import BackPropStepsTerminator
 from emote.memory import MemoryExporterProxyWrapper, MemoryLoader, TableMemoryProxy
 from emote.memory.builder import DictObsTable
 from emote.memory.callbacks import MemoryImporterCallback
 from emote.memory.storage import BaseStorage
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
-from emote.sac import FeatureAgentProxy
 
 
 N_HIDDEN = 10
