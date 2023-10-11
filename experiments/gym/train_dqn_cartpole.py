@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
 from emote.algorithms.dqn import QLoss, QTarget
-from emote.algorithms.generic_agent_proxy import GenericAgentProxy
+from emote.proxies import GenericAgentProxy
 from emote.callbacks.checkpointing import Checkpointer
 from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.logging import TensorboardLogger

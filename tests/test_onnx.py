@@ -4,7 +4,7 @@ import torch
 
 from gymnasium.vector import AsyncVectorEnv
 
-from emote.algorithms.generic_agent_proxy import GenericAgentProxy
+from emote.proxies import GenericAgentProxy
 from emote.extra.onnx_exporter import OnnxExporter
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
 
