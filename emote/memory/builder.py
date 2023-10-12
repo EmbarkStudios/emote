@@ -7,6 +7,9 @@ from typing import List
 import numpy as np
 import torch
 
+from emote.memory.coverage_based_strategy import CoverageBasedSampleStrategy
+from emote.memory.strategy import SampleStrategy
+
 from ..utils import MDPSpace
 from .adaptors import DictObsAdaptor, TerminalAdaptor
 from .column import Column, TagColumn, VirtualColumn
@@ -25,6 +28,7 @@ class DictTable(ArrayTable):
         columns: List[Column],
         maxlen: int,
         length_key="actions",
+        sampler: SampleStrategy = UniformSampleStrategy(),
         device: torch.device,
     ):
         adaptors = [DictObsAdaptor(obs_keys)]
@@ -41,7 +45,7 @@ class DictTable(ArrayTable):
         super().__init__(
             columns=columns,
             maxlen=maxlen,
-            sampler=UniformSampleStrategy(),
+            sampler=sampler,
             ejector=FifoEjectionStrategy(),
             length_key=length_key,
             adaptors=adaptors,
@@ -64,6 +68,7 @@ class DictObsTable(DictTable):
         device: torch.device,
         dones_dtype=bool,
         masks_dtype=np.float32,
+        sampler: SampleStrategy = UniformSampleStrategy(),
     ):
         if spaces.rewards is not None:
             reward_column = Column(
@@ -118,6 +123,7 @@ class DictObsTable(DictTable):
             maxlen=maxlen,
             columns=columns,
             obs_keys=obs_keys,
+            sampler=sampler,
             device=device,
         )
 
@@ -134,6 +140,7 @@ class DictObsNStepTable(DictTable):
         spaces: MDPSpace,
         use_terminal_column: bool,
         maxlen: int,
+        sampler: SampleStrategy = UniformSampleStrategy(),
         device: torch.device,
     ):
         if spaces.rewards is not None:
@@ -189,5 +196,6 @@ class DictObsNStepTable(DictTable):
             maxlen=maxlen,
             columns=columns,
             obs_keys=obs_keys,
+            sampler=sampler,
             device=device,
         )

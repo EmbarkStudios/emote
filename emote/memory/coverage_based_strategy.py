@@ -29,7 +29,7 @@ class CoverageBasedStrategy(Strategy):
     def track(self, identity: int, sequence_length: int):
         self._dirty = True
         self._identities[identity] = sequence_length
-        self._sample_count[identity] = self.sample_count.get(identity, 0)
+        self._sample_count[identity] = self._sample_count.get(identity, 0)
 
     def forget(self, identity: int):
         self._dirty = True
@@ -41,7 +41,7 @@ class CoverageBasedStrategy(Strategy):
         original_prios = np.array(tuple(self._identities.values())) / sum(self._identities.values())
         self._ids = np.array(tuple(self._identities.keys()), dtype=np.int64)
         
-        sample_prios = np.array([1 / (self.sample_count[id] + 1) ** self._alpha for id in self._ids])
+        sample_prios = np.array([1 / (self._sample_count[id] + 1) ** self._alpha for id in self._ids])
         combined_prios = original_prios * sample_prios  
         
         sum_prios = sum(combined_prios)

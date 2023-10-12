@@ -205,6 +205,7 @@ def main(args):
             spaces={k: BoxSpace(dtype=np.float32, shape=tuple(v)) for k, v in input_shapes.items()}
         ),
     )
+    print(spaces)
     num_actions = spaces.actions.shape[0]
     num_obs = list(spaces.state.spaces.values())[0].shape[0]
 
