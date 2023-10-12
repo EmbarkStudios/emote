@@ -8,8 +8,8 @@ import numpy as np
 import torch
 
 from gymnasium.vector import AsyncVectorEnv
-from tests.gym.dict_gym_wrapper import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
+from tests.gym.dict_gym_wrapper import DictGymWrapper
 from torch import nn
 from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter

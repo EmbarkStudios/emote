@@ -13,18 +13,18 @@ from .strategy import EjectionStrategy, SampleStrategy, Strategy
 
 
 class CoverageBasedStrategy(Strategy):
-    """A sampler intended to sample based on coverage of experiences, 
-    favoring less-visited states. This base class can be used for implementing 
+    """A sampler intended to sample based on coverage of experiences,
+    favoring less-visited states. This base class can be used for implementing
     various coverage-based sampling strategies."""
 
-    def __init__(self):
+    def __init__(self, alpha=0.5):
         super().__init__()
         self._identities = {}
         self._sample_count = {}
         self._ids = []
         self._prios = []
         self._dirty = False
-        self._alpha = 0.5
+        self._alpha = alpha
 
     def track(self, identity: int, sequence_length: int):
         self._dirty = True
@@ -40,13 +40,14 @@ class CoverageBasedStrategy(Strategy):
         self._dirty = False
         original_prios = np.array(tuple(self._identities.values())) / sum(self._identities.values())
         self._ids = np.array(tuple(self._identities.keys()), dtype=np.int64)
-        
-        sample_prios = np.array([1 / (self._sample_count[id] + 1) ** self._alpha for id in self._ids])
-        combined_prios = original_prios * sample_prios  
-        
-        sum_prios = sum(combined_prios)
-        self._prios = combined_prios / sum_prios  
 
+        sample_prios = np.array(
+            [1 / (self._sample_count[id] + 1) ** self._alpha for id in self._ids]
+        )
+        combined_prios = original_prios * sample_prios
+
+        sum_prios = sum(combined_prios)
+        self._prios = combined_prios / sum_prios
 
     def post_import(self):
         original_ids = self._identities.copy()
@@ -66,7 +67,10 @@ class CoverageBasedStrategy(Strategy):
 
 
 class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
-    def sample(self, count: int, transition_count: int, alpha=0.5) -> Sequence[SamplePoint]:
+    def __init__(self, alpha=0.5):
+        super().__init__(alpha=alpha)
+
+    def sample(self, count: int, transition_count: int) -> Sequence[SamplePoint]:
         if self._dirty:
             self._rebalance()
 
@@ -77,6 +81,7 @@ class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
         r = random.random
         tm1 = transition_count - 1
         for k in identities:
+            self._sample_count[k] += 1
             offset = int(r() * (ids[k] - tm1))
             app((k, offset, offset + transition_count))
 

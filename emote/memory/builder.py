@@ -7,7 +7,6 @@ from typing import List
 import numpy as np
 import torch
 
-from emote.memory.coverage_based_strategy import CoverageBasedSampleStrategy
 from emote.memory.strategy import SampleStrategy
 
 from ..utils import MDPSpace
@@ -190,7 +189,7 @@ class DictObsNStepTable(DictTable):
                     ),
                 ]
             )
-        
+
         super().__init__(
             use_terminal_column=use_terminal_column,
             maxlen=maxlen,
