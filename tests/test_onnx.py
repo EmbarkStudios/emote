@@ -6,7 +6,7 @@ from gymnasium.vector import AsyncVectorEnv
 
 from emote.extra.onnx_exporter import OnnxExporter
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
-from emote.sac import GenericAgentProxy
+from emote.proxies import GenericAgentProxy
 
 from .gym import DictGymWrapper, HitTheMiddle
 
@@ -22,7 +22,7 @@ def exporter(tmpdir):
     policy = Policy(2, 1, [N_HIDDEN, N_HIDDEN])
 
     input_keys = list(env.dict_space.state.spaces.keys())
-    agent_proxy = GenericAgentProxy(policy, device, input_keys, ["actions"])
+    agent_proxy = GenericAgentProxy(policy, device, input_keys, True, ["actions"])
 
     exporter = OnnxExporter(
         agent_proxy,

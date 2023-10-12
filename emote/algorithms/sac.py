@@ -12,8 +12,7 @@ from torch import nn, optim
 from emote.callback import Callback
 from emote.callbacks.loss import LossCallback
 from emote.mixins.logging import LoggingMixin
-from emote.proxies import AgentProxy
-from emote.typing import AgentId, DictObservation, DictResponse, EpisodeState
+from emote.proxies import AgentProxy, GenericAgentProxy
 from emote.utils.deprecated import deprecated
 from emote.utils.gamma_matrix import discount, make_gamma_matrix, split_rollouts
 from emote.utils.spaces import MDPSpace
@@ -353,93 +352,6 @@ class AgentProxyWrapper:
     @property
     def policy(self):
         return self._inner.policy
-
-
-class GenericAgentProxy(AgentProxy):
-    """Observations are dicts that contain multiple input and output keys.
-
-    For example, we might have a policy that takes in both "obs" and
-    "goal" and outputs "actions". In order to be able to properly
-    invoke the network it is the responsibility of this proxy to
-    collate the inputs and decollate the outputs per agent.
-    """
-
-    def __init__(
-        self,
-        policy: nn.Module,
-        device: torch.device,
-        input_keys: tuple,
-        output_keys: tuple,
-        spaces: MDPSpace | None = None,
-    ):
-        """Create a new proxy.
-
-        :param policy (nn.Module): The policy to invoke
-        :param device (torch.device): The device to run on
-        :param input_keys (tuple): The names of the inputs to the policy
-        :param output_keys (tuple): The names of the outputs of the policy
-        :param spaces (MDPSpace): The spaces of the inputs and outputs
-        """
-        self._policy = policy
-        self._end_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
-        self.device = device
-        self.input_keys = input_keys
-        self.output_keys = output_keys
-        self._spaces = spaces
-
-    def __call__(self, observations: dict[AgentId, DictObservation]) -> dict[AgentId, DictResponse]:
-        """Runs the policy and returns the actions."""
-        # The network takes observations of size batch x obs for each observation space.
-        assert len(observations) > 0, "Observations must not be empty."
-
-        active_agents = [
-            agent_id
-            for agent_id, obs in observations.items()
-            if obs.episode_state not in self._end_states
-        ]
-
-        tensor_obs_list = [None] * len(self.input_keys)
-        for input_key in self.input_keys:
-            np_obs = np.array(
-                [observations[agent_id].array_data[input_key] for agent_id in active_agents]
-            )
-
-            if self._spaces is not None:
-                shape = (np_obs.shape[0],) + self._spaces.state.spaces[input_key].shape
-                if shape != np_obs.shape:
-                    np_obs = np.reshape(np_obs, shape)
-
-            tensor_obs = torch.tensor(np_obs).to(self.device)
-            index = self.input_keys.index(input_key)
-            tensor_obs_list[index] = tensor_obs
-
-        outputs: tuple[any, ...] = self._policy(*tensor_obs_list)
-        # we remove element 1 as we don't need the logprobs here
-        outputs = outputs[0:1] + outputs[2:]
-
-        outputs = {key: outputs[i].detach().cpu().numpy() for i, key in enumerate(self.output_keys)}
-
-        agent_data = [
-            (agent_id, DictResponse(list_data={}, scalar_data={})) for agent_id in active_agents
-        ]
-
-        for i, (_, response) in enumerate(agent_data):
-            for k, data in outputs.items():
-                response.list_data[k] = data[i]
-
-        return dict(agent_data)
-
-    @property
-    def input_names(self):
-        return self.input_keys
-
-    @property
-    def output_names(self):
-        return self.output_keys
-
-    @property
-    def policy(self):
-        return self._policy
 
 
 class FeatureAgentProxy(GenericAgentProxy):
