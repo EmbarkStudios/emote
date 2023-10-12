@@ -192,7 +192,7 @@ class ArrayTable:
         with self._lock:
             with self._timers.scope("points"):
                 sample_points = self._sampler.sample(count, sequence_length)
-                
+
             result = self._execute_gather(count, sequence_length, sample_points)
         for adaptor in self.adaptors:
             result = adaptor(result, count, sequence_length)
