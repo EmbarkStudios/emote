@@ -363,6 +363,7 @@ if __name__ == "__main__":
         args=input_args,
         q1=qnet1,
         q2=qnet2,
+        policy=agent_proxy.policy,
         policy_proxy=agent_proxy,
         ln_alpha=ln_alpha,
         env=gym_wrapper,

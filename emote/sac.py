@@ -220,6 +220,9 @@ class PolicyLoss(LossCallback):
 
     def loss(self, observation):
         p_sample, logp_pi = self.policy(**observation)
+        #print("action, log_pi: ",  p_sample.shape, logp_pi.shape)
+        #if p_sample.grad is not None:
+        #    print(p_sample.grad)
         if self.q2 is not None:
             q_pi_min = torch.min(self.q1(p_sample, **observation), self.q2(p_sample, **observation))
         else:
