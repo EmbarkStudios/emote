@@ -8,8 +8,8 @@ import numpy as np
 import torch
 
 from gymnasium.vector import AsyncVectorEnv
+from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
-from tests.gym.dict_gym_wrapper import DictGymWrapper
 from torch import nn
 from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
@@ -205,7 +205,6 @@ def main(args):
             spaces={k: BoxSpace(dtype=np.float32, shape=tuple(v)) for k, v in input_shapes.items()}
         ),
     )
-    print(spaces)
     num_actions = spaces.actions.shape[0]
     num_obs = list(spaces.state.spaces.values())[0].shape[0]
 
@@ -268,7 +267,7 @@ def main(args):
             env,
             agent_proxy,
             memory_proxy,
-            warmup_steps=args.batch_size * 200,
+            warmup_steps=args.batch_size * 2000,
             render=False,
         ),
     ]

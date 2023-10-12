@@ -169,17 +169,6 @@ class ArrayTable:
 
                 for identity, start, end in sample_points:
                     try:
-                        # print("-"*80)
-                        # print(key)
-                        # print("Identity: ", identity)
-                        # print("Start", start, "end", end)
-                        # print("Idx", idx, "next_idx", next_idx)
-                        # print("Shape: ", output_store[idx:next_idx].shape)
-                        # print("---")
-                        # print("actual: ", store[identity][start:end])
-                        # print("Shape: ", store[identity][start:end].shape)
-                        # TODO: Luc: We want to know where store['next_obs'][start:end] is being filled
-                        # That means we need to know where self._data is filled other than initially
                         output_store[idx:next_idx] = store[identity][start:end]
                         idx = next_idx
 
@@ -203,6 +192,7 @@ class ArrayTable:
         with self._lock:
             with self._timers.scope("points"):
                 sample_points = self._sampler.sample(count, sequence_length)
+                
             result = self._execute_gather(count, sequence_length, sample_points)
         for adaptor in self.adaptors:
             result = adaptor(result, count, sequence_length)
