@@ -1,5 +1,5 @@
 """
-Test to validate the behavior of `CoverageBasedSampleStrategy`.Tests how the `alpha` parameter influences the sampling distribution between two waves of data.
+Test to validate the behavior of `CoverageBasedSampleStrategy`. Tests how the `alpha` parameter influences the sampling distribution between two waves of data.
 
 Wave 1 and Wave 2: Two separate sets of data points added to the memory. After each wave, a series of samples are drawn from the memory.
 
