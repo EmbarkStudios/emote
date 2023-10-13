@@ -49,6 +49,7 @@ class CoverageBasedStrategy(Strategy):
         sum_prios = sum(combined_prios)
         self._prios = combined_prios / sum_prios
 
+
 class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
     def __init__(self, alpha=0.5):
         super().__init__(alpha=alpha)
@@ -69,6 +70,7 @@ class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
             app((k, offset, offset + transition_count))
 
         return output
+
 
 class CoverageBasedEjectionStrategy(CoverageBasedStrategy, EjectionStrategy):
     def sample(self, count: int) -> Sequence[int]:
