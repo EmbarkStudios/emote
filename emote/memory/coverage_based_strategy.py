@@ -49,23 +49,6 @@ class CoverageBasedStrategy(Strategy):
         sum_prios = sum(combined_prios)
         self._prios = combined_prios / sum_prios
 
-    def post_import(self):
-        original_ids = self._identities.copy()
-        for id, length in original_ids.items():
-            self.forget(id)
-            if id >= 0:
-                self.track(-abs(id) - 1, length)
-
-        # rebalance here so we don't have to start by rebalancing all imported
-        # memory on the first sample. Not required and the rebalance should be
-        # cheap, but this makes the initial state of memory be clean.
-        if self._dirty:
-            self._rebalance()
-
-
-################################################################################
-
-
 class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
     def __init__(self, alpha=0.5):
         super().__init__(alpha=alpha)
@@ -86,10 +69,6 @@ class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
             app((k, offset, offset + transition_count))
 
         return output
-
-
-################################################################################
-
 
 class CoverageBasedEjectionStrategy(CoverageBasedStrategy, EjectionStrategy):
     def sample(self, count: int) -> Sequence[int]:
