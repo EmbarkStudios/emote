@@ -27,9 +27,12 @@ class DictTable(ArrayTable):
         columns: List[Column],
         maxlen: int,
         length_key="actions",
-        sampler: SampleStrategy = UniformSampleStrategy(),
+        sampler: SampleStrategy = None,
         device: torch.device,
     ):
+        if sampler is None:
+            sampler = UniformSampleStrategy()
+
         adaptors = [DictObsAdaptor(obs_keys)]
         if use_terminal_column:
             columns.append(
@@ -67,7 +70,7 @@ class DictObsTable(DictTable):
         device: torch.device,
         dones_dtype=bool,
         masks_dtype=np.float32,
-        sampler: SampleStrategy = UniformSampleStrategy(),
+        sampler: SampleStrategy = None,
     ):
         if spaces.rewards is not None:
             reward_column = Column(
@@ -117,6 +120,9 @@ class DictObsTable(DictTable):
                 ]
             )
 
+        if sampler is None:
+            sampler = UniformSampleStrategy()
+
         super().__init__(
             use_terminal_column=use_terminal_column,
             maxlen=maxlen,
@@ -139,7 +145,7 @@ class DictObsNStepTable(DictTable):
         spaces: MDPSpace,
         use_terminal_column: bool,
         maxlen: int,
-        sampler: SampleStrategy = UniformSampleStrategy(),
+        sampler: SampleStrategy = None,
         device: torch.device,
     ):
         if spaces.rewards is not None:
@@ -189,6 +195,9 @@ class DictObsNStepTable(DictTable):
                     ),
                 ]
             )
+
+        if sampler is None:
+            sampler = UniformSampleStrategy()
 
         super().__init__(
             use_terminal_column=use_terminal_column,
