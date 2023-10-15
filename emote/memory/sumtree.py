@@ -11,6 +11,10 @@ class SumTree:
         self._propagate_change(tree_idx, change)
         self.data_pointer = (self.data_pointer + 1) % self.capacity
 
+    def remove(self, identity):
+        tree_idx = identity + self.capacity - 1
+        self.update(identity, 0)
+
     def sample(self, value):
         return self._retrieve(0, value)
 
