@@ -37,6 +37,8 @@ class CoverageBasedStrategy(Strategy):
         del self._sample_count[identity]
 
     def _rebalance(self):
+        import time
+        start = time.time()
         self._dirty = False
         original_prios = np.array(tuple(self._identities.values())) / sum(self._identities.values())
         self._ids = np.array(tuple(self._identities.keys()), dtype=np.int64)
@@ -48,6 +50,7 @@ class CoverageBasedStrategy(Strategy):
 
         sum_prios = sum(combined_prios)
         self._prios = combined_prios / sum_prios
+        print(f"Rebalancing took {time.time() - start} seconds")
 
 
 class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
