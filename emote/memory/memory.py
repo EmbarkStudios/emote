@@ -299,6 +299,10 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         self.log_scalar("training/inf_per_sec", cycle_infs / cycle_time)
         self.log_scalar("episode/completed", self.completed_episodes)
 
+        for name, (mean, var) in self._timers.stats().items():
+            self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/mean", mean)
+            self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/var", var)
+
         if "episode/reward" in self.windowed_scalar:
             rewards = self.windowed_scalar["episode/reward"]
             average_reward = sum(rewards) / len(rewards)
@@ -413,11 +417,12 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
             with self._scopes.scope("export"):
                 self._inner.store(export_path)
 
+            elapsed_time = time.time() - start_time
+            logging.info(f"Memory export completed in {elapsed_time} seconds")
+
             for name, (mean, var) in self._scopes.stats().items():
                 self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/mean", mean)
                 self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/var", var)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Memory export completed in {elapsed_time} seconds")
 
 
 class MemoryLoader:
