@@ -154,6 +154,9 @@ class TableMemoryProxy:
         for agent_id, sequence in completed_episodes.items():
             self._table.add_sequence(agent_id, sequence)
 
+    def timers(self):
+        return self._table._timers
+
 
 class MemoryProxyWrapper:
     """Base class for memory proxy wrappers.
@@ -299,7 +302,7 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         self.log_scalar("training/inf_per_sec", cycle_infs / cycle_time)
         self.log_scalar("episode/completed", self.completed_episodes)
 
-        for name, (mean, var) in self._timers.stats().items():
+        for name, (mean, var) in self.timers().stats().items():
             self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/mean", mean)
             self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/var", var)
 
