@@ -267,16 +267,46 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default="cartpole", help="The name of the experiment")
-    parser.add_argument("--log-dir", type=str, default="./mllogs/emote/cartpole", help="Directory where logs will be stored.")
-    parser.add_argument("--num-envs", type=int, default=4, help="Number of environments to run in parallel")
-    parser.add_argument("--rollout-length", type=int, default=1, help="The length of each rollout. Refers to the number of steps or time-steps taken during a simulated trajectory or rollout when estimating the expected return of a policy.")
+    parser.add_argument(
+        "--log-dir",
+        type=str,
+        default="./mllogs/emote/cartpole",
+        help="Directory where logs will be stored.",
+    )
+    parser.add_argument(
+        "--num-envs", type=int, default=4, help="Number of environments to run in parallel"
+    )
+    parser.add_argument(
+        "--rollout-length",
+        type=int,
+        default=1,
+        help="The length of each rollout. Refers to the number of steps or time-steps taken during a simulated trajectory or rollout when estimating the expected return of a policy.",
+    )
     parser.add_argument("--batch-size", type=int, default=128, help="Size of each training batch")
-    parser.add_argument("--hidden-dims", type=list, default=[128, 128], help="The hidden dimensions of the network")
-    parser.add_argument("--lr", type=float, default=1e-3, help="The learning rate", help="Learning Rate")
-    parser.add_argument("--device", type=str, default="cpu", help="Device to run the model on, e.g. cpu or cuda:0")
-    parser.add_argument("--bp-steps", type=int, default=50_000, help="Number of backpropagation steps until the training run is finished")
-    parser.add_argument("--memory-size", type=int, default=50_000, help="The size of the replay buffer. More complex environments require larger replay buffers, as they need more data to learn. Given that cartpole is a simple environment, a replay buffer of size 50_000 is sufficient.")
-    parser.add_argument("--export-memory", action="store_true", default=False, help="Whether to export the memory")
+    parser.add_argument(
+        "--hidden-dims", type=list, default=[128, 128], help="The hidden dimensions of the network"
+    )
+    parser.add_argument(
+        "--lr", type=float, default=1e-3, help="The learning rate", help="Learning Rate"
+    )
+    parser.add_argument(
+        "--device", type=str, default="cpu", help="Device to run the model on, e.g. cpu or cuda:0"
+    )
+    parser.add_argument(
+        "--bp-steps",
+        type=int,
+        default=50_000,
+        help="Number of backpropagation steps until the training run is finished",
+    )
+    parser.add_argument(
+        "--memory-size",
+        type=int,
+        default=50_000,
+        help="The size of the replay buffer. More complex environments require larger replay buffers, as they need more data to learn. Given that cartpole is a simple environment, a replay buffer of size 50_000 is sufficient.",
+    )
+    parser.add_argument(
+        "--export-memory", action="store_true", default=False, help="Whether to export the memory"
+    )
     args = parser.parse_args()
     main(args)
 
