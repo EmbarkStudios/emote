@@ -27,6 +27,12 @@ from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 
 def _make_env():
+    """ Create the environment for the experiment, the environment is created in a thunk to avoid
+        creating multiple environments in the same process. This is important for the vectorized
+        environments.
+        Returns:
+            (Callable[[], gym.Env]): The thunk that creates the environment
+    """
     def _thunk():
         env = gym.make("CartPole-v1")
         env = gym.wrappers.FrameStack(env, 3)
@@ -37,6 +43,17 @@ def _make_env():
 
 
 class QNet(nn.Module):
+    """
+    Q-Network class for Q-Learning. It takes observations and returns Q-values for actions.
+
+    Attributes:
+        network (nn.Sequential): Neural network for computing Q-values.
+
+    Args:
+        num_obs (int): Dimensionality of observations.
+        num_actions (int): Number of possible actions.
+        hidden_dims (list of int): Dimensions of hidden layers.
+    """
     def __init__(self, num_obs, num_actions, hidden_dims):
         super(QNet, self).__init__()
 
@@ -53,10 +70,36 @@ class QNet(nn.Module):
         self.network = nn.Sequential(*layers)
 
     def forward(self, obs):
+        """
+        Forward pass for the Q-Network.
+
+        Args:
+            obs (Tensor): Observations.
+
+        Returns:
+            Tensor: Q-values for each action.
+        """
         return self.network(obs)
 
 
 class DQNPolicy(nn.Module):
+    """
+    DQN Policy class to handle action selection with epsilon-greedy strategy.
+
+    Attributes:
+        q_net (QNet): Q-Network to evaluate Q-values.
+        initial_epsilon (float): Initial value of epsilon in epsilon-greedy.
+        target_epsilon (float): Target value of epsilon.
+        step_count (int): Counter for steps taken.
+        epsilon_decay_duration (int): Steps over which epsilon is decayed.
+        log_epsilon (bool): Flag to log epsilon values.
+
+    Args:
+        q_net (QNet): Q-Network.
+        epsilon_range (list of float): Initial and target epsilon for epsilon-greedy.
+        epsilon_decay_duration (int): Number of steps over which epsilon will decay.
+        log_epsilon (bool): Whether to log epsilon values or not.
+    """
     def __init__(
         self, q_net, epsilon_range=[0.9, 0.05], epsilon_decay_duration=10_000, log_epsilon=True
     ):
@@ -71,6 +114,15 @@ class DQNPolicy(nn.Module):
 
     # Returns the index of the chosen action
     def forward(self, state):
+        """
+        Forward pass for action selection.
+
+        Args:
+            state (Tensor): The state observations.
+
+        Returns:
+            Tensor: Indices of chosen actions for each environment.
+        """
         with torch.no_grad():
             epsilon = self.target_epsilon + (self.initial_epsilon - self.target_epsilon) * math.exp(
                 -1.0 * self.step_count / self.epsilon_decay_duration
@@ -120,13 +172,16 @@ def create_memory(
         (tuple[TableMemoryProxy, MemoryLoader]): A proxy for the memory and a dataloader
 
     """
+    # Create the memory
     table = DictObsNStepTable(
         spaces=space,
         use_terminal_column=False,
         maxlen=memory_size,
         device=device,
     )
+    # The memory proxy is used to upload the data to the memory
     memory_proxy = TableMemoryProxy(table=table, use_terminal=False)
+    # The data loader is used to sample the data from the memory
     data_loader = MemoryLoader(
         table=table,
         rollout_count=batch_size // len_rollout,
@@ -152,16 +207,20 @@ def create_complementary_callbacks(
         Returns:
             (list[Callback]): the full list of callbacks for the training
     """
+    # The logger callback is used for logging the training progress
     logger = TensorboardLogger(
         logged_cbs,
         SummaryWriter(log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())),
         100,
     )
 
+    # Terminates the training after a certain number of backprop steps
     bp_step_terminator = BackPropStepsTerminator(bp_steps=args.bp_steps)
+    # Callbacks to be used during training
     callbacks = logged_cbs + [logger, bp_step_terminator]
 
     if cbs_name_to_checkpoint:
+        # The checkpointer exports the model weights to the checkpoint directory
         checkpointer = Checkpointer(
             callbacks=[
                 cb for cb in logged_cbs if hasattr(cb, "name") and cb.name in cbs_name_to_checkpoint
@@ -175,9 +234,11 @@ def create_complementary_callbacks(
 
 
 def main(args):
+    # Create the environment
     env = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(args.num_envs)]))
     device = torch.device(args.device)
 
+    # Define the space in order to create the memory
     input_shapes = {k: v.shape for k, v in env.dict_space.state.spaces.items()}
     output_shapes = {"actions": env.dict_space.actions.shape}
     action_shape = output_shapes["actions"]
@@ -214,14 +275,17 @@ def main(args):
 
     num_actions = env.action_space.nvec[0]
 
+    # Create our two networks and the policy
     online_q_net = QNet(num_obs, num_actions, args.hidden_dims)
     target_q_net = QNet(num_obs, num_actions, args.hidden_dims)
     policy = DQNPolicy(online_q_net)
 
+    # Move them to the device
     online_q_net = online_q_net.to(device)
     target_q_net = target_q_net.to(device)
     policy = policy.to(device)
 
+    # The agent proxy is responsible for inference
     agent_proxy = GenericAgentProxy(
         policy,
         device=device,
@@ -231,6 +295,7 @@ def main(args):
         spaces=spaces,
     )
 
+    # Create an optimizer for the online network
     optimizers = [
         QLoss(
             name="q1",
@@ -241,11 +306,13 @@ def main(args):
     ]
 
     train_callbacks = optimizers + [
+        # The QTarget callback is responsible for updating the target network
         QTarget(
             q_net=online_q_net,
             target_q_net=target_q_net,
             roll_length=args.rollout_length,
         ),
+        # The collector is responsible for the interaction with the environment
         ThreadedGymCollector(
             env,
             agent_proxy,
@@ -260,9 +327,9 @@ def main(args):
         train_callbacks,
     )
 
+    # The trainer acts as the main callback, responsible for calling all other callbacks
     trainer = Trainer(all_callbacks, dataloader)
     trainer.train()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -287,7 +354,7 @@ if __name__ == "__main__":
         "--hidden-dims", type=list, default=[128, 128], help="The hidden dimensions of the network"
     )
     parser.add_argument(
-        "--lr", type=float, default=1e-3, help="The learning rate", help="Learning Rate"
+        "--lr", type=float, default=1e-3, help="Learning Rate"
     )
     parser.add_argument(
         "--device", type=str, default="cpu", help="Device to run the model on, e.g. cpu or cuda:0"
