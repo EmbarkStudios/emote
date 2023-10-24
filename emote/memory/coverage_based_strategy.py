@@ -19,9 +19,13 @@ class CoverageBasedStrategy(Strategy):
 
     def __init__(self, alpha=0.5):
         super().__init__()
-        self._identities = {}
-        self._sample_count = {}
-        self._ids = []
+        # int (identity) -> int (sequence length)
+        self._identities = {}  
+        # int (identity) -> int (amount of time sampled)
+        self._sample_count = {}  
+        # np.array (identities)
+        self._ids = []  
+        # np.array (priorities)
         self._prios = []
         self._dirty = False
         self._alpha = alpha
@@ -71,6 +75,7 @@ class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
         return output
 
 
+############################################################################################################
 
 class CoverageBasedStrategy2(Strategy):
     """A sampler intended to sample based on coverage of experiences,
@@ -79,9 +84,13 @@ class CoverageBasedStrategy2(Strategy):
 
     def __init__(self, alpha=0.5):
         super().__init__()
-        self._identities = {}
-        self._sample_count = {}
-        self._ids = []
+        # int (identity) -> int (sequence length)
+        self._identities = {}  
+        # int (identity) -> int (amount of time sampled)
+        self._sample_count = {}  
+        # np.array (identities)
+        self._ids = []  
+        # np.array (priorities)
         self._prios = []
         self._dirty = False
         self._alpha = alpha
@@ -98,17 +107,15 @@ class CoverageBasedStrategy2(Strategy):
 
     def _rebalance(self):
         self._dirty = False
-        original_prios = np.array(tuple(self._identities.values())) / sum(self._identities.values())
-        self._ids = np.array(tuple(self._identities.keys()), dtype=np.int64)
 
-        sample_prios = np.array(
-            [1 / (self._sample_count[id] + 1) ** self._alpha for id in self._ids]
-        )
+        original_prios = np.array(list(self._identities.values())) / np.sum(list(self._identities.values()))
+        self._ids = np.array(list(self._identities.keys()), dtype=np.int64)
+        
+        sample_counts = np.array([self._sample_count[id] for id in self._ids])
+        sample_prios = 1 / (sample_counts + 1) ** self._alpha
         combined_prios = original_prios * sample_prios
-
-        sum_prios = sum(combined_prios)
-        self._prios = combined_prios / sum_prios
-
+        
+        self._prios = combined_prios / np.sum(combined_prios)
 
 class CoverageBasedSampleStrategy2(CoverageBasedStrategy2, SampleStrategy):
     def __init__(self, alpha=0.5):
@@ -119,16 +126,13 @@ class CoverageBasedSampleStrategy2(CoverageBasedStrategy2, SampleStrategy):
             self._rebalance()
 
         identities = np.random.choice(self._ids, size=count, p=self._prios)
-        ids = self._identities
-        output = []
-        app = output.append
-        r = random.random
-        tm1 = transition_count - 1
-        for k in identities:
-            self._sample_count[k] += 1
-            offset = int(r() * (ids[k] - tm1))
-            app((k, offset, offset + transition_count))
-        return output
+        offsets = np.random.randint(0, np.array([self._identities[k] - transition_count + 1 for k in identities]), size=count)
+
+        self._sample_count.update(dict.fromkeys(identities, 0))
+        self._sample_count.update({k: self._sample_count[k] + 1 for k in identities})
+        
+        end_offsets = offsets + transition_count
+        return list(zip(identities, offsets, end_offsets))
 
 ############################################################################################################
 class CoverageBasedEjectionStrategy(CoverageBasedStrategy, EjectionStrategy):

@@ -1,4 +1,5 @@
 import random
+import time
 from timeit import timeit
 from typing import List
 import numpy as np
@@ -40,18 +41,23 @@ def create_sample_space() -> MDPSpace:
 
 
 def populate_table(table: DictObsNStepTable):
-    sequence_len = random.randint(SEQUENCE_RANGE[0], SEQUENCE_RANGE[1])
+    total_time_taken = 0.0
     for i in range(START, END):
+        sequence_len = SEQUENCE_RANGE[0] + (i % (SEQUENCE_RANGE[1] - SEQUENCE_RANGE[0]))
         sequence = {
             "obs": [np.random.rand(2) for _ in range(sequence_len + 1)],
             "actions": [np.random.rand(1) for _ in range(sequence_len)],
             "rewards": [np.random.rand(1) for _ in range(sequence_len)],
         }
 
+        start_time = time.time()
         table.add_sequence(
             identity=i,
             sequence=sequence,
         )
+        total_time_taken += time.time() - start_time
+    return total_time_taken
+
 
 
 def sample_table(table: DictObsNStepTable):
@@ -80,16 +86,17 @@ def test_table_operations():
         table = create_table(mode)
 
         # Benchmarking add_sequence
-        time_taken = timeit(lambda: populate_table(table), number=1)
-        print(f"Time taken to add: {time_taken} seconds")
+        time_taken = populate_table(table)
+        print(f"Time taken to populate: {time_taken} seconds")
 
         # Benchmarking _rebalance
         time_taken = timeit(lambda: table._sampler._rebalance(), number=1)
         print(f"Time taken to rebalance: {time_taken} seconds")
 
         # Benchmarking sample
-        time_taken = timeit(lambda: sample_table(table), number=1)
+        time_taken = timeit(lambda: sample_table(table), number=100)
         print(f"Time taken to sample: {time_taken} seconds")
+        assert False
 
     assert False
 
