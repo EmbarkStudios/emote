@@ -12,7 +12,7 @@ from .core_types import SamplePoint
 from .strategy import EjectionStrategy, SampleStrategy, Strategy
 
 
-class CoverageBasedStrategy(Strategy):
+class CoverageBasedStrategy2(Strategy):
     """A sampler intended to sample based on coverage of experiences,
     favoring less-visited states. This base class can be used for implementing
     various coverage-based sampling strategies."""
@@ -22,6 +22,7 @@ class CoverageBasedStrategy(Strategy):
         self._identities = {}
         self._sample_count = {}
         self._ids = []
+        self._episode_lengths = []
         self._prios = []
         self._dirty = False
         self._alpha = alpha
@@ -38,7 +39,7 @@ class CoverageBasedStrategy(Strategy):
 
     def _rebalance(self):
         self._dirty = False
-        original_prios = np.array(tuple(self._identities.values())) / sum(self._identities.values())
+        original_prios = self._episode_lengths / sum(self._identities.values())
         self._ids = np.array(tuple(self._identities.keys()), dtype=np.int64)
 
         sample_prios = np.array(
@@ -50,7 +51,7 @@ class CoverageBasedStrategy(Strategy):
         self._prios = combined_prios / sum_prios
 
 
-class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
+class CoverageBasedSampleStrategy2(CoverageBasedStrategy2, SampleStrategy):
     def __init__(self, alpha=0.5):
         super().__init__(alpha=alpha)
 
@@ -58,7 +59,19 @@ class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
         if self._dirty:
             self._rebalance()
 
+        self._ids_with_lengths = np.array(tuple(self._identities.items()))
+
         identities = np.random.choice(self._ids, size=count, p=self._prios)
+        random_offsets = np.random.rand(count) * 
+        offsets = np.zeros(identities.shape, dtype=np.int64)
+        offsets_2 = np.zeros(identities.shape, dtype=np.int64)
+
+        return list(zip(identities, offsets, offsets_2))
+
+        
+        
+        return [] # TODO: 
+
         ids = self._identities
         output = []
         app = output.append
@@ -71,7 +84,7 @@ class CoverageBasedSampleStrategy(CoverageBasedStrategy, SampleStrategy):
         return output
 
 
-class CoverageBasedEjectionStrategy(CoverageBasedStrategy, EjectionStrategy):
+class CoverageBasedEjectionStrategy(CoverageBasedStrategy2, EjectionStrategy):
     def sample(self, count: int) -> Sequence[int]:
         if self._dirty:
             self._rebalance()
