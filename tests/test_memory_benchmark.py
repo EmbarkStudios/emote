@@ -3,7 +3,7 @@ from timeit import timeit
 from typing import List
 import numpy as np
 from emote.memory.builder import DictObsNStepTable
-from emote.memory.coverage_based_strategy import CoverageBasedSampleStrategy
+from emote.memory.coverage_based_strategy import CoverageBasedSampleStrategy, CoverageBasedSampleStrategy2
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 # The episode lengths that are possible
@@ -59,13 +59,16 @@ def sample_table(table: DictObsNStepTable):
         table.sample(COUNT, SEQUENCE_LEN)
 
 
-def create_table(): 
+def create_table(mode: int): 
     space = create_sample_space()
+    sampler = CoverageBasedSampleStrategy()
+    if mode == 1:
+        sampler = CoverageBasedSampleStrategy2()
     table = DictObsNStepTable(
         spaces=space,
         use_terminal_column=False,
         maxlen=MAXLEN,  
-        sampler=CoverageBasedSampleStrategy(),
+        sampler=sampler,
         device="cpu",
     )
     return table
@@ -74,7 +77,7 @@ def create_table():
 def test_table_operations():
     for mode in MODES: 
         print(f"Mode: {mode}")
-        table = create_table()
+        table = create_table(mode)
 
         # Benchmarking add_sequence
         time_taken = timeit(lambda: populate_table(table), number=1)
