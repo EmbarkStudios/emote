@@ -126,11 +126,12 @@ class CoverageBasedSampleStrategy2(CoverageBasedStrategy2, SampleStrategy):
             self._rebalance()
 
         identities = np.random.choice(self._ids, size=count, p=self._prios)
-        offsets = np.random.randint(0, np.array([self._identities[k] - transition_count + 1 for k in identities]), size=count)
+        transitions = np.array([self._identities[id] for id in identities])
+        offsets = np.random.randint(0, transitions - transition_count + 1)
 
-        self._sample_count.update(dict.fromkeys(identities, 0))
-        self._sample_count.update({k: self._sample_count[k] + 1 for k in identities})
-        
+        for identity in identities:
+            self._sample_count[identity] += 1
+
         end_offsets = offsets + transition_count
         return list(zip(identities, offsets, end_offsets))
 

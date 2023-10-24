@@ -11,18 +11,16 @@ from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 SEQUENCE_RANGE = [10, 1000] 
 
 # The length of the sequences we add to the table
-SEQUENCE_LEN = 16  
+SEQUENCE_LEN = 5
 
 # The amount of times we sample from the table
-SAMPLE_AMOUNT = 8  
+SAMPLE_AMOUNT = 1_000
 
 # The amount of sequences to sample from the table
 COUNT = 64  
 
-# The amount of sequences to add to the table, 
-# start is the starting identity, end is the ending identity
-START = 0
-END = 1_000  
+# The amount of sequences to add to the table
+SEQUENCES_TO_ADD = 1_000  
 
 # The maximum size of the table itself
 MAXLEN = 500_000
@@ -42,7 +40,7 @@ def create_sample_space() -> MDPSpace:
 
 def populate_table(table: DictObsNStepTable):
     total_time_taken = 0.0
-    for i in range(START, END):
+    for i in range(SEQUENCES_TO_ADD):
         sequence_len = SEQUENCE_RANGE[0] + (i % (SEQUENCE_RANGE[1] - SEQUENCE_RANGE[0]))
         sequence = {
             "obs": [np.random.rand(2) for _ in range(sequence_len + 1)],
@@ -94,9 +92,8 @@ def test_table_operations():
         print(f"Time taken to rebalance: {time_taken} seconds")
 
         # Benchmarking sample
-        time_taken = timeit(lambda: sample_table(table), number=100)
+        time_taken = timeit(lambda: sample_table(table), number=1)
         print(f"Time taken to sample: {time_taken} seconds")
-        assert False
 
     assert False
 
