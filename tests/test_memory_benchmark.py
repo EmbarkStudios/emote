@@ -1,11 +1,35 @@
-import time
+import random
+from timeit import timeit
+from typing import List
 import numpy as np
 from emote.memory.builder import DictObsNStepTable
 from emote.memory.coverage_based_strategy import CoverageBasedSampleStrategy
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
-# TODO: Luc: Make utils with test_memory_sampling.py
-# ---
+# The episode lengths that are possible
+SEQUENCE_RANGE = [10, 1000] 
+
+# The length of the sequences we add to the table
+SEQUENCE_LEN = 16  
+
+# The amount of times we sample from the table
+SAMPLE_AMOUNT = 8  
+
+# The amount of sequences to sample from the table
+COUNT = 64  
+
+# The amount of sequences to add to the table, 
+# start is the starting identity, end is the ending identity
+START = 0
+END = 1_000  
+
+# The maximum size of the table itself
+MAXLEN = 500_000
+
+# The modes we want to test
+MODES = [0, 1]
+
+
 def create_sample_space() -> MDPSpace:
     reward_space = BoxSpace(dtype=np.float32, shape=(1,))
     action_space = BoxSpace(dtype=np.int32, shape=(1,))
@@ -14,8 +38,10 @@ def create_sample_space() -> MDPSpace:
     state_space = DictSpace(spaces=state_space_dict)
     return MDPSpace(rewards=reward_space, actions=action_space, state=state_space)
 
-def populate_table(table: DictObsNStepTable, sequence_len: int, start: int, end: int):
-    for i in range(start, end):
+
+def populate_table(table: DictObsNStepTable):
+    sequence_len = random.randint(SEQUENCE_RANGE[0], SEQUENCE_RANGE[1])
+    for i in range(START, END):
         sequence = {
             "obs": [np.random.rand(2) for _ in range(sequence_len + 1)],
             "actions": [np.random.rand(1) for _ in range(sequence_len)],
@@ -26,44 +52,41 @@ def populate_table(table: DictObsNStepTable, sequence_len: int, start: int, end:
             identity=i,
             sequence=sequence,
         )
-def sample_table(table: DictObsNStepTable, sample_amount: int, count: int, sequence_length: int):
-    for _ in range(sample_amount):
-        table.sample(count, sequence_length)
-# ---
 
-def test_table_operations():
-    sequence_len = 10
-    sample_amount = 50
-    count = 10
-    alpha = 0.5
-    start = 0
-    end = 100
-    device = "cpu"  
-    
+
+def sample_table(table: DictObsNStepTable):
+    for _ in range(SAMPLE_AMOUNT):
+        table.sample(COUNT, SEQUENCE_LEN)
+
+
+def create_table(): 
     space = create_sample_space()
     table = DictObsNStepTable(
         spaces=space,
         use_terminal_column=False,
-        maxlen=500_000,  
-        sampler=CoverageBasedSampleStrategy(alpha=alpha),
-        device=device,
+        maxlen=MAXLEN,  
+        sampler=CoverageBasedSampleStrategy(),
+        device="cpu",
     )
+    return table
 
-    start_time = time.time()
-    populate_table(table, sequence_len, start, end)
-    add_time = time.time() - start_time
-    print(f"Time taken to add: {add_time} seconds")
 
-    # Benchmarking _rebalance
-    start_time = time.time()
-    table._sampler._rebalance()  # Assuming the sampler has been set and the _rebalance method is accessible
-    rebalance_time = time.time() - start_time
-    print(f"Time taken to rebalance: {rebalance_time} seconds")
+def test_table_operations():
+    for mode in MODES: 
+        print(f"Mode: {mode}")
+        table = create_table()
 
-    # Benchmarking sample
-    start_time = time.time()
-    sample_table(table, sample_amount, count, sequence_len)
-    sample_time = time.time() - start_time
-    print(f"Time taken to sample: {sample_time} seconds")
+        # Benchmarking add_sequence
+        time_taken = timeit(lambda: populate_table(table), number=1)
+        print(f"Time taken to add: {time_taken} seconds")
+
+        # Benchmarking _rebalance
+        time_taken = timeit(lambda: table._sampler._rebalance(), number=1)
+        print(f"Time taken to rebalance: {time_taken} seconds")
+
+        # Benchmarking sample
+        time_taken = timeit(lambda: sample_table(table), number=1)
+        print(f"Time taken to sample: {time_taken} seconds")
+
     assert False
 
