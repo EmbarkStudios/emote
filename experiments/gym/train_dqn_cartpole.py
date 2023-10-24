@@ -27,12 +27,13 @@ from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 
 def _make_env():
-    """ Create the environment for the experiment, the environment is created in a thunk to avoid
-        creating multiple environments in the same process. This is important for the vectorized
-        environments.
-        Returns:
-            (Callable[[], gym.Env]): The thunk that creates the environment
+    """Create the environment for the experiment, the environment is created in a thunk to avoid
+    creating multiple environments in the same process. This is important for the vectorized
+    environments.
+    Returns:
+        (Callable[[], gym.Env]): The thunk that creates the environment
     """
+
     def _thunk():
         env = gym.make("CartPole-v1")
         env = gym.wrappers.FrameStack(env, 3)
@@ -54,6 +55,7 @@ class QNet(nn.Module):
         num_actions (int): Number of possible actions.
         hidden_dims (list of int): Dimensions of hidden layers.
     """
+
     def __init__(self, num_obs, num_actions, hidden_dims):
         super(QNet, self).__init__()
 
@@ -100,6 +102,7 @@ class DQNPolicy(nn.Module):
         epsilon_decay_duration (int): Number of steps over which epsilon will decay.
         log_epsilon (bool): Whether to log epsilon values or not.
     """
+
     def __init__(
         self, q_net, epsilon_range=[0.9, 0.05], epsilon_decay_duration=10_000, log_epsilon=True
     ):
@@ -331,6 +334,7 @@ def main(args):
     trainer = Trainer(all_callbacks, dataloader)
     trainer.train()
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default="cartpole", help="The name of the experiment")
@@ -353,9 +357,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--hidden-dims", type=list, default=[128, 128], help="The hidden dimensions of the network"
     )
-    parser.add_argument(
-        "--lr", type=float, default=1e-3, help="Learning Rate"
-    )
+    parser.add_argument("--lr", type=float, default=1e-3, help="Learning Rate")
     parser.add_argument(
         "--device", type=str, default="cpu", help="Device to run the model on, e.g. cpu or cuda:0"
     )
