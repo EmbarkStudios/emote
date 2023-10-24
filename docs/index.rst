@@ -35,6 +35,7 @@ to build other algorithms.
    coding-standard
    📚 Editing documentation <documentation.md>
    🌡 Metrics <metrics.md>
+   🚀 Getting Started <getting_started.md>
 
 .. toctree::
    :maxdepth: 6
@@ -58,6 +59,7 @@ to build other algorithms.
    .. include:: adr/doc.md
    .. include:: documentation.md
    .. include:: metrics.md
+   .. include:: getting_started.md
 
 	  :parser: myst_parser.sphinx_
 
