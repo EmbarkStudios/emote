@@ -463,6 +463,38 @@ class MemoryLoader:
             yield {self.data_group: data, self.size_key: data[self.size_key]}
 
 
+class JointMemoryLoader:
+    """A memory loader capable of loading data from multiple `MemoryLoader`s.
+
+    If a datagroup is specified via the `data_group` param, it will place all loaded data in the specified datagroup,
+    otherwise it will directly return the data fetched from each individual loader.
+    """
+
+    def __init__(self, loaders: list[MemoryLoader], data_group: str | None = None):
+        self._loaders = loaders
+        self._data_group = data_group
+
+    def is_ready(self):
+        return all([loader.is_ready() for loader in self._loaders])
+
+    def __iter__(self):
+        if not self.is_ready():
+            raise Exception(
+                """memory loader(s) in JointMemoryLoader does not have enough data. Check `is_ready()`
+                before trying to iterate over data."""
+            )
+
+        while True:
+            out = {}
+            for loader in self._loaders:
+                out.update(next(iter(loader)))
+
+            if self._data_group is not None:
+                out = {self._data_group: out}
+
+            yield out
+
+
 class MemoryWarmup(Callback):
     """A blocker to ensure memory has data.
 
