@@ -475,7 +475,7 @@ class JointMemoryLoader:
         self._data_group = data_group
 
     def is_ready(self):
-        return all([loader.is_ready() for loader in self._loaders])
+        return all(loader.is_ready() for loader in self._loaders)
 
     def __iter__(self):
         if not self.is_ready():
