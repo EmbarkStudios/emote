@@ -53,18 +53,31 @@ def create_table_from_numpy(
 
 
 if __name__ == "__main__":
-    path_to_mocap_data: str = "/home/ali/data/biped/numpy/walk1_subject1"
+    path_to_mocap_data: str = "/home/ali/data/biped/numpy/forward"
+    path_to_store_buffer: str = "/home/ali/data/biped/replay_buffer/mocap/mocap52"
     preferred_device = torch.device('cpu')
+    minimum_data = 4000
+    action_count = 52
 
     bc_actions = np.load(os.path.join(path_to_mocap_data, 'actions.npy'))
+    if action_count == 52:
+        bc_actions = np.concatenate((bc_actions, np.zeros((bc_actions.shape[0], 1))), 1)
+        print('action shape: ', bc_actions.shape)
+
     bc_observations = np.load(os.path.join(path_to_mocap_data, 'observations.npy'))
 
     print(f"observation size: {bc_observations.shape}, "
           f"action size: {bc_actions.shape}")
 
+    while bc_observations.shape[0] < minimum_data:
+        bc_observations = np.concatenate((bc_observations, bc_observations), axis=0)
+        bc_actions = np.concatenate((bc_actions, bc_actions), axis=0)
+        print(f"observation size: {bc_observations.shape}, "
+              f"action size: {bc_actions.shape}")
+
     memory = create_table_from_numpy(bc_observations, bc_actions, "features", preferred_device)
     print(f"Table contains: {memory.size()} samples")
-    memory.store("/home/ali/data/biped/replay_buffer/mocap/mocap")
+    memory.store(path_to_store_buffer)
     print(f"Memory saved successfully")
 
     batch_size = 3
