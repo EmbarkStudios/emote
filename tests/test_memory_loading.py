@@ -3,7 +3,7 @@ import pytest
 
 from emote.memory.column import Column
 from emote.memory.fifo_strategy import FifoEjectionStrategy
-from emote.memory.memory import JointMemoryLoader, MemoryLoader
+from emote.memory.memory import JointMemoryLoader, JointMemoryLoaderWithDataGroup, MemoryLoader
 from emote.memory.table import ArrayTable
 from emote.memory.uniform_strategy import UniformSampleStrategy
 
@@ -50,7 +50,7 @@ def another_dummy_table():
     return tab
 
 
-def test_joint_memory_loader_no_datagroup(
+def test_joint_memory_loader(
     a_dummy_table: ArrayTable, another_dummy_table: ArrayTable
 ):
     a_loader = MemoryLoader(
@@ -90,7 +90,7 @@ def test_joint_memory_loader_datagroup(a_dummy_table: ArrayTable, another_dummy_
         data_group="another",
     )
 
-    joint_loader = JointMemoryLoader(
+    joint_loader = JointMemoryLoaderWithDataGroup(
         loaders=[a_loader, another_loader], data_group="joint_datagroup"
     )
 

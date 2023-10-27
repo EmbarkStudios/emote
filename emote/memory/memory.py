@@ -464,15 +464,10 @@ class MemoryLoader:
 
 
 class JointMemoryLoader:
-    """A memory loader capable of loading data from multiple `MemoryLoader`s.
+    """A memory loader capable of loading data from multiple `MemoryLoader`s."""
 
-    If a datagroup is specified via the `data_group` param, it will place all loaded data in the specified datagroup,
-    otherwise it will directly return the data fetched from each individual loader.
-    """
-
-    def __init__(self, loaders: list[MemoryLoader], data_group: str | None = None):
+    def __init__(self, loaders: list[MemoryLoader]):
         self._loaders = loaders
-        self._data_group = data_group
 
     def is_ready(self):
         return all(loader.is_ready() for loader in self._loaders)
@@ -489,10 +484,18 @@ class JointMemoryLoader:
             for loader in self._loaders:
                 out.update(next(iter(loader)))
 
-            if self._data_group is not None:
-                out = {self._data_group: out}
-
             yield out
+
+
+class JointMemoryLoaderWithDataGroup(JointMemoryLoader):
+    """A JointMemoryLoader that places its data inside of a user-specified datagroup."""
+
+    def __init__(self, loaders: list[MemoryLoader], data_group: str):
+        super().__init__(loaders)
+        self._data_group = data_group
+
+    def __iter__(self):
+        yield {self._data_group: next(super().__iter__())}
 
 
 class MemoryWarmup(Callback):
