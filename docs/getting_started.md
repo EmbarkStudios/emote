@@ -1,6 +1,6 @@
 # 🔥 Getting Started
 
-In the `/experiments` folder, example runs can be found for different Gymnasium environments.
+In the `/experiments/gym/` folder, example runs can be found for different Gymnasium environments.
 
 For example, you can run the cartpole example using DQN with the following command:
 
