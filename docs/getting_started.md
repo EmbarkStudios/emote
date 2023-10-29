@@ -5,12 +5,12 @@ In the `/experiments` folder, example runs can be found for different Gymnasium 
 For example, you can run the cartpole example using DQN with the following command:
 
 ```python
-pdm run python experiments/train_dqn_cartpole.py
+pdm run python experiments/gym/train_dqn_cartpole.py
 ```
 
 ![Alt Text](cart_pole.gif)
 
-This comes with a lot of predefined arguments, such as the learning rate, the amount of hidden layers, the batch size, etc. You can find all the arguments in the `experiments/train_dqn_cartpole.py` file.
+This comes with a lot of predefined arguments, such as the learning rate, the amount of hidden layers, the batch size, etc. You can find all the arguments in the `experiments/gym/train_dqn_cartpole.py` file.
 
 ## 📊 Tensorboard
 
