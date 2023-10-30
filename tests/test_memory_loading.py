@@ -120,4 +120,4 @@ def test_joint_memory_loader_nonunique_loaders_trigger_exception(a_dummy_table: 
     )
 
     with pytest.raises(Exception, match="JointMemoryLoader"):
-        joint_loader = JointMemoryLoader([loader1, loader2]) # noqa
+        joint_loader = JointMemoryLoader([loader1, loader2])  # noqa
