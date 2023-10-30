@@ -50,9 +50,7 @@ def another_dummy_table():
     return tab
 
 
-def test_joint_memory_loader(
-    a_dummy_table: ArrayTable, another_dummy_table: ArrayTable
-):
+def test_joint_memory_loader(a_dummy_table: ArrayTable, another_dummy_table: ArrayTable):
     a_loader = MemoryLoader(
         table=a_dummy_table,
         rollout_count=1,
@@ -103,3 +101,23 @@ def test_joint_memory_loader_datagroup(a_dummy_table: ArrayTable, another_dummy_
     assert (
         "a" in data and "another" in data
     ), "Expected joint dataloader to actually place data in its datagroup, but it is empty."
+
+
+def test_joint_memory_loader_nonunique_loaders_trigger_exception(a_dummy_table: ArrayTable):
+    loader1 = MemoryLoader(
+        table=a_dummy_table,
+        rollout_count=1,
+        rollout_length=1,
+        size_key="batch_size",
+        data_group="a",
+    )
+    loader2 = MemoryLoader(
+        table=a_dummy_table,
+        rollout_count=1,
+        rollout_length=1,
+        size_key="batch_size",
+        data_group="a",
+    )
+
+    with pytest.raises(Exception, match="JointMemoryLoader"):
+        joint_loader = JointMemoryLoader([loader1, loader2]) # noqa

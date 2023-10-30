@@ -7,6 +7,7 @@ them into episodes before submission into the memory.
 """
 from __future__ import annotations
 
+import collections
 import inspect
 import logging
 import os
@@ -469,6 +470,15 @@ class JointMemoryLoader:
     def __init__(self, loaders: list[MemoryLoader]):
         self._loaders = loaders
 
+        datagroups = (loader.data_group for loader in loaders)
+        counts = collections.Counter(datagroups)
+        counts_over_1 = {k: count for k, count in counts.items() if count > 1}
+        if len(counts_over_1) != 0:
+            raise Exception(
+                f"""JointMemoryLoader was provided MemoryLoaders that share the same datagroup. This will clobber the joint output data and is not allowed.
+                Here is a dict of each datagroup encountered more than once, and its occurance count: {counts_over_1}"""
+            )
+
     def is_ready(self):
         return all(loader.is_ready() for loader in self._loaders)
 
@@ -481,8 +491,10 @@ class JointMemoryLoader:
 
         while True:
             out = {}
+
             for loader in self._loaders:
-                out.update(next(iter(loader)))
+                data = next(iter(loader))
+                out[loader.data_group] = data[loader.data_group]
 
             yield out
 
