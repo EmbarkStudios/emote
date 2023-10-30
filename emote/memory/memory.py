@@ -467,8 +467,9 @@ class MemoryLoader:
 class JointMemoryLoader:
     """A memory loader capable of loading data from multiple `MemoryLoader`s."""
 
-    def __init__(self, loaders: list[MemoryLoader]):
+    def __init__(self, loaders: list[MemoryLoader], size_key: str = "batch_size"):
         self._loaders = loaders
+        self._size_key = size_key
 
         datagroups = (loader.data_group for loader in loaders)
         counts = collections.Counter(datagroups)
@@ -490,11 +491,13 @@ class JointMemoryLoader:
             )
 
         while True:
-            out = {}
+            out = {self._size_key: 0}
 
             for loader in self._loaders:
                 data = next(iter(loader))
                 out[loader.data_group] = data[loader.data_group]
+                # for joint memory loaders we sum up all individual loader sizes
+                out[self._size_key] += data[loader.size_key]
 
             yield out
 
@@ -502,12 +505,15 @@ class JointMemoryLoader:
 class JointMemoryLoaderWithDataGroup(JointMemoryLoader):
     """A JointMemoryLoader that places its data inside of a user-specified datagroup."""
 
-    def __init__(self, loaders: list[MemoryLoader], data_group: str):
-        super().__init__(loaders)
+    def __init__(self, loaders: list[MemoryLoader], data_group: str, size_key: str = "batch_size"):
+        super().__init__(loaders, size_key)
         self._data_group = data_group
 
     def __iter__(self):
-        yield {self._data_group: next(super().__iter__())}
+        data = next(super().__iter__())
+        total_size = data.pop(self._size_key)
+
+        yield {self._data_group: data, self._size_key: total_size}
 
 
 class MemoryWarmup(Callback):
