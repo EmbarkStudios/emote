@@ -471,11 +471,10 @@ class JointMemoryLoader:
         self._loaders = loaders
         self._size_key = size_key
 
-        datagroups = (loader.data_group for loader in loaders)
-        counts = collections.Counter(datagroups)
+        counts = collections.Counter((loader.data_group for loader in loaders))
         counts_over_1 = {k: count for k, count in counts.items() if count > 1}
         if len(counts_over_1) != 0:
-            raise Exception(
+            raise ValueError(
                 f"""JointMemoryLoader was provided MemoryLoaders that share the same datagroup. This will clobber the joint output data and is not allowed.
                 Here is a dict of each datagroup encountered more than once, and its occurance count: {counts_over_1}"""
             )
@@ -485,7 +484,7 @@ class JointMemoryLoader:
 
     def __iter__(self):
         if not self.is_ready():
-            raise Exception(
+            raise RuntimeError(
                 """memory loader(s) in JointMemoryLoader does not have enough data. Check `is_ready()`
                 before trying to iterate over data."""
             )
