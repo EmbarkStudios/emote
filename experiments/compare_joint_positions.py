@@ -58,7 +58,7 @@ def get_data_from_buffer(
 
 
 if __name__ == "__main__":
-    path_to_buffer = "/home/ali/data/biped/replay_buffer/tpos/rl_loader_export"
+    path_to_buffer = "/home/ali/data/biped/replay_buffer/tpos_game/rl_loader_export"
     path_to_mocap = "/home/ali/data/biped/numpy/fixed2"
 
     action_count = 51

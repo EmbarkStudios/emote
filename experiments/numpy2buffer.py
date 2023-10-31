@@ -53,11 +53,11 @@ def create_table_from_numpy(
 
 
 if __name__ == "__main__":
-    path_to_mocap_data: str = "/home/ali/data/biped/numpy/forward"
-    path_to_store_buffer: str = "/home/ali/data/biped/replay_buffer/mocap/mocap52"
+    path_to_mocap_data: str = "/home/ali/data/biped/numpy/mocap_progress"
+    path_to_store_buffer: str = "/home/ali/data/biped/replay_buffer/mocap_progress/progress"
     preferred_device = torch.device('cpu')
     minimum_data = 4000
-    action_count = 52
+    action_count = 51
 
     bc_actions = np.load(os.path.join(path_to_mocap_data, 'actions.npy'))
     if action_count == 52:
