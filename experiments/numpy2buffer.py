@@ -52,12 +52,19 @@ def create_table_from_numpy(
     return table
 
 
+def reduce_samples(observations, actions, skip_sample=1):
+    num_samples = observations.shape[0]
+    idx = np.arange(0, num_samples, skip_sample + 1)
+    return observations[idx], actions[idx]
+
+
 if __name__ == "__main__":
-    path_to_mocap_data: str = "/home/ali/data/biped/numpy/mocap_progress"
-    path_to_store_buffer: str = "/home/ali/data/biped/replay_buffer/mocap_progress/progress"
+    path_to_mocap_data: str = "/home/ali/data/biped/numpy/short_forward"
+    path_to_store_buffer: str = "/home/ali/data/biped/replay_buffer/forward/forward52_15hz"
     preferred_device = torch.device('cpu')
     minimum_data = 4000
-    action_count = 51
+    action_count = 52
+    skip_samples = 1
 
     bc_actions = np.load(os.path.join(path_to_mocap_data, 'actions.npy'))
     if action_count == 52:
@@ -68,6 +75,11 @@ if __name__ == "__main__":
 
     print(f"observation size: {bc_observations.shape}, "
           f"action size: {bc_actions.shape}")
+
+    if skip_samples:
+        bc_observations, bc_actions = reduce_samples(bc_observations, bc_actions, skip_sample=skip_samples)
+        print(f"new observation size: {bc_observations.shape}, "
+              f"new action size: {bc_actions.shape}")
 
     while bc_observations.shape[0] < minimum_data:
         bc_observations = np.concatenate((bc_observations, bc_observations), axis=0)
