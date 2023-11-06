@@ -1,63 +1,81 @@
-import os
-
 import numpy as np
 import torch
-
+import argparse
+import os
 from emote.memory.builder import DictObsNStepTable
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
-memory_path = "/home/ali/data/biped/replay_buffer/amp5/"
-data_group = "rl_batch"
-action_size = 51
-input_shapes = {
-    "features": {
-        "shape": [252]
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path-to-buffer", type=str, default="/home/ali/data/biped/replay_buffer/")
+    parser.add_argument("--path-to-save", type=str, default="/home/ali/data/biped/figure/")
+    parser.add_argument("--sequence-length", type=int, default=300)
+    parser.add_argument("--min-samples", type=int, default=300)
+
+    arg = parser.parse_args()
+
+    memory_path = arg.path_to_buffer
+    path_to_save = arg.path_to_save
+
+    seq_length = arg.sequence_length
+    minimum_samples = arg.min_samples
+
+    observation_key = 'features'
+    max_tries = 10
+
+    action_size = 51
+    input_shapes = {
+        "features": {
+            "shape": [252]
+        }
     }
-}
-device = torch.device('cpu')
-batch_size = 1
-rollout_length = 1
-memory_max_length = 300_000
+    device = torch.device('cpu')
+    memory_max_length = 100_000
 
-state_spaces = {
-    k: BoxSpace(dtype=np.float32, shape=tuple(v["shape"]))
-    for k, v in input_shapes.items()
-}
-input_spaces = MDPSpace(
-    rewards=None,
-    actions=BoxSpace(dtype=np.float32, shape=(action_size,)),
-    state=DictSpace(state_spaces),
-)
+    state_spaces = {
+        k: BoxSpace(dtype=np.float32, shape=tuple(v["shape"]))
+        for k, v in input_shapes.items()
+    }
 
-table = DictObsNStepTable(
-    spaces=input_spaces,
-    use_terminal_column=True,
-    maxlen=memory_max_length,
-    device=device,
-)
-restore_path = os.path.join(
-    memory_path, f"{data_group}_export"
-)
-print("restore_path: ", restore_path)
-table.restore(restore_path)
-print(f"the size of the table is: {table.size()}")
+    input_spaces = MDPSpace(
+        rewards=None,
+        actions=BoxSpace(dtype=np.float32, shape=(action_size,)),
+        state=DictSpace(state_spaces),
+    )
 
-seq_length = 200
+    table = DictObsNStepTable(
+        spaces=input_spaces,
+        use_terminal_column=True,
+        maxlen=memory_max_length,
+        device=device,
+    )
 
-samples = table.sample(count=1, sequence_length=seq_length)
-features = samples['observation']['features']
-actions = samples['actions']
-for i in range(5):
-    samples = table.sample(count=1, sequence_length=seq_length)
-    features_to_add = samples['observation']['features']
-    actions_to_add = samples['actions']
-    features = torch.cat((features, features_to_add), dim=0)
-    actions = torch.cat((actions, actions_to_add), dim=0)
+    table.restore(memory_path)
+    print(f"the size of the table is: {table.size()}")
 
-np_features = features.numpy()
-np_actions = actions.numpy()
+    num_samples_collected = 0
+    num_tries = 0
 
-print(np_features.shape)
-print(np_actions.shape)
-np.save("actions.npy", np_actions)
-np.save("features.npy", np_features)
+    while num_samples_collected < minimum_samples and num_tries < max_tries:
+        try:
+            samples = table.sample(count=1, sequence_length=seq_length)
+            if num_samples_collected == 0:
+                observations = samples['observation'][observation_key]
+                actions = samples['actions']
+            else:
+                observations = torch.cat((observations, samples['observation'][observation_key]), 0)
+                actions = torch.cat((actions, samples['actions']), dim=0)
+            num_samples_collected += observations.shape[0]
+
+        except:
+            num_tries += 1
+            print('problem with sampling')
+
+    np_observations = observations.numpy()
+    np_actions = actions.numpy()
+
+    print(np_observations.shape)
+    print(np_actions.shape)
+    np.save(os.path.join(path_to_save, "actions.npy"), np_actions)
+    np.save(os.path.join(path_to_save, "observations.npy"), np_observations)

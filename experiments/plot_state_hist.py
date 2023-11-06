@@ -106,9 +106,8 @@ if __name__ == "__main__":
         'linear_positions': position_idx,
     }
 
-    #font = {'size': 20}
-    #plt.rc('font', **font)
-
+    font = {'size': 6}
+    plt.rc('font', **font)
 
     for key, indices in all_idx.items():
         for j in range(3):
@@ -121,8 +120,8 @@ if __name__ == "__main__":
                                     top=0.9,
                                     wspace=0.4,
                                     hspace=0.4)
-                plt.hist(buffer_observations[:, idx])
-                plt.hist(mocap_observations[:, idx])
+                plt.hist(buffer_observations[:, idx], alpha=0.5)
+                plt.hist(mocap_observations[:, idx], alpha=0.5)
             plt.savefig(os.path.join(path_to_save, f"{key}-{j}.png"), dpi=2000)
             plt.close()
 
