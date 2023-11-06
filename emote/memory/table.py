@@ -189,6 +189,7 @@ class ArrayTable:
         transitions. The transitions are returned in a SoA fashion (since this is both
         easier to store and easier to consume)"""
 
+        # TODO: Luc: with
         with self._lock:
             with self._timers.scope("points"):
                 sample_points = self._sampler.sample(count, sequence_length)
@@ -219,6 +220,7 @@ class ArrayTable:
             return self._filled
 
     def add_sequence(self, identity: int, sequence: dict):
+        # TODO: Luc: with
         with self._timers.scope("add_sequence"):
             with self._lock:
                 self._add_sequence_internal(identity, sequence)
@@ -266,6 +268,7 @@ class ArrayTable:
     def _serialize(self, path: str) -> bool:
         from atomicwrites import atomic_write
 
+        # TODO: Luc: with
         with self._lock:
             with atomic_write(f"{path}.zip", overwrite=True, mode="wb") as tmp:
                 with zipfile.ZipFile(tmp, "a") as zip_:
@@ -440,6 +443,7 @@ class ArrayTable:
 
         from atomicwrites import atomic_write
 
+        # TODO: Luc: With
         with self._lock:
             with atomic_write(f"{path}.zip", overwrite=True, mode="wb") as tmp:
                 with zipfile.ZipFile(tmp, "a") as zip_:
@@ -474,6 +478,7 @@ class ArrayTable:
 
         import cloudpickle
 
+        # TODO: Luc: With
         with self._lock:
             with zip_.open("data.pickle", "r") as data_file:
                 parts = cloudpickle.load(data_file)

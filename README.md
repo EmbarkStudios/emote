@@ -127,7 +127,7 @@ pdm install -d -G :all
 **Torch won't install:** Check that your python version is correct. Try deleting your `.venv` and recreating it with
 
 ```bash
-pdm venv create 3.9
+pdm venv create 3.10
 pdm install -G :all
 ```
 
@@ -135,10 +135,10 @@ pdm install -G :all
 
 ```bash
 sudo apt install swig
-sudo apt install python3.9-dev
+sudo apt install python3.10-dev
 ```
 
-**Python 3.9 is tricky to install:** For Ubuntu based distros try adding the deadsnakes PPA.
+**Python 3.10 is tricky to install:** For Ubuntu based distros try adding the deadsnakes PPA.
 
 ## Contribution
 

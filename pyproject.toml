@@ -5,7 +5,7 @@ description = "A modular reinforcement learning library"
 authors = [
     {name = "Embark Studios", email = "python@embark-studios.com"},
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "MIT"}
 
