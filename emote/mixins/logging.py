@@ -1,6 +1,6 @@
 from collections import deque
 from collections.abc import Iterable
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Tuple
 
 import numpy as np
 import torch

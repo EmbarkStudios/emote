@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 import numpy as np
 import torch

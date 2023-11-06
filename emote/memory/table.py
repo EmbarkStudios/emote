@@ -448,7 +448,6 @@ class ArrayTable:
             with (
                 atomic_write(f"{path}.zip", overwrite=True, mode="wb") as tmp,
                 zipfile.ZipFile(tmp, "a") as zip_,
-                
             ):
                 with zip_.open("data.pickle", "w", force_zip64=True) as data_file:
                     parts = {

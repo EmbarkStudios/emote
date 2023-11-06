@@ -1,6 +1,6 @@
 # This file contains codes and texts that are copied from
 # https://github.com/facebookresearch/mbrl-lib
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import torch
