@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import torch
+import argparse
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 from emote.memory.builder import DictObsNStepTable
 from emote.memory import MemoryLoader
@@ -59,22 +60,33 @@ def reduce_samples(observations, actions, skip_sample=1):
 
 
 if __name__ == "__main__":
-    path_to_mocap_data: str = "/home/ali/data/biped/numpy/short_forward"
-    path_to_store_buffer: str = "/home/ali/data/biped/replay_buffer/forward/forward52_15hz"
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path-to-buffer", type=str, default="/home/ali/data/biped/replay_buffer/")
+    parser.add_argument("--path-to-mocap", type=str, default="/home/ali/data/biped/numpy/")
+    parser.add_argument("--action-count", type=int, default=51)
+    parser.add_argument("--obs-count", type=int, default=252)
+    parser.add_argument("--min-samples", type=int, default=4000)
+    parser.add_argument("--skip-samples", type=int, default=0)
+
+    arg = parser.parse_args()
+
+    path_to_mocap_data = arg.path_to_mocap
+    path_to_store_buffer = arg.path_to_buffer
+    action_count = arg.action_count
+    minimum_data = arg.min_samples
+    skip_samples = arg.skip_samples
+
     preferred_device = torch.device('cpu')
-    minimum_data = 4000
-    action_count = 52
-    skip_samples = 1
 
     bc_actions = np.load(os.path.join(path_to_mocap_data, 'actions.npy'))
     if action_count == 52:
         bc_actions = np.concatenate((bc_actions, np.zeros((bc_actions.shape[0], 1))), 1)
-        print('action shape: ', bc_actions.shape)
 
     bc_observations = np.load(os.path.join(path_to_mocap_data, 'observations.npy'))
 
-    print(f"observation size: {bc_observations.shape}, "
-          f"action size: {bc_actions.shape}")
+    print(f"observation size: {bc_observations.shape}")
+    print(f"action size: {bc_actions.shape}")
 
     if skip_samples:
         bc_observations, bc_actions = reduce_samples(bc_observations, bc_actions, skip_sample=skip_samples)
