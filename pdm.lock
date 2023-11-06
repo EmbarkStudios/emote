@@ -598,7 +598,6 @@ dependencies = [
 
 [metadata]
 lock_version = "4.2"
-cross_platform = true
 groups = ["default", "docs", "tools"]
 content_hash = "sha256:8ca3d87446c155bb5daa2a58a4bda8311c5666043a1f63267cf42b05f99062b6"
 
