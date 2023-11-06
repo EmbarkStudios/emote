@@ -93,7 +93,7 @@ class TagStorage(dict):
             self[-abs(valid_id) - 1] = self[valid_id]
             del self[valid_id]
 
-    def __getitem__(self, key: Union[int, Tuple[int, ...], slice]):
+    def __getitem__(self, key: int | Tuple[int, ...] | slice):
         episode = super().__getitem__(key)
         r = TagStorage.TagProxy()
         r.value = episode
@@ -117,13 +117,13 @@ class VirtualStorage:
     def shape(self):
         return self._storage.shape
 
-    def __getitem__(self, key: Union[int, Tuple[int, ...], slice]):
+    def __getitem__(self, key: int | Tuple[int, ...] | slice):
         pass
 
-    def __setitem__(self, key: Union[int, Tuple[int, ...], slice], value: Sequence[Number]):
+    def __setitem__(self, key: int | Tuple[int, ...] | slice, value: Sequence[Number]):
         pass
 
-    def __delitem__(self, key: Union[int, Tuple[int, ...], slice]):
+    def __delitem__(self, key: int | Tuple[int, ...] | slice):
         pass
 
     def sequence_length_transform(self, length):
@@ -191,7 +191,7 @@ class NextElementMapper(VirtualStorage):
         self._only_last = only_last
         self._wrapper = NextElementMapper.LastWrapper if only_last else NextElementMapper.Wrapper
 
-    def __getitem__(self, key: Union[int, Tuple[int, ...], slice]):
+    def __getitem__(self, key: int | Tuple[int, ...] | slice):
         return self._wrapper(self._storage[key])
 
     def sequence_length_transform(self, length):
@@ -245,7 +245,7 @@ class SyntheticDones(VirtualStorage):
         super().__init__(storage, shape, dtype)
         self._mask = mask
 
-    def __getitem__(self, key: Union[int, Tuple[int, ...], slice]):
+    def __getitem__(self, key: int | Tuple[int, ...] | slice):
         if self._mask:
             return SyntheticDones.MaskWrapper(len(self._storage[key]), self._shape, self._dtype)
 

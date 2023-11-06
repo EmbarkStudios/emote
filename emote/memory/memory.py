@@ -277,7 +277,7 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
 
     def get_report(
         self, keys: List[str]
-    ) -> Tuple[dict[str, Union[int, float, list[float]]], dict[str, list[float]]]:
+    ) -> Tuple[dict[str, int | float | list[float]], dict[str, list[float]]]:
         keys = set(keys)
         out = {}
         out_lists = {}
@@ -365,7 +365,7 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
 
     def __init__(
         self,
-        memory: Union[TableMemoryProxy, TableMemoryProxyWrapper],
+        memory: TableMemoryProxy | TableMemoryProxyWrapper,
         target_memory_name,
         inf_steps_per_memory_export,
         experiment_root_path: str,
