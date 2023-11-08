@@ -35,9 +35,9 @@ def create_table_from_numpy(
     features = [obs for obs in observations]
     actions = [action for action in actions]
     if len(actions) == len(features):
-        actions.pop()   # this is to remove the last action
+        actions.pop()  # this is to remove the last action
         print("last action item is removed! ")
-    rewards = [[0] for _ in range(num_samples-1)]
+    rewards = [[0] for _ in range(num_samples - 1)]
 
     print(f"features: {len(features)}, "
           f"actions: {len(actions)},"
@@ -68,6 +68,7 @@ if __name__ == "__main__":
     parser.add_argument("--obs-count", type=int, default=252)
     parser.add_argument("--min-samples", type=int, default=4000)
     parser.add_argument("--skip-samples", type=int, default=0)
+    parser.add_argument("--vision-size", type=int, default=0)
 
     arg = parser.parse_args()
 
@@ -80,10 +81,20 @@ if __name__ == "__main__":
     preferred_device = torch.device('cpu')
 
     bc_actions = np.load(os.path.join(path_to_mocap_data, 'actions.npy'))
+    bc_observations = np.load(os.path.join(path_to_mocap_data, 'observations.npy'))
     if action_count == 52:
         bc_actions = np.concatenate((bc_actions, np.zeros((bc_actions.shape[0], 1))), 1)
 
-    bc_observations = np.load(os.path.join(path_to_mocap_data, 'observations.npy'))
+    if arg.vision_size > 0:
+        bc_observations = np.concatenate(
+            (
+                bc_observations,
+                np.zeros(
+                    (bc_observations.shape[0], arg.vision_size)
+                )
+            ),
+            1
+        )
 
     print(f"observation size: {bc_observations.shape}")
     print(f"action size: {bc_actions.shape}")
