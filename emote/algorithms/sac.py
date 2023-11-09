@@ -11,6 +11,7 @@ from torch import nn, optim
 
 from emote.callback import Callback
 from emote.callbacks.loss import LossCallback
+from emote.extra.schedules import ConstantSchedule, Schedule
 from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy, GenericAgentProxy
 from emote.utils.deprecated import deprecated
@@ -252,10 +253,10 @@ class AlphaLoss(LossCallback):
         entropy.
     :param max_grad_norm (float): Clip the norm of the gradient during backprop using
         this value.
-    :param entropy_eps (float): Scaling value for the target entropy.
     :param name (str): The name of the module. Used e.g. while logging.
     :param data_group (str): The name of the data group from which this Loss takes its
         data.
+    :param t_entropy (float | Schedule, optional): Value or schedule for the target entropy.
     """
 
     def __init__(
@@ -267,10 +268,10 @@ class AlphaLoss(LossCallback):
         lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
         n_actions: int,
         max_grad_norm: float = 10.0,
-        entropy_eps: float = 0.089,
         max_alpha: float = 0.2,
         name: str = "alpha",
         data_group: str = "default",
+        t_entropy: float | Schedule = None,
     ):
         super().__init__(
             name=name,
@@ -284,14 +285,15 @@ class AlphaLoss(LossCallback):
         self._max_ln_alpha = torch.log(torch.tensor(max_alpha, device=ln_alpha.device))
         # TODO(singhblom) Check number of actions
         # self.t_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
-        self.t_entropy = n_actions * (1.0 + np.log(2.0 * np.pi * entropy_eps**2)) / 2.0
+        t_entropy = float(-n_actions) if t_entropy is None else t_entropy
+        self.t_entropy = ConstantSchedule(t_entropy) if isinstance(t_entropy, float) else t_entropy
         self.ln_alpha = ln_alpha  # This is log(alpha)
 
     def loss(self, observation):
         with torch.no_grad():
             _, logp_pi = self.policy(**observation)
             entropy = -logp_pi
-            error = entropy - self.t_entropy
+            error = entropy - self.t_entropy.get_last_val()
         alpha_loss = torch.mean(self.ln_alpha * error.detach())
         assert alpha_loss.dim() == 0
         self.log_scalar("loss/alpha_loss", alpha_loss)
@@ -304,7 +306,8 @@ class AlphaLoss(LossCallback):
         self.ln_alpha = torch.clamp_max_(self.ln_alpha, self._max_ln_alpha)
         self.ln_alpha.requires_grad_(True)
         self.log_scalar("training/alpha_value", torch.exp(self.ln_alpha).item())
-        self.log_scalar("training/target_entropy", self.t_entropy)
+        self.log_scalar("training/target_entropy", self.t_entropy.get_last_val())
+        self.t_entropy.step()
 
     def state_dict(self):
         state = super().state_dict()
