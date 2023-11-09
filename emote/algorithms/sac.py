@@ -245,7 +245,7 @@ class AlphaLoss(LossCallback):
         probability given a state.
     :param ln_alpha (torch.tensor): The current weight for the entropy part of the
         soft Q.
-    :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning rate schedule
+    :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule | None): Learning rate schedule
         for the optimizer of alpha.
     :param opt (torch.optim.Optimizer): An optimizer for ln_alpha.
     :param n_actions (int): The dimension of the action space. Scales the target
@@ -255,7 +255,7 @@ class AlphaLoss(LossCallback):
     :param name (str): The name of the module. Used e.g. while logging.
     :param data_group (str): The name of the data group from which this Loss takes its
         data.
-    :param t_entropy (float | Schedule, optional): Value or schedule for the target entropy.
+    :param t_entropy (float | Schedule | None): Value or schedule for the target entropy.
     """
 
     def __init__(
@@ -264,13 +264,13 @@ class AlphaLoss(LossCallback):
         pi: nn.Module,
         ln_alpha: torch.tensor,
         opt: optim.Optimizer,
-        lr_schedule: Optional[optim.lr_scheduler._LRScheduler] = None,
+        lr_schedule: optim.lr_scheduler._LRScheduler | None = None,
         n_actions: int,
         max_grad_norm: float = 10.0,
         max_alpha: float = 0.2,
         name: str = "alpha",
         data_group: str = "default",
-        t_entropy: float | Schedule = None,
+        t_entropy: float | Schedule | None = None,
     ):
         super().__init__(
             name=name,
