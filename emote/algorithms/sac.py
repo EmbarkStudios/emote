@@ -284,8 +284,13 @@ class AlphaLoss(LossCallback):
         self._max_ln_alpha = torch.log(torch.tensor(max_alpha, device=ln_alpha.device))
         # TODO(singhblom) Check number of actions
         # self.t_entropy = -np.prod(self.env.action_space.shape).item()  # Value from rlkit from Harnouja
-        t_entropy = float(-n_actions) if t_entropy is None else t_entropy
-        self.t_entropy = ConstantSchedule(t_entropy) if isinstance(t_entropy, float) else t_entropy
+        t_entropy = -n_actions if t_entropy is None else t_entropy
+        if not isinstance(t_entropy, (int, float, Schedule)):
+            raise TypeError("t_entropy must be a number or an instance of Schedule")
+
+        self.t_entropy = (
+            t_entropy if isinstance(t_entropy, Schedule) else ConstantSchedule(t_entropy)
+        )
         self.ln_alpha = ln_alpha  # This is log(alpha)
 
     def loss(self, observation):
