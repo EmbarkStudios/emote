@@ -25,10 +25,11 @@ class Schedule:
         self.steps = steps
 
         self._step_count = 0
-        self._last_val = initial
+        self._current_value = initial
 
-    def get_last_val(self) -> float:
-        return self._last_val
+    @property
+    def value(self):
+        return self._current_value
 
     def step(self):
         pass
@@ -79,7 +80,7 @@ class LinearSchedule(Schedule):
             fraction = math.floor(fraction * self.staircase_steps) / self.staircase_steps
         fraction = min(fraction, 1.0)
 
-        self._last_val = self.initial + fraction * (self.final - self.initial)
+        self._current_value = self.initial + fraction * (self.final - self.initial)
 
         self._step_count += 1
 
@@ -127,7 +128,7 @@ class CyclicSchedule(Schedule):
         cycle = math.floor(1 + self._step_count / (2 * self.steps))
         x = math.fabs(self._step_count / self.steps - 2 * cycle + 1)
 
-        self._last_val = self.initial + (self.final - self.initial) * max(
+        self._current_value = self.initial + (self.final - self.initial) * max(
             0, (1 - x)
         ) * self.scale_fn(cycle)
 
@@ -149,13 +150,13 @@ class CosineAnnealing(Schedule):
     def step(self):
         if self._step_count > 0:
             if (self._step_count - 1 - self.steps) % (2 * self.steps) == 0:
-                self._last_val += (
+                self._current_value += (
                     (self.initial - self.final) * (1 - math.cos(math.pi / self.steps)) / 2
                 )
             else:
-                self._last_val = (1 + math.cos(math.pi * self._step_count / self.steps)) / (
+                self._current_value = (1 + math.cos(math.pi * self._step_count / self.steps)) / (
                     1 + math.cos(math.pi * (self._step_count - 1) / self.steps)
-                ) * (self._last_val - self.final) + self.final
+                ) * (self._current_value - self.final) + self.final
 
         self._step_count += 1
 
@@ -176,7 +177,7 @@ class CosineAnnealingWarmRestarts(Schedule):
         if self._step_count >= self.steps:
             self._step_count %= self.steps
 
-        self._last_val = (
+        self._current_value = (
             self.final
             + (self.initial - self.final)
             * (1 + math.cos(math.pi * self._step_count / self.steps))
