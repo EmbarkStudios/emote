@@ -4,7 +4,6 @@ import copy
 
 from typing import Any, Dict, Optional
 
-import numpy as np
 import torch
 
 from torch import nn, optim
