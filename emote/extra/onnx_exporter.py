@@ -206,7 +206,7 @@ class OnnxExporter(LoggingMixin, Callback):
                 )
 
                 f.seek(0)
-                model_proto = onnx.load_model(f, onnx.ModelProto)
+                model_proto = onnx.load_model(f)
 
             return model_proto
 
