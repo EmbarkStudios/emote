@@ -64,6 +64,7 @@ if __name__ == '__main__':
     data = next(itr)
     print('obs: ', data[data_group]['observation']['features'].shape)
     print('next_obs: ', data[data_group]['next_observation']['features'].shape)
+    print('action: ', data[data_group]['actions'].shape)
 
 
 
