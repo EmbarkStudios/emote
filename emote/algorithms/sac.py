@@ -292,7 +292,7 @@ class AlphaLoss(LossCallback):
         with torch.no_grad():
             _, logp_pi = self.policy(**observation)
             entropy = -logp_pi
-            error = entropy - self.t_entropy.get_last_val()
+            error = entropy - self.t_entropy.value
         alpha_loss = torch.mean(self.ln_alpha * error.detach())
         assert alpha_loss.dim() == 0
         self.log_scalar("loss/alpha_loss", alpha_loss)
@@ -305,7 +305,7 @@ class AlphaLoss(LossCallback):
         self.ln_alpha = torch.clamp_max_(self.ln_alpha, self._max_ln_alpha)
         self.ln_alpha.requires_grad_(True)
         self.log_scalar("training/alpha_value", torch.exp(self.ln_alpha).item())
-        self.log_scalar("training/target_entropy", self.t_entropy.get_last_val())
+        self.log_scalar("training/target_entropy", self.t_entropy.value)
         self.t_entropy.step()
 
     def state_dict(self):
