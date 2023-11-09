@@ -11,7 +11,6 @@ from torch import nn, optim
 from emote.callback import Callback
 from emote.callbacks.loss import LossCallback
 from emote.extra.schedules import ConstantSchedule, Schedule
-from emote.extra.schedules import ConstantSchedule, Schedule
 from emote.mixins.logging import LoggingMixin
 from emote.proxies import AgentProxy, GenericAgentProxy
 from emote.utils.deprecated import deprecated
