@@ -165,13 +165,6 @@ class TableMemoryProxy:
         return self._table._timers
 
 
-def get_dict_attr(obj, attr):
-    for obj in [obj] + obj.__class__.mro():
-        if attr in obj.__dict__:
-            return obj.__dict__[attr]
-    raise AttributeError
-
-
 class MemoryProxyWrapper:
     """Base class for memory proxy wrappers.
     This class forwards non-existing method accessess to the inner
@@ -182,13 +175,23 @@ class MemoryProxyWrapper:
         super().__init__(**kwargs)
         self._inner = inner
 
+    def _lookup_class_attr(self, name):
+        cls_attr = getattr(self._inner.__class__, name, None)
+        if cls_attr is None:
+            if isinstance(self._inner, MemoryProxyWrapper):
+                return self._inner._lookup_class_attr(name)
+
+            return None
+
+        return cls_attr
+
     def __getattr__(self, name):
         # get the attribute from inner.
         # if it does not exist, exception will be raised.
         #
         # we look up the class attr to check if it is a property. Properties on the instance only
         # resolve to the value, which would be string for example.
-        cls_attr = getattr(self._inner.__class__, name)
+        cls_attr = self._lookup_class_attr(name)
         attr = getattr(self._inner, name)
 
         # for some safety, make sure it is an method.
