@@ -68,6 +68,8 @@ class TableMemoryProxy:
         table: Table,
         minimum_length_threshold: Optional[int] = None,
         use_terminal: bool = False,
+        *,
+        name: str = "default",
     ):
         self._store: Dict[AgentId, Episode] = {}
         self._table = table
@@ -80,6 +82,11 @@ class TableMemoryProxy:
         self._completed_episodes: set[AgentId] = set()
         self._term_states = [EpisodeState.TERMINAL, EpisodeState.INTERRUPTED]
         self._use_terminal = use_terminal
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
 
     def size(self):
         return self._table.size()
@@ -158,6 +165,13 @@ class TableMemoryProxy:
         return self._table._timers
 
 
+def get_dict_attr(obj, attr):
+    for obj in [obj] + obj.__class__.mro():
+        if attr in obj.__dict__:
+            return obj.__dict__[attr]
+    raise AttributeError
+
+
 class MemoryProxyWrapper:
     """Base class for memory proxy wrappers.
     This class forwards non-existing method accessess to the inner
@@ -171,11 +185,15 @@ class MemoryProxyWrapper:
     def __getattr__(self, name):
         # get the attribute from inner.
         # if it does not exist, exception will be raised.
+        #
+        # we look up the class attr to check if it is a property. Properties on the instance only
+        # resolve to the value, which would be string for example.
+        cls_attr = getattr(self._inner.__class__, name)
         attr = getattr(self._inner, name)
 
         # for some safety, make sure it is an method.
         # we only want the memory proxy wrapper to forward methods.
-        if not inspect.ismethod(attr):
+        if not inspect.ismethod(attr) and not isinstance(cls_attr, property):
             # NOTE: In python >= 3.10 we should specify
             # 'obj' and 'name' on the AttributeError so Python can provide hints to the user.
             raise AttributeError(
@@ -303,8 +321,8 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         self.log_scalar("episode/completed", self.completed_episodes)
 
         for name, (mean, var) in self.timers().stats().items():
-            self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/mean", mean)
-            self.log_scalar(f"memory/{self._target_memory_name}/{name}/timing/var", var)
+            self.log_scalar(f"memory/{self.name}/{name}/timing/mean", mean)
+            self.log_scalar(f"memory/{self.name}/{name}/timing/var", var)
 
         if "episode/reward" in self.windowed_scalar:
             rewards = self.windowed_scalar["episode/reward"]
