@@ -66,15 +66,18 @@ if __name__ == "__main__":
     parser.add_argument("--path-to-mocap", type=str, default="/home/ali/data/biped/numpy/")
     parser.add_argument("--action-count", type=int, default=51)
     parser.add_argument("--obs-count", type=int, default=252)
-    parser.add_argument("--min-samples", type=int, default=4000)
+    #parser.add_argument("--min-samples", type=int, default=4000)
     parser.add_argument("--skip-samples", type=int, default=0)
+    parser.add_argument("--idx-start", type=int, default=0)
+    parser.add_argument("--idx-end", type=int, default=-1)
+    parser.add_argument("--vision", action='store_true')
 
     arg = parser.parse_args()
 
     path_to_mocap_data = arg.path_to_mocap
     path_to_store_buffer = arg.path_to_buffer
     action_count = arg.action_count
-    minimum_data = arg.min_samples
+    #minimum_data = arg.min_samples
     skip_samples = arg.skip_samples
 
     preferred_device = torch.device('cpu')
@@ -88,16 +91,31 @@ if __name__ == "__main__":
     print(f"observation size: {bc_observations.shape}")
     print(f"action size: {bc_actions.shape}")
 
+    if arg.vision:
+        zero_obs = np.zeros((bc_observations.shape[0], 100))
+        bc_observations = np.concatenate((bc_observations, zero_obs), 1)
+        print('*' * 20)
+        print(f"new observation size: {bc_observations.shape}")
+        print('*' * 20)
+
+    if (arg.idx_end - arg.idx_start) > 0:
+        bc_observations = bc_observations[arg.idx_start:arg.idx_end]
+        bc_actions = bc_actions[arg.idx_start:arg.idx_end]
+        print('*'*20)
+        print(f"observation size: {bc_observations.shape}")
+        print(f"action size: {bc_actions.shape}")
+        print('*' * 20)
+
     if skip_samples:
         bc_observations, bc_actions = reduce_samples(bc_observations, bc_actions, skip_sample=skip_samples)
         print(f"new observation size: {bc_observations.shape}, "
               f"new action size: {bc_actions.shape}")
 
-    while bc_observations.shape[0] < minimum_data:
-        bc_observations = np.concatenate((bc_observations, bc_observations), axis=0)
-        bc_actions = np.concatenate((bc_actions, bc_actions), axis=0)
-        print(f"observation size: {bc_observations.shape}, "
-              f"action size: {bc_actions.shape}")
+    #while bc_observations.shape[0] < minimum_data:
+    #    bc_observations = np.concatenate((bc_observations, bc_observations), axis=0)
+    #    bc_actions = np.concatenate((bc_actions, bc_actions), axis=0)
+    #    print(f"observation size: {bc_observations.shape}, "
+    #          f"action size: {bc_actions.shape}")
 
     memory = create_table_from_numpy(bc_observations, bc_actions, "features", preferred_device)
     print(f"Table contains: {memory.size()} samples")

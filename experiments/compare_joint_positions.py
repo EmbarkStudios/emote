@@ -4,6 +4,7 @@ import torch
 
 from emote.memory.builder import DictObsNStepTable
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
+import argparse
 
 
 def get_data_from_mocap(
@@ -58,8 +59,14 @@ def get_data_from_buffer(
 
 
 if __name__ == "__main__":
-    path_to_buffer = "/home/ali/data/biped/replay_buffer/tpos_game/rl_loader_export"
-    path_to_mocap = "/home/ali/data/biped/numpy/fixed3"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path-to-buffer", type=str, default="/home/ali/data/biped/replay_buffer/")
+    parser.add_argument("--path-to-mocap", type=str, default="/home/ali/data/biped/numpy/")
+
+    arg = parser.parse_args()
+
+    path_to_buffer = arg.path_to_buffer
+    path_to_mocap = arg.path_to_mocap
 
     action_count = 51
     obs_count = 252
