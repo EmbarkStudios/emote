@@ -4,6 +4,7 @@ import argparse
 import os
 from emote.memory.builder import DictObsNStepTable
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
+from emote.memory.memory import MemoryLoader
 
 if __name__ == '__main__':
 
@@ -56,6 +57,30 @@ if __name__ == '__main__':
 
     num_samples_collected = 0
     num_tries = 0
+
+    batch_size = arg.sequence_length
+    rollout_length = arg.sequence_length
+    data_loader = MemoryLoader(
+        table,
+        batch_size // rollout_length,
+        rollout_length,
+        "batch_size",
+        data_group="group",
+    )
+    print('*' * 30)
+
+    itr = iter(data_loader)
+    data = next(itr)
+    observations = data['group']['observation']['features']
+    actions = data['group']['actions']
+
+    print(f"observation shape {observations.shape}")
+    print(f"action shape {actions.shape}")
+
+    np.save(os.path.join(path_to_save, "actions2.npy"), actions)
+    np.save(os.path.join(path_to_save, "observations2.npy"), observations)
+
+    print('*' * 30)
 
     while num_samples_collected < minimum_samples and num_tries < max_tries:
         try:
