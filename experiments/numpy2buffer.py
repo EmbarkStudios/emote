@@ -87,12 +87,12 @@ if __name__ == "__main__":
     if action_count == 52:
         bc_actions = np.concatenate((bc_actions, np.zeros((bc_actions.shape[0], 1))), 1)
 
-    if arg.vision_size > 0:
+    if arg.vision:
         bc_observations = np.concatenate(
             (
                 bc_observations,
                 np.zeros(
-                    (bc_observations.shape[0], arg.vision_size)
+                    (bc_observations.shape[0], 100)
                 )
             ),
             1

@@ -32,5 +32,5 @@ if __name__ == "__main__":
     for idx in list_of_indices:
         print('{')
         print(f"\t\"start\": {idx[0]},")
-        print(f"\t\"end\": {idx[2]}")
+        print(f"\t\"end\": {idx[2] + 1}")
         print('},')
