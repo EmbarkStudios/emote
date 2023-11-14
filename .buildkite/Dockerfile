@@ -40,11 +40,15 @@ RUN eval "$(pyenv init --path)" && \
 	pipx install --pip-args='--no-cache-dir' pdm~=2.6.0 --suffix 26 && \
 	pipx install --pip-args='--no-cache-dir' pdm~=2.7.0 --suffix 27 && \
 	pipx install --pip-args='--no-cache-dir' pdm~=2.8.0 --suffix 28 && \
+	pipx install --pip-args='--no-cache-dir' pdm~=2.9.0 --suffix 29 && \
+	pipx install --pip-args='--no-cache-dir' pdm~=2.10.0 --suffix 210 && \
 	pdm23 --version && \
 	pdm24 --version && \
 	pdm25 --version && \
 	pdm26 --version && \
 	pdm27 --version && \
-	pdm28 --version
+	pdm28 --version && \
+	pdm29 --version && \
+	pdm210 --version
 
 ENTRYPOINT bash
