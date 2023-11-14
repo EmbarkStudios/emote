@@ -10,14 +10,15 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-buffer", type=str, default="/home/ali/data/biped/replay_buffer/")
-    parser.add_argument("--path-to-save", type=str, default="/home/ali/data/biped/figure/")
+    parser.add_argument("--path-to-mocap", type=str, default="/home/ali/data/biped/numpy/")
     parser.add_argument("--sequence-length", type=int, default=300)
     parser.add_argument("--min-samples", type=int, default=300)
+    parser.add_argument("--use-terminal", action='store_true')
 
     arg = parser.parse_args()
 
     memory_path = arg.path_to_buffer
-    path_to_save = arg.path_to_save
+    path_to_mocap = arg.path_to_mocap
 
     seq_length = arg.sequence_length
     minimum_samples = arg.min_samples
@@ -47,7 +48,7 @@ if __name__ == '__main__':
 
     table = DictObsNStepTable(
         spaces=input_spaces,
-        use_terminal_column=True,
+        use_terminal_column=arg.use_terminal,
         maxlen=memory_max_length,
         device=device,
     )
@@ -77,8 +78,8 @@ if __name__ == '__main__':
     print(f"observation shape {observations.shape}")
     print(f"action shape {actions.shape}")
 
-    np.save(os.path.join(path_to_save, "actions2.npy"), actions)
-    np.save(os.path.join(path_to_save, "observations2.npy"), observations)
+    np.save(os.path.join(path_to_mocap, "actions2.npy"), actions)
+    np.save(os.path.join(path_to_mocap, "observations2.npy"), observations)
 
     print('*' * 30)
 
@@ -102,5 +103,5 @@ if __name__ == '__main__':
 
     print(np_observations.shape)
     print(np_actions.shape)
-    np.save(os.path.join(path_to_save, "actions.npy"), np_actions)
-    np.save(os.path.join(path_to_save, "observations.npy"), np_observations)
+    np.save(os.path.join(path_to_mocap, "actions.npy"), np_actions)
+    np.save(os.path.join(path_to_mocap, "observations.npy"), np_observations)
