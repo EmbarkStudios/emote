@@ -14,11 +14,15 @@ if __name__ == '__main__':
     parser.add_argument("--obs-count", type=int, default=252)
     parser.add_argument("--batch", type=int, default=50)
     parser.add_argument("--rollout", type=int, default=5)
+    parser.add_argument("--use-terminal", action="store_true")
 
     arg = parser.parse_args()
 
     memory_path = arg.path_to_buffer
     action_size = arg.action_count
+
+    if '.zip' in memory_path:
+        memory_path = memory_path.replace('.zip', '')
 
     batch_size = arg.batch
     rollout_length = arg.rollout
@@ -43,7 +47,7 @@ if __name__ == '__main__':
 
     table = DictObsNStepTable(
         spaces=spaces,
-        use_terminal_column=True,
+        use_terminal_column=arg.use_terminal,
         maxlen=1_000_000,
         device=device,
     )
