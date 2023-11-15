@@ -34,6 +34,7 @@ have new arguments to handle versioning.
   - `OnnxExporter` accepts a `device` argument to enable tracing on other devices.
   - `FinalRewardTestCheck` can now be configured with another key and to use windowed data.
   - `begin_training` has been split into `restore_state` followed by `begin_training`
+  - `CoverageBasedSampleStrategy` has been added which allows memory sampling that prioritises unvisited experiences. This can speed up training. 
 
 ### Deprecations
 

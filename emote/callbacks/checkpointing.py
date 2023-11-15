@@ -59,18 +59,24 @@ class Checkpointer(Callback):
         os.makedirs(self._folder_path, exist_ok=True)
 
     def end_cycle(self, bp_step, bp_samples):
+        name = f"checkpoint_{self._checkpoint_index}.tar"
+        final_path = os.path.join(self._folder_path, name)
         state_dict = {
             "callback_state_dicts": {cb.name: cb.state_dict() for cb in self._cbs},
             "training_state": {
+                "latest_checkpoint": final_path,
                 "bp_step": bp_step,
                 "bp_samples": bp_samples,
                 "checkpoint_index": self._checkpoint_index,
             },
         }
-        name = f"checkpoint_{self._checkpoint_index}.tar"
-        final_path = os.path.join(self._folder_path, name)
         torch.save(state_dict, final_path)
         self._checkpoint_index += 1
+
+        return {
+            "latest_checkpoint": state_dict["training_state"]["latest_checkpoint"],
+            "checkpoint_index": state_dict["training_state"]["checkpoint_index"],
+        }
 
 
 class CheckpointLoader(Callback):

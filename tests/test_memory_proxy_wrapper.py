@@ -10,6 +10,10 @@ class DummyMemoryProxy:
     def say_hello(self):
         return "hello world"
 
+    @property
+    def a_property(self):
+        return "a property"
+
 
 class EmptyMemoryProxyWrapper(MemoryProxyWrapper):
     pass
@@ -77,3 +81,18 @@ def test_wrapper_disallows_accessing_non_existing_attribute():
 
     with pytest.raises(AttributeError):
         wrapper.i_do_not_exist
+
+
+def test_wrapper_allows_accessing_property():
+    dummy = DummyMemoryProxy()
+    wrapper = EmptyMemoryProxyWrapper(dummy)
+
+    wrapper.a_property
+
+
+def test_wrapper_allows_accessing_property_nested():
+    dummy = DummyMemoryProxy()
+    wrapper = EmptyMemoryProxyWrapper(dummy)
+    wrapper = SayGoodbyeProxyWrapper(wrapper)
+
+    wrapper.a_property
