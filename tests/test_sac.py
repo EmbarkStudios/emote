@@ -6,6 +6,7 @@ import pytest
 import torch
 
 from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy
+from emote.extra.schedules import ConstantSchedule, CyclicSchedule
 from emote.nn.gaussian_policy import GaussianMlpPolicy
 from emote.typing import DictObservation, EpisodeState
 
@@ -67,3 +68,49 @@ def test_alpha_value_ref_valid_after_load():
     assert (
         ln_alpha_before_load is ln_alpha_after_load
     ), "expected ln(alpha) to be the same python object after loading. The reference is used by other loss functions such as PolicyLoss!"
+
+
+def test_target_entropy_schedules():
+    policy = GaussianMlpPolicy(IN_DIM, OUT_DIM, [16, 16])
+    init_ln_alpha = torch.tensor(0.0, dtype=torch.float32, requires_grad=True)
+    optim = torch.optim.Adam([init_ln_alpha])
+    loss = AlphaLoss(pi=policy, ln_alpha=init_ln_alpha, opt=optim, n_actions=OUT_DIM)
+
+    # Check if default is set correctly when no t_entropy is passed
+    init_entropy = loss.t_entropy.value
+    assert init_entropy == -OUT_DIM
+    print(init_entropy)
+
+    # Check that default schedule is constant and doesn't update the value
+    assert isinstance(loss.t_entropy, ConstantSchedule)
+    for _ in range(5):
+        loss.end_batch()
+    assert init_entropy == loss.t_entropy.value
+
+    # Check that value is updated when using a schedule
+    start = 5
+    end = 0
+    steps = 5
+    schedule = CyclicSchedule(start, end, steps, mode="triangular")
+    loss = AlphaLoss(
+        pi=policy, ln_alpha=init_ln_alpha, opt=optim, n_actions=OUT_DIM, t_entropy=schedule
+    )
+
+    for _ in range(steps + 1):
+        loss.end_batch()
+    assert loss.t_entropy.value == end
+
+    for _ in range(steps):
+        loss.end_batch()
+    assert loss.t_entropy.value == start
+
+    # Check that invalid types are not accepted
+    invalid_t_entropy = torch.optim.lr_scheduler.LinearLR(optim, 1, end / start, steps)
+    with pytest.raises(TypeError):
+        AlphaLoss(
+            pi=policy,
+            ln_alpha=init_ln_alpha,
+            opt=optim,
+            n_actions=OUT_DIM,
+            t_entropy=invalid_t_entropy,
+        )

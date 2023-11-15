@@ -163,3 +163,31 @@ def test_get_report(table_proxy, tmpdir):
     assert out["histogram:ones"] == 1
     assert out["one"] == 1 and out["one/cumulative"] == 3
     assert out_lists["three"] == [3, 3]
+
+
+def test_end_cycle(table_proxy, tmpdir):
+    proxy = LoggingProxyWrapper(
+        table_proxy,
+        SummaryWriter(
+            log_dir=tmpdir,
+        ),
+        2,
+    )
+
+    state = EpisodeState.INITIAL
+    for s in range(10):
+        proxy.add(
+            {
+                0: DictObservation(
+                    episode_state=state,
+                    array_data={"obs": [1.0]},
+                    rewards={"reward": None},
+                    metadata=MetaData(info={"episode/reward": 10.0}, info_lists={}),
+                )
+            },
+            {0: DictResponse({"actions": [0.0]}, {})} if s < 9 else {},
+        )
+
+        state = EpisodeState.RUNNING if s < 8 else EpisodeState.TERMINAL
+
+    proxy._end_cycle()
