@@ -11,6 +11,6 @@ eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 
 ${PDM_COMMAND:1:-1} use ${PYTHON_VERSION:1:-1}
-${PDM_COMMAND:1:-1} install -d -G ci -k post_install
-${PDM_COMMAND:1:-1} plugin add pdm-plugin-torch==23.3.0
+${PDM_COMMAND:1:-1} install --plugins
+${PDM_COMMAND:1:-1} install -d -G ci
 ${PDM_COMMAND:1:-1} torch install cpu
