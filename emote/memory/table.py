@@ -219,9 +219,11 @@ class ArrayTable:
             return self._filled
 
     def add_sequence(self, identity: int, sequence: dict):
-        with self._timers.scope("add_sequence"):
-            with self._lock:
-                self._add_sequence_internal(identity, sequence)
+        with (
+            self._timers.scope("add_sequence"),
+            self._lock,
+        ):
+            self._add_sequence_internal(identity, sequence)
 
     def _add_sequence_internal(self, identity: int, sequence: dict):
         """add a fully terminated sequence to the memory"""
@@ -267,68 +269,70 @@ class ArrayTable:
         from atomicwrites import atomic_write
 
         with self._lock:
-            with atomic_write(f"{path}.zip", overwrite=True, mode="wb") as tmp:
-                with zipfile.ZipFile(tmp, "a") as zip_:
-                    with zip_.open("version", "w") as version:
-                        version_int = TableSerializationVersion.V1.value
-                        version.write(str(version_int).encode("utf-8"))
+            with (
+                atomic_write(f"{path}.zip", overwrite=True, mode="wb") as tmp,
+                zipfile.ZipFile(tmp, "a") as zip_,
+            ):
+                with zip_.open("version", "w") as version:
+                    version_int = TableSerializationVersion.V1.value
+                    version.write(str(version_int).encode("utf-8"))
 
-                    parts = {
-                        "ejector_type": self._ejector.__class__.__name__,
-                        "sampler_type": self._sampler.__class__.__name__,
-                        "length_key": self._length_key,
-                        "maxlen": self._maxlen,
-                        "ids": list(self._lengths.keys()),
-                    }
+                parts = {
+                    "ejector_type": self._ejector.__class__.__name__,
+                    "sampler_type": self._sampler.__class__.__name__,
+                    "length_key": self._length_key,
+                    "maxlen": self._maxlen,
+                    "ids": list(self._lengths.keys()),
+                }
 
-                    ejector_state = self._ejector.state()
-                    if ejector_state is not None:
-                        parts["ejector_state"] = ejector_state
+                ejector_state = self._ejector.state()
+                if ejector_state is not None:
+                    parts["ejector_state"] = ejector_state
 
-                    sampler_state = self._sampler.state()
-                    if sampler_state is not None:
-                        parts["sampler_state"] = sampler_state
+                sampler_state = self._sampler.state()
+                if sampler_state is not None:
+                    parts["sampler_state"] = sampler_state
 
-                    parts["columns"] = [
-                        (name, column.__class__.__name__, column.state())
-                        for name, column in self._columns.items()
-                    ]
+                parts["columns"] = [
+                    (name, column.__class__.__name__, column.state())
+                    for name, column in self._columns.items()
+                ]
 
-                    output_ranges = {}
-                    output_data = {}
+                output_ranges = {}
+                output_data = {}
 
-                    for key, store in self._data.items():
-                        ranges = []
-                        merged_data = []
+                for key, store in self._data.items():
+                    ranges = []
+                    merged_data = []
 
-                        if isinstance(store, VirtualStorage):
-                            continue
+                    if isinstance(store, VirtualStorage):
+                        continue
 
-                        for identity, data in store.items():
-                            ranges.append(
-                                (
-                                    identity,
-                                    len(merged_data),
-                                    len(data),
-                                )
+                    for identity, data in store.items():
+                        ranges.append(
+                            (
+                                identity,
+                                len(merged_data),
+                                len(data),
                             )
-                            merged_data.extend(data)
+                        )
+                        merged_data.extend(data)
 
-                        output_data[key] = np.stack(merged_data)
-                        output_ranges[key] = ranges
+                    output_data[key] = np.stack(merged_data)
+                    output_ranges[key] = ranges
 
-                    parts["part_keys"] = list(output_data.keys())
+                parts["part_keys"] = list(output_data.keys())
 
-                    with zip_.open("configuration.json", "w", force_zip64=True) as f:
-                        json_data = json.dumps(parts)
-                        f.write(json_data.encode("utf-8"))
+                with zip_.open("configuration.json", "w", force_zip64=True) as f:
+                    json_data = json.dumps(parts)
+                    f.write(json_data.encode("utf-8"))
 
-                    for key, data in output_data.items():
-                        with zip_.open(f"{key}.ranges.npy", "w", force_zip64=True) as f:
-                            np.save(f, output_ranges[key], allow_pickle=False)
+                for key, data in output_data.items():
+                    with zip_.open(f"{key}.ranges.npy", "w", force_zip64=True) as f:
+                        np.save(f, output_ranges[key], allow_pickle=False)
 
-                        with zip_.open(f"{key}.npy", "w", force_zip64=True) as npz:
-                            np.save(npz, data, allow_pickle=False)
+                    with zip_.open(f"{key}.npy", "w", force_zip64=True) as npz:
+                        np.save(npz, data, allow_pickle=False)
 
             os.chmod(f"{path}.zip", stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
 
@@ -441,27 +445,29 @@ class ArrayTable:
         from atomicwrites import atomic_write
 
         with self._lock:
-            with atomic_write(f"{path}.zip", overwrite=True, mode="wb") as tmp:
-                with zipfile.ZipFile(tmp, "a") as zip_:
-                    with zip_.open("data.pickle", "w", force_zip64=True) as data_file:
-                        parts = {
-                            "ejector": self._ejector,
-                            "sampler": self._sampler,
-                            "length_key": self._length_key,
-                            "maxlen": self._maxlen,
-                            "columns": self._columns,
-                            "lengths": self._lengths,
-                            "filled": self._filled,
-                        }
+            with (
+                atomic_write(f"{path}.zip", overwrite=True, mode="wb") as tmp,
+                zipfile.ZipFile(tmp, "a") as zip_,
+            ):
+                with zip_.open("data.pickle", "w", force_zip64=True) as data_file:
+                    parts = {
+                        "ejector": self._ejector,
+                        "sampler": self._sampler,
+                        "length_key": self._length_key,
+                        "maxlen": self._maxlen,
+                        "columns": self._columns,
+                        "lengths": self._lengths,
+                        "filled": self._filled,
+                    }
 
-                        cloudpickle.dump(parts, data_file, protocol=4)
+                    cloudpickle.dump(parts, data_file, protocol=4)
 
-                    for key, data in self._data.items():
-                        if isinstance(data, VirtualStorage):
-                            continue
+                for key, data in self._data.items():
+                    if isinstance(data, VirtualStorage):
+                        continue
 
-                        with zip_.open(f"{key}.npy", "w", force_zip64=True) as npz:
-                            np.save(npz, data)
+                    with zip_.open(f"{key}.npy", "w", force_zip64=True) as npz:
+                        np.save(npz, data)
 
             os.chmod(f"{path}.zip", stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
 

@@ -5,7 +5,7 @@ description = "A modular reinforcement learning library"
 authors = [
     {name = "Embark Studios", email = "python@embark-studios.com"},
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "MIT"}
 
@@ -46,7 +46,8 @@ docs = [
 ]
 
 [tool.pdm.scripts]
-post_install = "pdm plugin add pdm-plugin-torch>=23.1.1"
+post_install = "pdm plugin add pdm-plugin-torch==23.3.0"
+
 post_lock = "pdm torch lock"
 docs = "bash -c 'cd docs && rm -rf _build/dirhtml/ && make dirhtml'"
 docs-serve = "python -m http.server --directory docs/_build/dirhtml"

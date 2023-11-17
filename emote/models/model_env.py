@@ -90,7 +90,7 @@ class ModelEnv:
                 converted to a torch.Tensor and sent to the model device.
 
         Returns:
-            (Union[tuple, dict]): contains the predicted next observation, reward, done flag.
+            (tuple | dict): contains the predicted next observation, reward, done flag.
             The done flag and rewards are computed using the termination_fn and
             reward_fn passed in the constructor. The rewards can also be predicted
             by the model.

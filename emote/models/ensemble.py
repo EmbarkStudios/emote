@@ -1,6 +1,6 @@
 # This file contains codes and texts that are copied from
 # https://github.com/facebookresearch/mbrl-lib
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import torch
@@ -53,7 +53,7 @@ class EnsembleOfGaussian(nn.Module):
         *,
         in_size: int,
         out_size: int,
-        device: Union[str, torch.device],
+        device: str | torch.device,
         num_layers: int = 4,
         ensemble_size: int = 1,
         hidden_size: int = 256,
