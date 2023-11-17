@@ -46,7 +46,8 @@ docs = [
 ]
 
 [tool.pdm.scripts]
-post_install = "pdm plugin add pdm-plugin-torch>=23.1.1"
+post_install = "pdm plugin add pdm-plugin-torch>=23.1.1,<24.0.0"
+
 post_lock = "pdm torch lock"
 docs = "bash -c 'cd docs && rm -rf _build/dirhtml/ && make dirhtml'"
 docs-serve = "python -m http.server --directory docs/_build/dirhtml"
