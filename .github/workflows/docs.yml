@@ -42,6 +42,13 @@ jobs:
         run: pdm install --plugins && pdm install -d -G ci && pdm torch install cpu
       - name: Build docs
         run: cd docs && make deploy
+
+  deploy-and-upload:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Upload artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v1
