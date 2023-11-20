@@ -1,8 +1,10 @@
 name: Deploy static content to Pages
 
 on:
+  pull_request:  
+    branches: [main]
   push:
-    branches: ["main", "luc/test31"]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
