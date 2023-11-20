@@ -1,10 +1,9 @@
 name: Deploy static content to Pages
 
 on:
-  pull_request:  
-    branches: [main]
   push:
     branches: ["main"]
+
   workflow_dispatch:
 
 permissions:
@@ -17,18 +16,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-docs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Accept Repository Changes
-        run: |
-          sudo apt-get --allow-releaseinfo-change update
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v1
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+      - uses: pdm-project/setup-pdm@v3
+        name: Setup PDM
         with:
           python-version: '3.10'
           architecture: x64
@@ -42,30 +43,10 @@ jobs:
       - name: Build docs
         run: cd docs && make deploy
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-pages-artifact@v1
         with:
-          name: doc-build
+          # Upload entire repository
           path: 'docs/_build/dirhtml'
-
-  deploy:
-    needs: build-docs
-    # if: github.ref == 'refs/heads/main'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Download artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: doc-build
-          path: 'docs/_build/dirhtml'
-      - name: Setup Pages
-        uses: actions/configure-pages@v2
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
-        with:
-          artifact_name: doc-build
