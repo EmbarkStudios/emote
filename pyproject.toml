@@ -67,7 +67,6 @@ enable-cuda = true
 cuda-versions = ["cu116"]
 
 [tool.pdm.scripts]
-post_lock = "pdm torch lock"
 docs = "bash -c 'cd docs && rm -rf _build/dirhtml/ && make dirhtml'"
 docs-serve = "python -m http.server --directory docs/_build/dirhtml"
 
