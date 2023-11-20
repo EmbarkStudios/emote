@@ -1,9 +1,10 @@
 name: Deploy static content to Pages
 
 on:
+  pull_request:  
+    branches: [main]
   push:
     branches: ["main"]
-
   workflow_dispatch:
 
 permissions:
@@ -16,20 +17,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build-docs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Accept Repository Changes
+        run: |
+          sudo apt-get --allow-releaseinfo-change update
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v1
-      - name: Setup Pages
-        uses: actions/configure-pages@v2
-      - uses: pdm-project/setup-pdm@v3
-        name: Setup PDM
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v3
         with:
           python-version: '3.10'
           architecture: x64
@@ -47,6 +46,17 @@ jobs:
         with:
           # Upload entire repository
           path: 'docs/_build/dirhtml'
+
+  deploy:
+    needs: build-docs
+    # if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
+        with:
+          artifact_name: doc-build
