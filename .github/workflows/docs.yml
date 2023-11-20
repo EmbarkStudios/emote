@@ -46,7 +46,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          # Upload entire repository
+          name: doc-build
           path: 'docs/_build/dirhtml'
 
   deploy:
