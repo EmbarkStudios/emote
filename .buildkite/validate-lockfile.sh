@@ -1,6 +1,6 @@
 set -eo pipefail
 
-${PDM_COMMAND:1:-1} plugin add pdm-plugin-torch==23.1
+${PDM_COMMAND:1:-1} install --plugins
 
 EXIT_CODE=0
 TORCH_EXIT_CODE=0
