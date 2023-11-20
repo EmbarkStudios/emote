@@ -3,8 +3,6 @@ on:
   push:
     tags:
       - v*
-    branches:
-      - luc/test31  # Added this line
 
 jobs:
   create-release:

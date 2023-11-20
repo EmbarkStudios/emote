@@ -43,10 +43,12 @@ jobs:
       - name: Build docs
         run: cd docs && make deploy
       - name: Upload artifact
+        if: github.ref == 'refs/head/main'
         uses: actions/upload-pages-artifact@v1
         with:
           # Upload entire repository
           path: 'docs/_build/dirhtml'
       - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/head/main'
         id: deployment
         uses: actions/deploy-pages@v1
