@@ -3,6 +3,9 @@ name: Publish pre-release package
 on:
   schedule:
   - cron: "0 0 * * *"
+  push:
+    branches:
+      - luc/test31  
 
   workflow_dispatch:
 
