@@ -22,6 +22,7 @@ def get_data_from_buffer(
         memory_path: str,
         observation_key: str,
         max_memory_size: int,
+        use_terminal: bool = True,
 ):
     device = torch.device('cpu')
     spaces = MDPSpace(
@@ -38,14 +39,14 @@ def get_data_from_buffer(
     )
     table = DictObsNStepTable(
         spaces=spaces,
-        use_terminal_column=True,
+        use_terminal_column=use_terminal,
         maxlen=max_memory_size,
         device=device,
     )
     table.restore(memory_path)
     print(f"the size of the table is: {table.size()}")
 
-    seq_length = 50
+    seq_length = 100
 
     samples = table.sample(count=1, sequence_length=seq_length)
 
@@ -59,9 +60,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-buffer", type=str, default="")
     parser.add_argument("--path-to-mocap", type=str, default="")
-    parser.add_argument("--path-to-save", type=str, default="")
+    parser.add_argument("--path-to-save", type=str, default="figures/")
     parser.add_argument("--action-count", type=int, default=51)
     parser.add_argument("--obs-count", type=int, default=252)
+    parser.add_argument("--use-terminal", action='store_true')
 
     arg = parser.parse_args()
 
@@ -76,10 +78,11 @@ if __name__ == "__main__":
             memory_path=arg.path_to_buffer,
             observation_key=obs_key,
             max_memory_size=300_000,
+            use_terminal=arg.use_terminal,
         )
     elif arg.path_to_mocap != "":
         observations, _ = get_data_from_mocap(arg.path_to_mocap)
-        observations = observations[200:]
+        # observations = observations[200:]
 
     else:
         raise(IOError, "--path-to-buffer or --path-to-mocap must be provided")
@@ -94,7 +97,7 @@ if __name__ == "__main__":
     joint_velocity_indices = [[68 + 9 * k + 3, 68 + 9 * k + 4, 68 + 9 * k + 5] for k in range(17)]
 
     dt = 1.0 / 30
-    t = np.arange(0.0, 1.0, dt)
+    t = np.arange(0.0, 1, dt)
     len_data = t.shape[0]
     for j in range(17):
         for idx in range(3):

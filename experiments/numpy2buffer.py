@@ -58,6 +58,33 @@ def create_table_from_numpy(
     return table
 
 
+def overwrite_velocities(
+    list_of_observations: list[np.ndarray],
+    delta_t: float = (1.0 / 30.0),
+    overwrite_joint_velocity: bool = True
+):
+
+    joint_angle_idx = [[4 * k, 4 * k + 1, 4 * k + 2] for k in range(17)]
+    angular_velocity_idx = [[68 + 9 * k + 3, 68 + 9 * k + 4, 68 + 9 * k + 5] for k in range(17)]
+    position_idx = [[17 * 4 + 9 * k + 6, 17 * 4 + 9 * k + 7, 17 * 4 + 9 * k + 8] for k in range(17)]
+    linear_velocity_idx = [[68 + 9 * k, 68 + 9 * k + 1, 68 + 9 * k + 2] for k in range(17)]
+
+    updated_list_of_observation = []
+    for observations in list_of_observations:
+        new_observations = observations.copy()
+        observation_length = observations.shape[0]
+        for t in range(observation_length - 1):
+            for joint in range(17):
+                if overwrite_joint_velocity:
+                    for i_p, i_v in zip(joint_angle_idx[joint], angular_velocity_idx[joint]):
+                        new_observations[t, i_v] = (observations[t + 1, i_p] - observations[t, i_p]) / delta_t
+                for i_p, i_v in zip(position_idx[joint], linear_velocity_idx[joint]):
+                    new_observations[t, i_v] = (observations[t + 1, i_p] - observations[t, i_p]) / delta_t
+        new_observations = new_observations[:-1]
+        updated_list_of_observation.append(new_observations)
+    return updated_list_of_observation
+
+
 def reduce_samples(observations, actions, skip_sample=1):
     num_samples = observations.shape[0]
     idx = np.arange(0, num_samples, skip_sample + 1)
@@ -73,7 +100,7 @@ if __name__ == "__main__":
     parser.add_argument("--idx-end", nargs="+", type=int, default=[])
     parser.add_argument("--vision", action='store_true')
     parser.add_argument("--magic-force", action='store_true')
-    # parser.add_argument("--skip-samples", type=int, default=0)
+    parser.add_argument("--overwrite-velocity", action='store_true')
 
     arg = parser.parse_args()
     preferred_device = torch.device('cpu')
@@ -115,6 +142,9 @@ if __name__ == "__main__":
     if not list_observations:
         list_observations.append(bc_observations)
         list_actions.append(bc_actions)
+
+    if arg.overwrite_velocity:
+        list_observations = overwrite_velocities(list_observations)
 
     # if arg.skip_samples:
     #    bc_observations, bc_actions = reduce_samples(bc_observations, bc_actions, skip_sample=arg.skip_samples)
