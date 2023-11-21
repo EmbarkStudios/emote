@@ -22,7 +22,6 @@ def get_data_from_buffer(
         memory_path: str,
         observation_key: str,
         max_memory_size: int,
-        minimum_samples: int,
 ):
     device = torch.device('cpu')
     spaces = MDPSpace(
@@ -45,24 +44,22 @@ def get_data_from_buffer(
     )
     table.restore(memory_path)
     print(f"the size of the table is: {table.size()}")
+
     seq_length = 50
+
     samples = table.sample(count=1, sequence_length=seq_length)
+
     observations = samples['observation'][observation_key]
     actions = samples['actions']
-    while observations.shape[0] < minimum_samples:
-        try:
-            samples = table.sample(count=1, sequence_length=seq_length)
-            observations = torch.cat((observations, samples['observation'][observation_key]), 0)
-            actions = torch.cat((actions, samples['actions']), dim=0)
-        except:
-            print('problem with sampling')
+
     return observations.numpy(), actions.numpy()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path-to-buffer", type=str, default="/home/ali/data/biped/replay_buffer/")
-    parser.add_argument("--path-to-mocap", type=str, default="/home/ali/data/biped/numpy/")
+    parser.add_argument("--path-to-buffer", type=str, default="")
+    parser.add_argument("--path-to-mocap", type=str, default="")
+    parser.add_argument("--path-to-save", type=str, default="")
     parser.add_argument("--action-count", type=int, default=51)
     parser.add_argument("--obs-count", type=int, default=252)
 
@@ -71,75 +68,76 @@ if __name__ == "__main__":
     action_count = arg.action_count
     obs_count = arg.obs_count
     obs_key = "features"
-    num_samples = 100
 
-    mocap_observations, buffer_actions = get_data_from_buffer(
-        action_size=action_count,
-        observation_size=obs_count,
-        memory_path=arg.path_to_buffer,
-        observation_key=obs_key,
-        max_memory_size=300_000,
-        minimum_samples=num_samples
-    )
-    buffer_observations, mocap_actions = get_data_from_mocap(arg.path_to_mocap)
-    print(f"size of buffer data: {buffer_observations.shape},"
-          f"mocap data: {mocap_observations.shape}")
+    if arg.path_to_buffer != "":
+        observations, _ = get_data_from_buffer(
+            action_size=action_count,
+            observation_size=obs_count,
+            memory_path=arg.path_to_buffer,
+            observation_key=obs_key,
+            max_memory_size=300_000,
+        )
+    elif arg.path_to_mocap != "":
+        observations, _ = get_data_from_mocap(arg.path_to_mocap)
+        observations = observations[200:]
 
-    lin_vel_idx = [[68 + 9 * k, 68 + 9 * k + 1, 68 + 9 * k + 2] for k in range(17)]
-    pos_idx = [[68 + 9 * k + 6, 68 + 9 * k + 7, 68 + 9 * k + 8] for k in range(17)]
+    else:
+        raise(IOError, "--path-to-buffer or --path-to-mocap must be provided")
 
-    #for vel_idx, pos_idx in zip(lin_vel_idx, pos_idx):
-    #    print('{')
-    #    print(f"\t\"start\": {vel_idx[0]},")
-    #    print(f"\t\"end\": {vel_idx[2]}")
-    #    print('},')
-    #    print('{')
-    #    print(f"\t\"start\": {pos_idx[0]},")
-    #    print(f"\t\"end\": {pos_idx[2]}")
-    #    print('},')
+    print(f"size of buffer data: {observations.shape},"
+          f"mocap data: {observations.shape}")
 
+    joint_position_indices = [[4 * k, 4 * k + 1, 4 * k + 2] for k in range(17)]
 
-    print(lin_vel_idx)
-    print(pos_idx)
-    joint_angle_idx = [[4 * k, 4 * k + 1, 4 * k + 2] for k in range(17)]
-    joint_velocity_idx = [[68 + 9 * k + 3, 68 + 9 * k + 4, 68 + 9 * k + 5] for k in range(17)]
-    print('joint angle indices: ', joint_angle_idx)
-    print('joint velocity indices: ', joint_velocity_idx)
-    err
+    linear_velocity_indices = [[68 + 9 * k, 68 + 9 * k + 1, 68 + 9 * k + 2] for k in range(17)]
+    position_indices = [[68 + 9 * k + 6, 68 + 9 * k + 7, 68 + 9 * k + 8] for k in range(17)]
+    joint_velocity_indices = [[68 + 9 * k + 3, 68 + 9 * k + 4, 68 + 9 * k + 5] for k in range(17)]
+
     dt = 1.0 / 30
-    t = np.arange(0.0, 3.0, dt)
+    t = np.arange(0.0, 1.0, dt)
     len_data = t.shape[0]
     for j in range(17):
         for idx in range(3):
             plt.cla()
             plt.clf()
-            plt.plot(t, buffer_observations[:len_data, joint_angle_idx[j][idx]])
-            plt.savefig(f"figures/joint_pos_{j}_{idx}.png")
+            plt.plot(t, observations[:len_data, joint_position_indices[j][idx]])
+            plt.savefig(os.path.join(arg.path_to_save, f"joint_pos_{j}_{idx}.png"))
             plt.close()
 
-            velocities = (
-                    buffer_observations[1:len_data+1, joint_angle_idx[j][idx]] -
-                    buffer_observations[0:len_data, joint_angle_idx[j][idx]]
+            derivatives = (
+                                 observations[1:len_data+1, joint_position_indices[j][idx]] -
+                                 observations[0:len_data, joint_position_indices[j][idx]]
             ) / dt
             plt.cla()
             plt.clf()
-            plt.plot(t, velocities)
-            plt.savefig(f"figures/derivatives_{j}_{idx}.png")
+            plt.plot(t, derivatives)
+            plt.savefig(os.path.join(arg.path_to_save, f"derivatives_{j}_{idx}.png"))
             plt.close()
 
             plt.cla()
             plt.clf()
-            plt.plot(t, buffer_observations[:len_data, joint_velocity_idx[j][idx]])
-            plt.savefig(f"figures/joint_vel_{j}_{idx}.png")
+            plt.plot(t, observations[:len_data, joint_velocity_indices[j][idx]])
+            plt.savefig(os.path.join(arg.path_to_save, f"joint_vel_{j}_{idx}.png"))
             plt.close()
 
+            plt.cla()
+            plt.clf()
+            plt.plot(t, observations[:len_data, position_indices[j][idx]])
+            plt.savefig(os.path.join(arg.path_to_save, f"position_{j}_{idx}.png"))
+            plt.close()
 
+            derivatives = (
+                                  observations[1:len_data + 1, position_indices[j][idx]] -
+                                  observations[0:len_data, position_indices[j][idx]]
+                          ) / dt
+            plt.cla()
+            plt.clf()
+            plt.plot(t, derivatives)
+            plt.savefig(os.path.join(arg.path_to_save, f"position_derivatives_{j}_{idx}.png"))
+            plt.close()
 
-    """
-    dt = 1.0 / 15
-    for s in range(10):
-        for pos_idx, vel_idx in zip([0, 1, 2], [80, 81, 82]):
-            print(f"{vel_idx}: velocity1: {buffer_observations[s][vel_idx]}")
-            velocity = (buffer_observations[s+1][pos_idx] - buffer_observations[s][pos_idx]) / dt
-            print(f"{pos_idx}: velocity2: {velocity}")
-    """
+            plt.cla()
+            plt.clf()
+            plt.plot(t, observations[:len_data, linear_velocity_indices[j][idx]])
+            plt.savefig(os.path.join(arg.path_to_save, f"linear_velocity_{j}_{idx}.png"))
+            plt.close()
