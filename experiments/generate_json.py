@@ -25,7 +25,7 @@ if __name__ == "__main__":
     if arg.position:
         list_of_indices.extend(position_idx)
     if arg.linear_velocity:
-        list_of_indices.extend(angular_velocity_idx)
+        list_of_indices.extend(linear_velocity_idx)
     if arg.root:
         list_of_indices.extend(root_idx)
 
