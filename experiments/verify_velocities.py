@@ -22,6 +22,7 @@ def get_data_from_buffer(
         memory_path: str,
         observation_key: str,
         max_memory_size: int,
+        seq_length: int = 100,
         use_terminal: bool = True,
 ):
     device = torch.device('cpu')
@@ -46,8 +47,6 @@ def get_data_from_buffer(
     table.restore(memory_path)
     print(f"the size of the table is: {table.size()}")
 
-    seq_length = 100
-
     samples = table.sample(count=1, sequence_length=seq_length)
 
     observations = samples['observation'][observation_key]
@@ -63,6 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--path-to-save", type=str, default="figures/")
     parser.add_argument("--action-count", type=int, default=51)
     parser.add_argument("--obs-count", type=int, default=252)
+    parser.add_argument("--seq-length", type=int, default=100)
     parser.add_argument("--use-terminal", action='store_true')
 
     arg = parser.parse_args()
@@ -78,12 +78,11 @@ if __name__ == "__main__":
             memory_path=arg.path_to_buffer,
             observation_key=obs_key,
             max_memory_size=300_000,
+            seq_length=arg.seq_length,
             use_terminal=arg.use_terminal,
         )
     elif arg.path_to_mocap != "":
         observations, _ = get_data_from_mocap(arg.path_to_mocap)
-        # observations = observations[200:]
-
     else:
         raise(IOError, "--path-to-buffer or --path-to-mocap must be provided")
 
