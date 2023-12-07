@@ -312,6 +312,8 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
                 out_lists[key] = list(window)
                 out[key] = sum(window) / len(window)
                 out[f"{key}/cumulative"] = self.windowed_scalar_cumulative[key]
+            elif key == "inf_step":
+                out[key] = self.completed_inferences
 
         return out, out_lists
 
