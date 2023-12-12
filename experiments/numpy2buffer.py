@@ -84,6 +84,12 @@ def overwrite_velocities(
         updated_list_of_observation.append(new_observations)
     return updated_list_of_observation
 
+def make_burgerman(
+    list_of_observations: list[np.ndarray],
+    list_of_actions: list[np.ndarray]
+):
+    for observations in list_of_observations:
+
 
 def reduce_samples(observations, actions, skip_sample=1):
     num_samples = observations.shape[0]
@@ -101,6 +107,7 @@ if __name__ == "__main__":
     parser.add_argument("--vision", action='store_true')
     parser.add_argument("--magic-force", action='store_true')
     parser.add_argument("--overwrite-velocity", action='store_true')
+    parser.add_argument("--burgerman", action='store_true')
 
     arg = parser.parse_args()
     preferred_device = torch.device('cpu')
@@ -145,11 +152,6 @@ if __name__ == "__main__":
 
     if arg.overwrite_velocity:
         list_observations = overwrite_velocities(list_observations)
-
-    # if arg.skip_samples:
-    #    bc_observations, bc_actions = reduce_samples(bc_observations, bc_actions, skip_sample=arg.skip_samples)
-    #    print(f"new observation size: {bc_observations.shape}, "
-    #          f"new action size: {bc_actions.shape}")
 
     memory = create_table_from_numpy(list_observations, list_actions, "features", preferred_device)
     print(f"Table contains: {memory.size()} samples")
