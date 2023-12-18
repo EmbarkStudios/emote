@@ -32,3 +32,17 @@ def normal_init_(m: nn.Module):
         torch.nn.init.normal_(m.weight, std=1e-3)
         if m.bias is not None:
             torch.nn.init.constant_(m.bias, 0)
+
+
+def trunc_normal_init_(m: nn.Module, std: float = 0.02):
+    if isinstance(m, nn.Linear):
+        nn.init.trunc_normal_(m.weight, std=std)
+        if m.bias is not None:
+            nn.init.constant_(m.bias, 0)
+
+
+def constant_init_(m: nn.Module, val):
+    if isinstance(m, nn.Linear):
+        nn.init.constant_(m.weight, val)
+        if m.bias is not None:
+            nn.init.constant_(m.bias, 0)
