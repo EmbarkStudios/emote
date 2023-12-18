@@ -1,5 +1,4 @@
 import argparse
-import time
 
 from functools import partial
 
@@ -16,7 +15,6 @@ from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import Tensor, nn
 from torch.optim import Adam
-from torch.utils.tensorboard import SummaryWriter
 
 from emote import Trainer
 from emote.algorithms.tdmpc2 import (
@@ -26,10 +24,6 @@ from emote.algorithms.tdmpc2 import (
     TDMPC2Loss,
     TDMPC2Proxy,
 )
-from emote.callbacks import Checkpointer
-from emote.callbacks.generic import BackPropStepsTerminator
-from emote.callbacks.logging import TensorboardLogger
-from emote.mixins.logging import LoggingMixin
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import constant_init_, trunc_normal_init_, xavier_uniform_init_
 from emote.utils.tdmpc2_utils import SimNorm, two_hot_inv
@@ -183,60 +177,6 @@ class Q(nn.Module):
         q1 = two_hot_inv(q1, self.bin_min, self.bin_max, self.num_bins)
         q2 = two_hot_inv(q2, self.bin_min, self.bin_max, self.num_bins)
         return 0.5 * (q1 + q2) if return_type == "avg" else torch.min(q1, q2)
-
-
-def create_complementary_callbacks(
-    args,
-    logged_cbs: list[LoggingMixin],
-    cbs_name_to_checkpoint: list[str] = None,
-):
-    """The function creates the supplementary callbacks for the training and adds them to the callback lists
-    and returns the list.
-
-        Arguments:
-            args: input args
-            logged_cbs (list[Callback]): the list of callbacks
-            cbs_name_to_checkpoint (list[str]): the name of callbacks to checkpoint
-        Returns:
-            (list[Callback]): the full list of callbacks for the training
-    """
-    if args.use_wandb:
-        from emote.callbacks.wb_logger import WBLogger
-
-        config = {
-            "wandb_project": args.name,
-            "wandb_run": args.wandb_run,
-            "hidden_dims": args.hidden_layer_size,
-            "batch_size": args.batch_size,
-            "learning_rate": args.actor_lr,
-            "rollout_len": args.rollout_length,
-        }
-        logger = WBLogger(
-            callbacks=logged_cbs,
-            config=config,
-            log_interval=100,
-        )
-    else:
-        logger = TensorboardLogger(
-            logged_cbs,
-            SummaryWriter(log_dir=args.log_dir + "/" + args.name + "_{}".format(time.time())),
-            1,
-        )
-
-    bp_step_terminator = BackPropStepsTerminator(bp_steps=args.bp_steps)
-    callbacks = logged_cbs + [logger, bp_step_terminator]
-
-    if cbs_name_to_checkpoint:
-        checkpointer = Checkpointer(
-            callbacks=[
-                cb for cb in logged_cbs if hasattr(cb, "name") and cb.name in cbs_name_to_checkpoint
-            ],
-            run_root=args.checkpoint_dir,
-            checkpoint_interval=args.checkpoint_interval,
-        )
-        callbacks += [checkpointer]
-
-    return callbacks
 
 
 if __name__ == "__main__":

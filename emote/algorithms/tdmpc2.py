@@ -8,7 +8,6 @@ import torch.nn.functional as F
 
 from torch import nn, optim
 
-from emote import Trainer
 from emote.algorithms.sac import AlphaLoss, GenericAgentProxy, PolicyLoss, soft_update_from_to
 from emote.callback import Callback
 from emote.callbacks import LossCallback

@@ -51,7 +51,7 @@ class GaussianPolicyHead(nn.Module):
             Direct samples (pre-actions) from the policy
             log-probabilities associated to those samples
         """
-        bsz = x.shape[0]
+        # bsz = x.shape[0]
 
         mean = self.mean(x).clamp(min=-5, max=5)  # equates to 0.99991 after tanh.
         std = torch.exp(self.log_std(x).clamp(min=-20, max=2))
