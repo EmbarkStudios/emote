@@ -15,9 +15,9 @@ reinforcement learning
 [![Embark](https://img.shields.io/badge/discord-ark-%237289da.svg?logo=discord)](https://discord.gg/dAuKfZS)
 [![Build status](https://badge.buildkite.com/968ac3c0bb075fb878f9f973ed91406c8b257b0f050c197542.svg?theme=github&branch=main)](https://buildkite.com/embark-studios/emote)
 [![Docs status](https://img.shields.io/badge/Docs-latest-brightgreen)](https://embarkstudios.github.io/emote/)
-[![pdm-managed](https://img.shields.io/badge/PDM-v2.5.6-blueviolet)](https://pdm.fming.dev)
+[![pdm-managed](https://img.shields.io/badge/PDM-v2.10.1-blueviolet)](https://pdm.fming.dev)
 
-🚧 This project is very much **work in progress and not yet ready for production use.** 🚧
+🚧 This project is a  **work in progress**. Things can and will change. 🚧
 
 </div>
 
@@ -127,7 +127,7 @@ pdm install -d -G :all
 **Torch won't install:** Check that your python version is correct. Try deleting your `.venv` and recreating it with
 
 ```bash
-pdm venv create 3.9
+pdm venv create 3.10
 pdm install -G :all
 ```
 
@@ -135,10 +135,10 @@ pdm install -G :all
 
 ```bash
 sudo apt install swig
-sudo apt install python3.9-dev
+sudo apt install python3.10-dev
 ```
 
-**Python 3.9 is tricky to install:** For Ubuntu based distros try adding the deadsnakes PPA.
+**Python 3.10 is tricky to install:** For Ubuntu based distros try adding the deadsnakes PPA.
 
 ## Contribution
 

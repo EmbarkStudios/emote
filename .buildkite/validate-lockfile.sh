@@ -1,6 +1,6 @@
 set -eo pipefail
 
-${PDM_COMMAND:1:-1} plugin add pdm-plugin-torch==23.1
+${PDM_COMMAND:1:-1} install --plugins
 
 EXIT_CODE=0
 TORCH_EXIT_CODE=0
@@ -10,7 +10,7 @@ ${PDM_COMMAND:1:-1} torch lock --check || TORCH_EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ] || [ $TORCH_EXIT_CODE -ne 0 ]; then
 	cat << EOF | buildkite-agent annotate --style "error" --context "lockfile"
-:lock: Lockfiles are outdated. Please run \`pdm lock\` and commit the result.
+:lock: Lockfiles are outdated. Please run \`pdm lock && pdm torch lock\` and commit the result.
 EOF
 	exit 1
 else

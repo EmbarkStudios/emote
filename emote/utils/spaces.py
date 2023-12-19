@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 import numpy as np
 import torch
@@ -7,7 +7,7 @@ import torch
 
 @dataclass
 class BoxSpace:
-    dtype: Union[torch.dtype, np.dtype]
+    dtype: torch.dtype | np.dtype
     shape: Tuple[int]
 
 

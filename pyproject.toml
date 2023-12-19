@@ -5,7 +5,7 @@ description = "A modular reinforcement learning library"
 authors = [
     {name = "Embark Studios", email = "python@embark-studios.com"},
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "MIT"}
 
@@ -45,33 +45,15 @@ docs = [
     "myst-parser~=0.18.0"
 ]
 
-[tool.pdm.scripts]
-post_install = "pdm plugin add pdm-plugin-torch>=23.1.1"
-post_lock = "pdm torch lock"
-docs = "bash -c 'cd docs && rm -rf _build/dirhtml/ && make dirhtml'"
-docs-serve = "python -m http.server --directory docs/_build/dirhtml"
+[project.urls]
+repository = "https://github.com/EmbarkStudios/emote"
 
-test = "pytest tests"
+[tool.pdm]
+plugins = [
+    "pdm-plugin-torch>=23.4.0"
+]
 
-flake8_ = "flake8 emote experiments tests"
-bandit_ = "bandit --r -ll emote experiments tests"
-lint.composite = ["bandit_", "flake8_"]
-
-black_ = "black emote experiments tests"
-isort_ = "isort emote experiments tests"
-fmt.composite = ["black_", "isort_"]
-
-precommit.composite = ["fmt", "lint", "test"]
-
-[[tool.pdm.source]]
-type = "index"
-url = "https://download.pytorch.org/whl/cpu/"
-name = "torch"
-
-[tool.pdm.resolution]
-respect-source-order = false
-
-[tool.pdm.plugins.torch]
+[tool.pdm.plugin.torch]
 dependencies = [
    "torch==1.12.0"
 ]
@@ -84,12 +66,26 @@ rocm-versions = ["5.0"]
 enable-cuda = true
 cuda-versions = ["cu116"]
 
-[project.urls]
-repository = "https://github.com/EmbarkStudios/emote"
+[tool.pdm.scripts]
+docs = "bash -c 'cd docs && rm -rf _build/dirhtml/ && make dirhtml'"
+docs-serve = "python -m http.server --directory docs/_build/dirhtml"
+
+test = "pytest tests"
+
+flake8_ = "flake8 emote experiments tests"
+bandit_ = "bandit --r -ll emote experiments tests"
+lint.composite = ["bandit_", "flake8_"]
+
+black_ = "black emote experiments tests"
+isort_ = "isort emote experiments tests"
+fmt.composite = ["black_", "isort_"]
+foo = "pdm -V"
+
+precommit.composite = ["fmt", "lint", "test"]
 
 [build-system]
-requires = ["pdm-pep517>=1.0.0"]
-build-backend = "pdm.pep517.api"
+requires = ["pdm-backend>=2.0.0"]
+build-backend = "pdm.backend"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

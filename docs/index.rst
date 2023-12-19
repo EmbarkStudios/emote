@@ -13,6 +13,7 @@ PDM site. Then install the package using ::
 
    pdm install
 
+Currently, our supported version of PDM is 2.10 -- other versions may work, but there are no guarantees.
 
 Ideas and Philosophy
 ====================

@@ -47,7 +47,7 @@ def test_onnx_metadata_set(exporter):
     )
 
     with open(handle.filepath, "rb") as f:
-        model = onnx.load_model(f, onnx.ModelProto)
+        model = onnx.load_model(f, "protobuf")
 
     print(model.metadata_props)
 
@@ -84,7 +84,7 @@ def test_onnx_converts_value_to_str(exporter):
     )
 
     with open(handle.filepath, "rb") as f:
-        model = onnx.load_model(f, onnx.ModelProto)
+        model = onnx.load_model(f, "protobuf")
 
     assert model.metadata_props[0].key == "this is a key"
     assert model.metadata_props[0].value == "1"
