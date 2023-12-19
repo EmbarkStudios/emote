@@ -488,8 +488,9 @@ class TDMPC2Proxy(GenericAgentProxy):
         )
 
         if self._prev_mean is not None:
-            for i, state in enumerate(episode_states):
-                if state != EpisodeState.INITIAL:
+            # sometimes we get different numbers of agents which can throw an IndexError
+            for i in range(min(self._prev_mean.shape[1], mean.shape[1])):
+                if episode_states[i] != EpisodeState.INITIAL:
                     mean[:-1, i] = self._prev_mean[1:, i]
 
         actions = torch.empty(
