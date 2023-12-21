@@ -56,7 +56,7 @@ class PolicyLossTDMPC2(PolicyLoss):
 
         # This is different compared to the normal loss fn
         # weigh temporally further time steps less
-        rho = torch.pow(self.rho, torch.arange(len(q_pi)))
+        rho = torch.pow(self.rho, torch.arange(len(q_pi))).to(alpha.device)
         policy_loss = ((alpha * logp_pi - q_pi).mean(dim=(1, 2)) * rho).mean()
 
         self.log_scalar("policy/q_pi", torch.mean(q_pi))
@@ -444,7 +444,7 @@ class TDMPC2Proxy(GenericAgentProxy):
             reward += discount * r
             discount *= self.discount
 
-        actions = self.policy_copy(z, torch.randn(self.action_dim))
+        actions = self.policy_copy(z, torch.randn(self.action_dim, device=self.device))
         qs = self.qs_copy(z, actions, return_type="avg")
 
         return reward + discount * qs
@@ -474,7 +474,7 @@ class TDMPC2Proxy(GenericAgentProxy):
 
             # imagine rollouts: starting from the actual observation, generate actions with the policy and next state with the dynamics model
             for t in range(self.horizon):
-                eps = torch.randn(self.action_dim)
+                eps = torch.randn(self.action_dim, device=self.device)
                 a_t = self.policy_copy(zs, eps)
                 p_actions[t] = a_t
 
@@ -526,7 +526,6 @@ class TDMPC2Proxy(GenericAgentProxy):
             top_k_ind = torch.topk(values.squeeze(-1), self.num_k, dim=1).indices
             top_k_values = values.gather(1, top_k_ind.unsqueeze(-1))
             max_value = torch.max(top_k_values)
-            # self.log_scalar("tdmpc2/max_value", torch.mean(max_value).item())
 
             top_k_actions = actions[:, torch.arange(batch_dim)[:, None], top_k_ind, :]
 
