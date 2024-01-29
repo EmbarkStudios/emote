@@ -84,12 +84,6 @@ def overwrite_velocities(
         updated_list_of_observation.append(new_observations)
     return updated_list_of_observation
 
-def make_burgerman(
-    list_of_observations: list[np.ndarray],
-    list_of_actions: list[np.ndarray]
-):
-    for observations in list_of_observations:
-
 
 def reduce_samples(observations, actions, skip_sample=1):
     num_samples = observations.shape[0]
