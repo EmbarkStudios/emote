@@ -8,14 +8,26 @@ if __name__ == "__main__":
     parser.add_argument("--position", action="store_true")
     parser.add_argument("--linear-velocity", action="store_true")
     parser.add_argument("--root", action="store_true")
+    parser.add_argument("--number-of-controllable-joints", type=int, default=17)
+    parser.add_argument("--number-of-bodies", type=int, default=18)
 
     arg = parser.parse_args()
+    
+    n_joints = arg.number_of_controllable_joints
+    n_bodies = arg.number_of_bodies
 
-    joint_angle_idx = [[4 * k, 4 * k + 1, 4 * k + 2] for k in range(17)]
-    linear_velocity_idx = [[68 + 9 * k, 68 + 9 * k + 1, 68 + 9 * k + 2] for k in range(17)]
-    angular_velocity_idx = [[68 + 9 * k + 3, 68 + 9 * k + 4, 68 + 9 * k + 5] for k in range(17)]
-    position_idx = [[17 * 4 + 9 * k + 6, 17 * 4 + 9 * k + 7, 17 * 4 + 9 * k + 8] for k in range(17)]
-    root_idx = [[3 * k + 239, 3 * k + 239 + 1, 3 * k + 239 + 2] for k in range(3)]
+    joint_angle_idx = [[4 * k, 4 * k + 1, 4 * k + 2] for k in range(n_joints)]
+
+    offset = n_joints * 4
+    linear_velocity_idx = [[offset + 9 * k, offset + 9 * k + 1, offset + 9 * k + 2]
+                           for k in range(n_joints)]
+    angular_velocity_idx = [[offset + 9 * k + 3, offset + 9 * k + 4, offset + 9 * k + 5]
+                            for k in range(n_joints)]
+    position_idx = [[offset + 9 * k + 6, offset + 9 * k + 7, offset + 9 * k + 8]
+                    for k in range(n_joints)]
+
+    offset = 13 * n_joints + n_bodies
+    root_idx = [[3 * k + offset, 3 * k + offset + 1, 3 * k + offset + 2] for k in range(3)]
 
     list_of_indices = []
     if arg.joint_angle:
