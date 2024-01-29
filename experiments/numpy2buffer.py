@@ -85,43 +85,32 @@ def overwrite_velocities(
     return updated_list_of_observation
 
 
-def reduce_samples(observations, actions, skip_sample=1):
-    num_samples = observations.shape[0]
-    idx = np.arange(0, num_samples, skip_sample + 1)
-    return observations[idx], actions[idx]
-
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-buffer", type=str, default="/home/ali/data/biped/replay_buffer/")
     parser.add_argument("--path-to-mocap", type=str, default="/home/ali/data/biped/numpy/")
+
     parser.add_argument("--idx-start", nargs="+", type=int, default=[])
     parser.add_argument("--idx-end", nargs="+", type=int, default=[])
-    parser.add_argument("--vision", action='store_true')
-    parser.add_argument("--magic-force", action='store_true')
+
+    parser.add_argument("--zero-actions", action='store_true')
+    parser.add_argument("--action-size", type=int, default=0)
+
     parser.add_argument("--overwrite-velocity", action='store_true')
-    parser.add_argument("--burgerman", action='store_true')
 
     arg = parser.parse_args()
     preferred_device = torch.device('cpu')
 
-    bc_actions = np.load(os.path.join(arg.path_to_mocap, 'actions.npy'))
     bc_observations = np.load(os.path.join(arg.path_to_mocap, 'observations.npy'))
+    num_samples = bc_observations.shape[0]
 
-    if arg.magic_force:
-        bc_actions = np.concatenate((bc_actions, np.zeros((bc_actions.shape[0], 1))), 1)
+    if arg.zero_actions:
+        assert arg.action_size > 0
+        bc_actions = np.zeros((num_samples, arg.action_size))
 
-    if arg.vision:
-        bc_observations = np.concatenate(
-            (
-                bc_observations,
-                np.zeros(
-                    (bc_observations.shape[0], 100)
-                )
-            ),
-            1
-        )
+    else:
+        bc_actions = np.load(os.path.join(arg.path_to_mocap, 'actions.npy'))
 
     print(f"observation size: {bc_observations.shape}")
     print(f"action size: {bc_actions.shape}")
