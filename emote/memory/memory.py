@@ -486,6 +486,30 @@ class MemoryLoader:
             yield {self.data_group: data, self.size_key: data[self.size_key]}
 
 
+class MemoryLoaderList:
+    """Creates one memory loader from a list of loaders."""
+
+    def __init__(self, loaders: list[MemoryLoader]):
+        self._loaders = loaders
+
+    def is_ready(self):
+        return all([loader.is_ready() for loader in self._loaders])
+
+    def __iter__(self):
+        if not self.is_ready():
+            raise Exception(
+                """Data loader does not have enough data. Check `is_ready()`
+                before trying to iterate over data."""
+            )
+
+        while True:
+            out = {}
+            for loader in self._loaders:
+                out.update(next(iter(loader)))
+
+            yield out
+
+
 class MemoryWarmup(Callback):
     """A blocker to ensure memory has data.
 

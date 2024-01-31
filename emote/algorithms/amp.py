@@ -1,19 +1,41 @@
-import torch
-from torch import Tensor, nn
-from emote.callbacks.loss import LossCallback
 from typing import Callable
 
+import torch
 
-def gradient_loss_function(prediction: Tensor, inputs: Tensor) -> Tensor:
-    predictions = torch.split(prediction, 1, dim=0)
-    inputs_grad = torch.autograd.grad(predictions, inputs, create_graph=True, retain_graph=True)
-    inputs_grad = torch.cat(inputs_grad, axis=1)
+from torch import Tensor, nn
+
+from emote import Callback
+from emote.callbacks.logging import LoggingMixin
+from emote.callbacks.loss import LossCallback
+
+
+def gradient_loss_function(model_output: Tensor, model_input: Tensor) -> Tensor:
+    """
+    Given inputs and outputs of an nn.Module, computes the sum of
+    squared derivatives of outputs to the inputs
+        Arguments:
+            model_output (Tensor): the output of the nn.Module
+            model_input (Tensor): the input to the nn.Module
+        Returns:
+            loss (Tensor): the sum of squared derivatives
+    """
+    # grad can be implicitly created only for scalar outputs
+    predictions = torch.split(model_output, 1, dim=0)
+    inputs_grad = torch.autograd.grad(
+        predictions, model_input, create_graph=True, retain_graph=True
+    )
+    inputs_grad = torch.cat(inputs_grad, dim=1)
     inputs_grad_norm = torch.square(inputs_grad)
     inputs_grad_norm = torch.sum(inputs_grad_norm, dim=1)
     return torch.mean(inputs_grad_norm)
 
 
 class DiscriminatorLoss(LossCallback):
+    """
+    This loss is used to train a discriminator for
+    adversarial training.
+    """
+
     def __init__(
         self,
         discriminator: nn.Module,
@@ -39,6 +61,17 @@ class DiscriminatorLoss(LossCallback):
         self._obs_key = input_key
 
     def loss(self, imitation_batch: dict, policy_batch: dict) -> Tensor:
+        """
+        Computing the loss
+            Arguments:
+                imitation_batch (dict): a batch of data from the reference animation.
+                    the discriminator is trained to classify data from this batch as
+                    positive samples
+                policy_batch (dict): a batch of data from the RL buffer. the discriminator
+                    is trained to classify data from this batch as negative samples.
+            Returns:
+                loss (Tensor): the loss tensor
+        """
         imitation_batch_size = imitation_batch["batch_size"]
         policy_data_batch_size = policy_batch["batch_size"]
 
@@ -83,9 +116,11 @@ class DiscriminatorLoss(LossCallback):
 
 
 class AMPReward(Callback, LoggingMixin):
+    """Adversarial rewarding with AMP"""
+
     def __init__(
         self,
-        discriminator: Discriminator,
+        discriminator: nn.Module,
         state_map_fn: Callable[[Tensor], Tensor],
         style_reward_weight: float,
         rollout_length: int,
@@ -104,6 +139,15 @@ class AMPReward(Callback, LoggingMixin):
     def begin_batch(
         self, observation: dict[str, Tensor], next_observation: dict[str, Tensor], rewards: Tensor
     ):
+        """
+        Updating the reward by adding the weighted AMP reward
+            Arguments:
+                observation: current observation
+                next_observation: next observation
+                rewards: task reward
+            Returns
+                dict: the batch data with updated reward
+        """
         obs = observation[self._obs_key]
         bsz = obs.shape[0]
         rollouts = obs.reshape(bsz // self._rollout_length, self._rollout_length, -1)
