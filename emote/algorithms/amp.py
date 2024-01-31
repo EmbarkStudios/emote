@@ -1,29 +1,22 @@
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 from emote.callbacks.loss import LossCallback
 from typing import Callable
 
 
 def gradient_loss_function(prediction: Tensor, inputs: Tensor) -> Tensor:
-    imitation_batch_size = prediction.shape[0]
-    n_obs = inputs.shape[1]
     predictions = torch.split(prediction, 1, dim=0)
-    grad_inp = torch.autograd.grad(predictions, inputs, create_graph=True, retain_graph=True)
-    grad_inp = torch.cat(grad_inp, axis=1)
-    assert grad_inp.shape == (imitation_batch_size, n_obs)
-    grad_inp_norm = torch.square(grad_inp)
-    assert grad_inp_norm.shape == (imitation_batch_size, n_obs)
-    grad_inp_norm = torch.sum(grad_inp_norm, dim=1)
-    assert grad_inp_norm.shape == (imitation_batch_size,)
-    grad_inp_loss = torch.mean(grad_inp_norm)
-    assert grad_inp_loss.shape == ()
-    return grad_inp_loss
+    inputs_grad = torch.autograd.grad(predictions, inputs, create_graph=True, retain_graph=True)
+    inputs_grad = torch.cat(inputs_grad, axis=1)
+    inputs_grad_norm = torch.square(inputs_grad)
+    inputs_grad_norm = torch.sum(inputs_grad_norm, dim=1)
+    return torch.mean(inputs_grad_norm)
 
 
 class DiscriminatorLoss(LossCallback):
     def __init__(
         self,
-        discriminator: Discriminator,
+        discriminator: nn.Module,
         state_map_fn: Callable[[Tensor], Tensor],
         grad_loss_weight: float,
         optimizer: torch.optim.Optimizer,
