@@ -39,7 +39,8 @@ class DiscriminatorLoss(LossCallback):
     def __init__(
         self,
         discriminator: nn.Module,
-        state_map_fn: Callable[[Tensor], Tensor],
+        imitation_state_map_fn: Callable[[Tensor], Tensor],
+        policy_state_map_fn: Callable[[Tensor], Tensor],
         grad_loss_weight: float,
         optimizer: torch.optim.Optimizer,
         lr_schedule: torch.optim.lr_scheduler._LRScheduler,
@@ -56,7 +57,8 @@ class DiscriminatorLoss(LossCallback):
             data_group=None,
         )
         self._discriminator = discriminator
-        self._state_map_function = state_map_fn
+        self._imitation_state_map_function = imitation_state_map_fn
+        self._policy_state_map_function = policy_state_map_fn
         self._grad_loss_weight = grad_loss_weight
         self._obs_key = input_key
 
@@ -80,13 +82,13 @@ class DiscriminatorLoss(LossCallback):
         neg_obs: Tensor = policy_batch["observation"][self._obs_key]
         neg_next_obs: Tensor = policy_batch["next_observation"][self._obs_key]
 
-        (pos_obs,) = (self._state_map_function(pos_obs),)
-        pos_next_obs = self._state_map_function(pos_next_obs)
+        pos_obs = self._imitation_state_map_function(pos_obs)
+        pos_next_obs = self._imitation_state_map_function(pos_next_obs)
         pos_input = torch.cat([pos_obs, pos_next_obs], dim=-1)
         pos_input.requires_grad_(True)
 
-        neg_obs = self._state_map_function(neg_obs)
-        neg_next_obs = self._state_map_function(neg_next_obs)
+        neg_obs = self._policy_state_map_function(neg_obs)
+        neg_next_obs = self._policy_state_map_function(neg_next_obs)
         neg_input = torch.cat([neg_obs, neg_next_obs], dim=-1)
 
         pos_output = self._discriminator(pos_input)
