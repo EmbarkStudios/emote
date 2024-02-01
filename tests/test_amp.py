@@ -43,7 +43,8 @@ def test_discriminator_loss():
     discriminator_opt = torch.optim.Adam(discriminator.parameters(), lr=0.001)
     loss = DiscriminatorLoss(
         discriminator=discriminator,
-        state_map_fn=state_map_fn,
+        imitation_state_map_fn=state_map_fn,
+        policy_state_map_fn=state_map_fn,
         grad_loss_weight=1,
         optimizer=discriminator_opt,
         lr_schedule=None,
