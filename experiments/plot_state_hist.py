@@ -7,14 +7,6 @@ from emote.memory.builder import DictObsNStepTable
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 
-def get_data_from_mocap(
-        mocap_path: str
-):
-    observations = np.load(os.path.join(mocap_path, 'observations.npy'))
-    actions = np.load(os.path.join(mocap_path, 'actions.npy'))
-    return observations, actions
-
-
 def get_data_from_buffer(
         action_size: int,
         observation_size: int,
@@ -64,6 +56,7 @@ if __name__ == "__main__":
     parser.add_argument("--path-to-buffer", type=str, default="/home/ali/data/biped/replay_buffer/")
     parser.add_argument("--path-to-mocap", type=str, default="/home/ali/data/biped/numpy/")
     parser.add_argument("--path-to-save", type=str, default="/home/ali/data/biped/figure/")
+    parser.add_argument("--num-joints", type=int, default=17)
     parser.add_argument("--action-count", type=int, default=51)
     parser.add_argument("--obs-count", type=int, default=252)
 
@@ -84,25 +77,22 @@ if __name__ == "__main__":
         max_memory_size=300_000,
         minimum_samples=500
     )
-    mocap_observations, mocap_actions = get_data_from_mocap(path_to_mocap)
+    mocap_observations = np.load(os.path.join(path_to_mocap, 'observations.npy'))
+
     print(f"size of buffer data: {buffer_observations.shape},\n"
           f"mocap data: {mocap_observations.shape}")
 
-    np.save(os.path.join(path_to_save, 'mocap_observations.npy'), mocap_observations)
-    np.save(os.path.join(path_to_save, 'mocap_actions.npy'), mocap_actions)
-    np.save(os.path.join(path_to_save, 'buffer_observations.npy'), buffer_observations)
-    np.save(os.path.join(path_to_save, 'buffer_actions.npy'), buffer_actions)
-
-    joint_angle_idx = [[4 * k, 4 * k + 1, 4 * k + 2] for k in range(17)]
-    linear_velocity_idx = [[68 + 9 * k, 68 + 9 * k + 1, 68 + 9 * k + 2] for k in range(17)]
-    angular_velocity_idx = [[68 + 9 * k + 3, 68 + 9 * k + 4, 68 + 9 * k + 5] for k in range(17)]
-    position_idx = [[17 * 4 + 9 * k + 6, 17 * 4 + 9 * k + 7, 17 * 4 + 9 * k + 8] for k in range(17)]
-    root_idx = [k + 239 for k in range(9)]
+    n_joints = arg.num_joints
+    joint_angle_idx = [[4 * k, 4 * k + 1, 4 * k + 2] for k in range(n_joints)]
+    offset = n_joints * 4
+    linear_velocity_idx = [[offset + 9 * k, offset + 9 * k + 1, offset + 9 * k + 2]
+                           for k in range(n_joints)]
+    position_idx = [[offset + 9 * k + 6, offset + 9 * k + 7, offset + 9 * k + 8]
+                    for k in range(n_joints)]
 
     all_idx = {
         'joint_angle': joint_angle_idx,
         'linear_velocity': linear_velocity_idx,
-        'angular_velocity': angular_velocity_idx,
         'linear_positions': position_idx,
     }
 
@@ -111,7 +101,7 @@ if __name__ == "__main__":
 
     for key, indices in all_idx.items():
         for j in range(3):
-            for k in range(17):
+            for k in range(n_joints):
                 plt.subplot(6, 3, k + 1)
                 idx = indices[k][j]
                 plt.subplots_adjust(left=0.1,
@@ -124,17 +114,3 @@ if __name__ == "__main__":
                 plt.hist(mocap_observations[:, idx], alpha=0.5)
             plt.savefig(os.path.join(path_to_save, f"{key}-{j}.png"), dpi=2000)
             plt.close()
-
-    for j in range(9):
-        plt.subplot(3, 3, j + 1)
-        idx = root_idx[j]
-        plt.subplots_adjust(left=0.1,
-                            bottom=0.1,
-                            right=0.9,
-                            top=0.9,
-                            wspace=0.4,
-                            hspace=0.4)
-        plt.hist(buffer_observations[:, idx])
-        plt.hist(mocap_observations[:, idx])
-    plt.savefig(os.path.join(path_to_save, f"root.png"), dpi=2000)
-    plt.close()
