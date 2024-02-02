@@ -14,6 +14,7 @@ def get_data_from_buffer(
         observation_key: str,
         max_memory_size: int,
         minimum_samples: int,
+        use_terminal: bool = True,
 ):
     device = torch.device('cpu')
     spaces = MDPSpace(
@@ -30,7 +31,7 @@ def get_data_from_buffer(
     )
     table = DictObsNStepTable(
         spaces=spaces,
-        use_terminal_column=True,
+        use_terminal_column=use_terminal,
         maxlen=max_memory_size,
         device=device,
     )
@@ -69,15 +70,23 @@ if __name__ == "__main__":
     obs_count = arg.obs_count
 
     obs_key = "features"
-    buffer_observations, buffer_actions = get_data_from_buffer(
+    buffer_observations, _ = get_data_from_buffer(
         action_size=action_count,
         observation_size=obs_count,
         memory_path=path_to_buffer,
         observation_key=obs_key,
-        max_memory_size=300_000,
+        max_memory_size=500_000,
         minimum_samples=500
     )
-    mocap_observations = np.load(os.path.join(path_to_mocap, 'observations.npy'))
+    mocap_observations, _ = get_data_from_buffer(
+        action_size=action_count,
+        observation_size=182,
+        memory_path=path_to_mocap,
+        observation_key=obs_key,
+        max_memory_size=500_000,
+        minimum_samples=500,
+        use_terminal=False,
+    )
 
     print(f"size of buffer data: {buffer_observations.shape},\n"
           f"mocap data: {mocap_observations.shape}")
@@ -110,7 +119,7 @@ if __name__ == "__main__":
                                     top=0.9,
                                     wspace=0.4,
                                     hspace=0.4)
-                plt.hist(buffer_observations[:, idx], alpha=0.5)
-                plt.hist(mocap_observations[:, idx], alpha=0.5)
+                plt.hist(buffer_observations[:, idx], alpha=0.5, color='red')
+                plt.hist(mocap_observations[:, idx], alpha=0.5, color='blue')
             plt.savefig(os.path.join(path_to_save, f"{key}-{j}.png"), dpi=2000)
             plt.close()
