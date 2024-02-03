@@ -459,12 +459,14 @@ class MemoryLoader:
         rollout_length: int,
         size_key: str,
         data_group: str = "default",
+        name: str = "default",
     ):
         self.data_group = data_group
         self.table = table
         self.rollout_count = rollout_count
         self.rollout_length = rollout_length
         self.size_key = size_key
+        self.name = name
         self.timer = TimedBlock()
 
     def is_ready(self):
@@ -484,6 +486,33 @@ class MemoryLoader:
 
             data[self.size_key] = self.rollout_count * self.rollout_length
             yield {self.data_group: data, self.size_key: data[self.size_key]}
+
+
+class MemoryLoaderLogger(Callback, LoggingMixin):
+    """Callback that periodically logs tracked metrics from `MemoryLoader`s and their `Table`."""
+
+    def __init__(self, loaders: list[MemoryLoader], bp_steps_per_log=1000):
+        super().__init__(cycle=bp_steps_per_log)
+        self._loaders = loaders
+        self._log_interval = bp_steps_per_log
+
+    def begin_cycle(self):
+        for loader in self._loaders:
+            self._log_loader(loader)
+
+    def _log_loader(self, loader: MemoryLoader):
+        mem_size = loader.table.size()
+        mean, var = loader.timer.stats()
+
+        self.log_scalar(f"memory/{loader.name}/size", mem_size)
+        self.log_scalar(f"memory/{loader.name}/fetch/timing/mean", mean)
+        self.log_scalar(f"memory/{loader.name}/fetch/timing/var", var)
+
+        if hasattr(loader.table, "_timers"):
+            timers: BlockTimers = loader.table._timers
+            for block_name, (mean, var) in timers.stats().items():
+                self.log_scalar(f"memory/{loader.name}/table/{block_name}/timing/mean", mean)
+                self.log_scalar(f"memory/{loader.name}/table/{block_name}/timing/var", var)
 
 
 class MemoryWarmup(Callback):
