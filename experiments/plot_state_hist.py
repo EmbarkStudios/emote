@@ -105,6 +105,8 @@ if __name__ == "__main__":
         'linear_positions': position_idx,
     }
 
+    print(all_idx)
+
     font = {'size': 6}
     plt.rc('font', **font)
 
@@ -121,5 +123,6 @@ if __name__ == "__main__":
                                     hspace=0.4)
                 plt.hist(buffer_observations[:, idx], alpha=0.5, color='red')
                 plt.hist(mocap_observations[:, idx], alpha=0.5, color='blue')
+                plt.ylabel(f"joint {k}")
             plt.savefig(os.path.join(path_to_save, f"{key}-{j}.png"), dpi=2000)
             plt.close()
