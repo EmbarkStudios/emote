@@ -57,9 +57,10 @@ if __name__ == "__main__":
     parser.add_argument("--path-to-buffer", type=str, default="/home/ali/data/biped/replay_buffer/")
     parser.add_argument("--path-to-mocap", type=str, default="/home/ali/data/biped/numpy/")
     parser.add_argument("--path-to-save", type=str, default="/home/ali/data/biped/figure/")
-    parser.add_argument("--num-joints", type=int, default=17)
-    parser.add_argument("--action-count", type=int, default=51)
-    parser.add_argument("--obs-count", type=int, default=252)
+    parser.add_argument("--num-joints", type=int, default=12)
+    parser.add_argument("--action-count", type=int, default=36)
+    parser.add_argument("--obs-count", type=int, default=182)
+    parser.add_argument("--vision-count", type=int, default=900)
 
     arg = parser.parse_args()
 
@@ -68,11 +69,12 @@ if __name__ == "__main__":
     path_to_save = arg.path_to_save
     action_count = arg.action_count
     obs_count = arg.obs_count
+    vision_count = arg.vision_count
 
     obs_key = "features"
     buffer_observations, _ = get_data_from_buffer(
         action_size=action_count,
-        observation_size=obs_count,
+        observation_size=obs_count + vision_count,
         memory_path=path_to_buffer,
         observation_key=obs_key,
         max_memory_size=500_000,
@@ -80,7 +82,7 @@ if __name__ == "__main__":
     )
     mocap_observations, _ = get_data_from_buffer(
         action_size=action_count,
-        observation_size=182,
+        observation_size=obs_count,
         memory_path=path_to_mocap,
         observation_key=obs_key,
         max_memory_size=500_000,
