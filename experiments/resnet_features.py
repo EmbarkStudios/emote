@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
     resnet_model = ResNetFeatures(
         res_block=BasicBlock,
-        n_blocks_list=[2, 2, 2, 2],
+        n_blocks_list=[1, 1, 1, 1],
         num_channels=1,
         out_channels_list=[64, 128, 256, 512]
     )
