@@ -4,12 +4,12 @@
 
 from .callbacks import MemoryImporterCallback
 from .memory import (
+    JointMemoryLoader,
     LoggingProxyWrapper,
     MemoryExporterProxyWrapper,
     MemoryLoader,
     MemoryWarmup,
     TableMemoryProxy,
-    JointMemoryLoader,
 )
 from .table import Table
 
