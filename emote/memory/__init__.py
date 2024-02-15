@@ -9,6 +9,7 @@ from .memory import (
     MemoryLoader,
     MemoryWarmup,
     TableMemoryProxy,
+    JointMemoryLoader,
 )
 from .table import Table
 
@@ -21,4 +22,5 @@ __all__ = [
     "MemoryImporterCallback",
     "LoggingProxyWrapper",
     "MemoryWarmup",
+    "JointMemoryLoader",
 ]
