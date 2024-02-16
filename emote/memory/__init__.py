@@ -4,6 +4,7 @@
 
 from .callbacks import MemoryImporterCallback
 from .memory import (
+    JointMemoryLoader,
     LoggingProxyWrapper,
     MemoryExporterProxyWrapper,
     MemoryLoader,
@@ -21,4 +22,5 @@ __all__ = [
     "MemoryImporterCallback",
     "LoggingProxyWrapper",
     "MemoryWarmup",
+    "JointMemoryLoader",
 ]
