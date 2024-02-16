@@ -7,6 +7,8 @@ from emote.memory.builder import DictObsNStepTable
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 from emote.memory import MemoryLoader
 
+from PIL import Image
+
 
 def create_layer(res_block, n_blocks, in_channels, out_channels, stride=1):
     """
@@ -250,7 +252,15 @@ if __name__ == "__main__":
     batch = next(data_iter)
 
     vision_input = batch["rl_loader"]['observation'][arg.observation_key][:, -arg.vision_size * arg.vision_size:]
-
-    c2, c3, c4, c5, y = resnet_model.forward(vision_input.view(batch_size, 1, arg.vision_size, arg.vision_size))
+    vision_input = vision_input.view(batch_size, 1, arg.vision_size, arg.vision_size)
+    c2, c3, c4, c5, y = resnet_model.forward(vision_input)
     print(vision_input.shape)
     print(c2.shape, c3.shape, c4.shape, c5.shape, y.shape)
+
+    for i in range(batch_size):
+        img = vision_input[i].squeeze()
+        img = (img - img.min()) / (img.max() - img.min()) * 255
+        # print(np.uint8(vision_input[i].squeeze()))
+        image = Image.fromarray(np.uint8(img))
+        image.save(f"{i}.png")
+
