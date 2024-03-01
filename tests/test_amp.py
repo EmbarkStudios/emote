@@ -70,11 +70,11 @@ def test_amp_reward():
         discriminator=discriminator,
         state_map_fn=state_map_fn,
         style_reward_weight=1.0,
-        rollout_length=1,
+        rollout_length=5,
         observation_key="features",
         data_group=None,
     )
-    observation = {"features": torch.rand(30, 10)}
+    observation = {"features": torch.rand(30 * 5, 10)}
     next_observation = {"features": torch.rand(30, 10)}
-    reward = torch.rand(30, 1)
+    reward = torch.rand(30 * 5, 1)
     amp_reward.begin_batch(observation, next_observation, reward)
