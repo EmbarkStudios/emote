@@ -39,7 +39,7 @@ class DictObsAdaptor:
     def __call__(self, result: SampleResult, count: int, sequence_length: int) -> SampleResult:
         obs_dict = {}
         next_obs_dict = {}
-        for (key, out_key) in self.key_map:
+        for key, out_key in self.key_map:
             obs_dict[out_key] = result.pop(key)
             if self.with_next:
                 next_obs_dict[f"{out_key}"] = result.pop("next_" + key)

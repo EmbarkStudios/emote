@@ -98,7 +98,10 @@ class ModelEnv:
         assert len(actions.shape) == 2  # batch, action_dim
         with torch.no_grad():
             actions = torch.from_numpy(actions).to(self.device)
-            (next_observs, pred_rewards,) = self.dynamic_model.sample(
+            (
+                next_observs,
+                pred_rewards,
+            ) = self.dynamic_model.sample(
                 action=actions,
                 observation=self._current_obs,
                 rng=self.rng,

@@ -51,7 +51,6 @@ def create_memory(
     device: torch.device,
     observation_key: str = "obs",
 ):
-
     use_terminal_masking = True
 
     table = DictObsNStepTable(
@@ -87,7 +86,6 @@ def create_actor_critic_agents(
     decoder_wrapper: DecoderWrapper,
     init_alpha: float = 0.01,
 ):
-
     device = args.device
 
     hidden_dims = [args.hidden_layer_size] * arg.num_hidden_layer
