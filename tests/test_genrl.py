@@ -59,7 +59,6 @@ class FullyConnectedEncoder(nn.Module):
     def forward(
         self, data: torch.Tensor, condition: torch.Tensor = None
     ) -> tuple[torch.Tensor, torch.Tensor]:
-
         if condition is not None:
             data = torch.cat((data, condition), dim=len(data.shape) - 1)
 
@@ -129,7 +128,6 @@ HIDDEN_SIZES = [256] * 2
 
 
 def test_genrl():
-
     cfn = get_conditioning_fn(CONDITION_SIZE)
     device = torch.device("cpu")
 
@@ -154,7 +152,6 @@ def test_genrl():
 
 
 def test_memory_proxy():
-
     cfn = get_conditioning_fn(CONDITION_SIZE)
     device = torch.device("cpu")
 

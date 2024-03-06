@@ -27,7 +27,6 @@ class DecoderWrapper(nn.Module):
             param.requires_grad = False
 
     def forward(self, latent: torch.Tensor, observation: torch.Tensor = None) -> torch.Tensor:
-
         """
         Running decoder
 
