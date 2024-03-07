@@ -10,6 +10,7 @@ from .memory import (
     MemoryLoader,
     MemoryWarmup,
     TableMemoryProxy,
+    JointMemoryLoader,
 )
 from .table import Table
 
