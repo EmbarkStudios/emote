@@ -23,5 +23,6 @@ wandb/**
 
 __pypackages__/
 
-.pdm-python
 .DS_STORE
+.pids
+.pants.d
