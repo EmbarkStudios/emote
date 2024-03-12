@@ -1,3 +1,3 @@
 python_sources(
-    overrides = {"logging.py":  {"dependencies": [f"//:reqs#tensorboard"]}},
+    overrides = {"logging.py":  {"dependencies": [f"//:root#tensorboard"]}},
 )
