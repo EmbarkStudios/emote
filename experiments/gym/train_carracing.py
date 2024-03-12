@@ -8,7 +8,7 @@ from typing import Tuple
 import numpy as np
 import torch
 
-from gym.vector import AsyncVectorEnv
+from gymnasium.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import nn

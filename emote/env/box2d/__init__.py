@@ -1,4 +1,4 @@
-import gym
+import gymnasium
 
 from emote.env.wrappers import FrameStack, ScaledFloatFrame, WarpFrame
 
@@ -20,7 +20,7 @@ def make_vision_box2d_env(
     """
 
     def _thunk():
-        env = gym.make(environment_id)
+        env = gymnasium.make(environment_id)
         env.seed(seed + rank)
         env = WarpFrame(env)
         if use_float_scaling:
