@@ -6,5 +6,4 @@ python_requirement(
     dependencies = [
         "//:reqs-opt#atari",
     ],
-    resolve = "opt",
 )

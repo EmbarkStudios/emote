@@ -2,20 +2,18 @@
 name = "emote-rl"
 version = "23.0.0"
 description = "A modular reinforcement learning library"
-authors = [
-    { name = "Embark Studios", email = "python@embark-studios.com" },
-]
+authors = [{ name = "Embark Studios", email = "python@embark-studios.com" }]
 requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "MIT" }
 
 dependencies = [
-    "tensorboard>=2.8.0",
-    "setuptools==59.5",
-    "psutil>=5.8.0",
-    "onnx>=1.10",
-    "atomicwrites>=1.4.0",
-    "numpy<1.24",
+  "tensorboard>=2.8.0",
+  "setuptools==59.5",
+  "psutil>=5.8.0",
+  "onnx>=1.10",
+  "atomicwrites>=1.4.0",
+  "numpy<1.24",
 ]
 
 

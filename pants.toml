@@ -2,18 +2,19 @@
 pants_version = "2.19.1"
 
 backend_packages = [
-    "pants.backend.python",
+  "pants.backend.python",
 
-    "pants.backend.python.lint.black",
-    "pants.backend.python.lint.isort",
-    "pants.backend.python.lint.flake8",
+  "pants.backend.python.lint.black",
+  "pants.backend.python.lint.isort",
+  "pants.backend.python.lint.flake8",
+  "pants.backend.python.lint.docformatter",
 
-    "pants.backend.shell",
-    "pants.backend.shell.lint.shellcheck",
-    "pants.backend.shell.lint.shfmt",
+  "pants.backend.shell",
+  "pants.backend.shell.lint.shellcheck",
+  "pants.backend.shell.lint.shfmt",
 
-    "pants.backend.tools.taplo",
-    "pants.backend.experimental.adhoc",
+  "pants.backend.tools.taplo",
+  "pants.backend.experimental.adhoc",
 ]
 
 [cli.alias]
@@ -21,27 +22,30 @@ precommit = "fmt lint tailor test"
 --all-changed = "--changed-since=origin/main --changed-dependees=transitive"
 
 [source]
-root_patterns = [
-  "/",
-]
+root_patterns = ["/"]
 
 [python-bootstrap]
 search_path = [
-    # This will use all interpreters in `$(pyenv root)/versions`.
-    "<PYENV>",
-     # Brew usually installs Python here.
-    "/usr/local/bin",
+  # This will use all interpreters in `$(pyenv root)/versions`.
+  "<PYENV>",
+  # Brew usually installs Python here.
+  "/usr/local/bin",
 ]
 
 [python]
 interpreter_constraints = [">=3.10,<3.11"]
 pip_version = "23.0.1"
+enable_resolves = true
+default_resolve = "base"
 
 [python.resolves]
 pytest = "locks/tools/pytest.lock"
 isort = "locks/tools/isort.lock"
 ipython = "locks/tools/ipython.lock"
 black = "locks/tools/black.lock"
+docformatter = "locks/tools/docformatter.lock"
+
+base = "locks/base.lock"
 
 [repl]
 shell = "ipython"
@@ -62,3 +66,7 @@ interpreter_constraints = ["==3.10.*"]
 args = ["--no-header"]
 execution_slot_var = "TEST_EXECUTION_SLOT"
 install_from_resolve = "pytest"
+
+[docformatter]
+install_from_resolve = "docformatter"
+interpreter_constraints = ["==3.10.*"]
