@@ -98,8 +98,7 @@ class GenericAgentProxy(AgentProxy):
             agent_id
             for agent_id, obs in observations.items()
             if obs.episode_state not in self._end_states
-        ]
-        
+        ]       
         tensor_obs_list = {}
         for input_key in self.input_keys:
             np_obs = np.array(
