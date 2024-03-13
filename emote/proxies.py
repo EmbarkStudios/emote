@@ -99,8 +99,8 @@ class GenericAgentProxy(AgentProxy):
             for agent_id, obs in observations.items()
             if obs.episode_state not in self._end_states
         ]
-
-        tensor_obs_list = [None] * len(self.input_keys)
+        
+        tensor_obs_list = {}
         for input_key in self.input_keys:
             np_obs = np.array(
                 [observations[agent_id].array_data[input_key] for agent_id in active_agents]
@@ -111,19 +111,18 @@ class GenericAgentProxy(AgentProxy):
                 if shape != np_obs.shape:
                     np_obs = np.reshape(np_obs, shape)
 
-            tensor_obs = torch.tensor(np_obs).to(self.device)
-            index = self.input_keys.index(input_key)
-            tensor_obs_list[index] = tensor_obs
+            tensor_obs = torch.tensor(np_obs).to(self.device)            
+            tensor_obs_list[input_key] = tensor_obs
 
         if self._uses_logprobs:
-            outputs: tuple[any, ...] = self._policy(*tensor_obs_list)
+            outputs: tuple[any, ...] = self._policy(**tensor_obs_list)
             # we remove element 1 as we don't need the logprobs here
             outputs = outputs[0:1] + outputs[2:]
             outputs = {
                 key: outputs[i].detach().cpu().numpy() for i, key in enumerate(self.output_keys)
             }
         else:
-            outputs = self._policy(*tensor_obs_list)
+            outputs = self._policy(**tensor_obs_list)
             outputs = {key: outputs.detach().cpu().numpy() for key in self.output_keys}
 
         agent_data = [
