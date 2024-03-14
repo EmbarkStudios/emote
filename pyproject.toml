@@ -29,17 +29,11 @@ dependencies = [
 torch = ["torch==1.12.0"]
 atari = ["gymnasium>=0.27.1", "box2d-py>=2.3.5", "pygame>=2.1.0"]
 wandb = ["wandb>=0.14.0"]
-ci = ["gsutil>=4.66", "emote-rl[atari, wandb]"]
+protobuf = ["protobuf>=4.0"]
+ci = ["gsutil>=4.66"]
 
 [project.urls]
 repository = "https://github.com/EmbarkStudios/emote"
-
-# [tool.pdm.scripts]
-# flake8_ = "flake8 emote experiments tests"
-# bandit_ = "bandit --r -ll emote experiments tests"
-# lint.composite = ["bandit_", "flake8_"]
-
-# precommit.composite = ["fmt", "lint", "test"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -49,7 +43,7 @@ log_format = "%(asctime)s:\t%(message)s"
 log_date_format = "%H:%M:%S"
 
 [tool.isort]
-py_version = 39
+py_version = 310
 profile = "black"
 combine_as_imports = true
 lines_between_types = 1
@@ -59,7 +53,7 @@ known_first_party = ["emote"]
 line_length = 100
 
 [tool.black]
-target-version = ['py39']
+target-version = ['py310']
 line-length = 100
 
 [tool.mypy]
