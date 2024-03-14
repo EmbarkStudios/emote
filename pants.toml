@@ -8,6 +8,7 @@ backend_packages = [
   "pants.backend.python.lint.isort",
   "pants.backend.python.lint.flake8",
   "pants.backend.python.lint.docformatter",
+  "pants.backend.python.lint.bandit",
 
   "pants.backend.shell",
   "pants.backend.shell.lint.shellcheck",
@@ -39,6 +40,7 @@ isort = "locks/tools/isort.lock"
 ipython = "locks/tools/ipython.lock"
 black = "locks/tools/black.lock"
 docformatter = "locks/tools/docformatter.lock"
+bandit = "locks/tools/bandit.lock"
 
 base = "locks/base.lock"
 
@@ -65,3 +67,6 @@ install_from_resolve = "pytest"
 [docformatter]
 install_from_resolve = "docformatter"
 interpreter_constraints = ["==3.10.*"]
+
+[bandit]
+args = ["-r", "-ll", "--quiet"]

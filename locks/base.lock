@@ -13,13 +13,13 @@
 //     "atomicwrites>=1.4.0",
 //     "box2d-py>=2.3.5",
 //     "cloudpickle~=3.0",
-//     "emote-rl[atari,wandb]",
 //     "gsutil>=4.66",
 //     "gymnasium>=0.27.1",
 //     "myst-parser~=2.0",
 //     "numpy<1.24",
 //     "onnx>=1.10",
 //     "opencv-python~=4.9",
+//     "protobuf>=4.0",
 //     "psutil>=5.8.0",
 //     "pygame>=2.1.0",
 //     "pytest~=8.1",
@@ -195,35 +195,6 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "1a30270d4aec820527be7a643aad381d0d1c932dc476740f63cc649dd200e065",
-              "url": "https://files.pythonhosted.org/packages/b7/26/d4a03d3064c04c65e95dbc47c6fcef4579a5a57d80e607355d826ba2c88c/ale_py-0.7.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "003725a8b6f02353066564ab417f4228adc886434aa4c8d314489a7f79fe9dfd",
-              "url": "https://files.pythonhosted.org/packages/35/b6/8126a3dd8299db4f4575bd9798b41d3087c16cc001e234c3f94e5086d50c/ale_py-0.7.5-cp310-cp310-macosx_11_0_arm64.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "c68d3960f0e14738362069798ff5baa85ecb337038168cb61bd4855125deb894",
-              "url": "https://files.pythonhosted.org/packages/88/af/8220255414213e3c1c98b5fa37e2116f71b322b748716ee07e886340c214/ale_py-0.7.5-cp310-cp310-macosx_10_15_x86_64.whl"
-            }
-          ],
-          "project_name": "ale-py",
-          "requires_dists": [
-            "gym~=0.23; extra == \"test\"",
-            "importlib-metadata>=4.10.0; python_version < \"3.10\"",
-            "importlib-resources",
-            "numpy",
-            "pytest>=7.0; extra == \"test\""
-          ],
-          "requires_python": ">=3.7",
-          "version": "0.7.5"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
               "hash": "a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128",
               "url": "https://files.pythonhosted.org/packages/3b/00/2344469e2084fb287c2e0b57b72910309874c3245463acd6cf5e3db69324/appdirs-1.4.4-py2.py3-none-any.whl"
             },
@@ -381,14 +352,14 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "b37dc38844bcd7def48a97111d2b082e4f81cca3cece7460feb3eacda0da2207",
-              "url": "https://files.pythonhosted.org/packages/dd/5a/ad8d3ef9c13d5afcc1e44a77f11792ee717f6727b3320bddbc607e935e2a/box2d-py-2.3.5.tar.gz"
+              "hash": "bdacfbbc56079bb317548efe49d3d5a86646885cc27f4a2ee97e4b2960921ab7",
+              "url": "https://files.pythonhosted.org/packages/98/c2/ab05b5329dc4416b5ee5530f0625a79c394a3e3c10abe0812b9345256451/box2d-py-2.3.8.tar.gz"
             }
           ],
           "project_name": "box2d-py",
           "requires_dists": [],
           "requires_python": null,
-          "version": "2.3.5"
+          "version": "2.3.8"
         },
         {
           "artifacts": [
@@ -807,35 +778,6 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "b9f58e77bb4eb11d1712895aeda6de0c71f6f8df9c38ad6175cfa9596236f4a3",
-              "url": "https://files.pythonhosted.org/packages/e7/1b/3f9692baa6210673227c623f23fb4e8a3dc732db78dec36d9f9518a45801/emote_rl-23.0.0-py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "1ceb94c19fc97747322c5f656c77321a67d4468c1c205cbd0730ec8649351090",
-              "url": "https://files.pythonhosted.org/packages/bc/03/a0257926d9435e9a2bf567183f4cc263bca1e96fce1b407bbe7a5ff981bf/emote-rl-23.0.0.tar.gz"
-            }
-          ],
-          "project_name": "emote-rl",
-          "requires_dists": [
-            "box2d-py==2.3.5; extra == \"atari\"",
-            "emote-rl[atari]; extra == \"ci\"",
-            "gsutil>=4.66; extra == \"ci\"",
-            "gym[atari,classic_control]~=0.23.0; extra == \"atari\"",
-            "onnx>=1.10",
-            "psutil>=5.8.0",
-            "pygame~=2.1.0; extra == \"atari\"",
-            "setuptools==59.5",
-            "tensorboard>=2.8.0",
-            "torch==1.10.2; extra == \"torch\""
-          ],
-          "requires_python": ">=3.9",
-          "version": "23.0.0"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
               "hash": "4bfd3996ac73b41e9b9628b04e079f193850720ea5945fc96a08633c66912f14",
               "url": "https://files.pythonhosted.org/packages/b8/9a/5028fd52db10e600f1c4674441b968cf2ea4959085bfb5b99fb1250e5f68/exceptiongroup-1.2.0-py3-none-any.whl"
             },
@@ -1204,64 +1146,6 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "d0f9b9da34edbdace421c9442fc9205d03b8d15d0fb451053c766cde706d40e0",
-              "url": "https://files.pythonhosted.org/packages/87/86/3f5467531428b6ce6f3c12d3121b4304d2ea1536a50775a4df036add37b8/gym-0.23.1.tar.gz"
-            }
-          ],
-          "project_name": "gym",
-          "requires_dists": [
-            "ale-py~=0.7.4; extra == \"all\"",
-            "ale-py~=0.7.4; extra == \"atari\"",
-            "autorom[accept-rom-license]~=0.4.2; extra == \"accept-rom-license\"",
-            "box2d-py==2.3.5; extra == \"all\"",
-            "box2d-py==2.3.5; extra == \"box2d\"",
-            "box2d-py==2.3.5; extra == \"nomujoco\"",
-            "cloudpickle>=1.2.0",
-            "gym-notices>=0.0.4",
-            "importlib-metadata>=4.10.0; python_version < \"3.10\"",
-            "lz4>=3.1.0; extra == \"all\"",
-            "lz4>=3.1.0; extra == \"nomujoco\"",
-            "lz4>=3.1.0; extra == \"other\"",
-            "mujoco-py<2.0,>=1.50; extra == \"all\"",
-            "mujoco-py<2.0,>=1.50; extra == \"mujoco\"",
-            "numpy>=1.18.0",
-            "opencv-python>=3.0; extra == \"all\"",
-            "opencv-python>=3.0; extra == \"nomujoco\"",
-            "opencv-python>=3.0; extra == \"other\"",
-            "pygame==2.1.0; extra == \"all\"",
-            "pygame==2.1.0; extra == \"box2d\"",
-            "pygame==2.1.0; extra == \"classic-control\"",
-            "pygame==2.1.0; extra == \"nomujoco\"",
-            "pygame==2.1.0; extra == \"toy-text\"",
-            "scipy>=1.4.1; extra == \"all\"",
-            "scipy>=1.4.1; extra == \"nomujoco\"",
-            "scipy>=1.4.1; extra == \"toy-text\""
-          ],
-          "requires_python": ">=3.7",
-          "version": "0.23.1"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
-              "hash": "e5f82e00823a166747b4c2a07de63b6560b1acb880638547e0cabf825a01e463",
-              "url": "https://files.pythonhosted.org/packages/25/26/d786c6bec30fe6110fd3d22c9a273a2a0e56c0b73b93e25ea1af5a53243b/gym_notices-0.0.8-py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "ad25e200487cafa369728625fe064e88ada1346618526102659b4640f2b4b911",
-              "url": "https://files.pythonhosted.org/packages/b4/62/d312681b09cacf77d04237a2815653c58e5031998bb613ce114b85fc3f57/gym-notices-0.0.8.tar.gz"
-            }
-          ],
-          "project_name": "gym-notices",
-          "requires_dists": [],
-          "requires_python": null,
-          "version": "0.0.8"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
               "hash": "61c3384b5575985bb7f85e43213bcb40f36fcdff388cae6bc229304c71f2843e",
               "url": "https://files.pythonhosted.org/packages/a8/4d/3cbfd81ed84db450dbe73a89afcd8bc405273918415649ac6683356afe92/gymnasium-0.29.1-py3-none-any.whl"
             },
@@ -1377,41 +1261,6 @@
           "requires_dists": [],
           "requires_python": "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,>=2.7",
           "version": "1.4.1"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
-              "hash": "783407aa1cd05550e3aa123e8f7cfaebee35ffa9cb0242919e2d1e4172222705",
-              "url": "https://files.pythonhosted.org/packages/de/79/7ad3b2831247db4f61e781f9164147b1ee20205c5230dcd177021caa266b/importlib_resources-6.3.0-py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "166072a97e86917a9025876f34286f549b9caf1d10b35a1b372bffa1600c6569",
-              "url": "https://files.pythonhosted.org/packages/47/09/c02a7de10bd37af6752d1487b989342e4ae688a0082c59d3fc16274361c7/importlib_resources-6.3.0.tar.gz"
-            }
-          ],
-          "project_name": "importlib-resources",
-          "requires_dists": [
-            "furo; extra == \"docs\"",
-            "jaraco.collections; extra == \"testing\"",
-            "jaraco.packaging>=9.3; extra == \"docs\"",
-            "jaraco.tidelift>=1.4; extra == \"docs\"",
-            "pytest-checkdocs>=2.4; extra == \"testing\"",
-            "pytest-cov; extra == \"testing\"",
-            "pytest-enabler>=2.2; extra == \"testing\"",
-            "pytest-mypy; platform_python_implementation != \"PyPy\" and extra == \"testing\"",
-            "pytest-ruff>=0.2.1; extra == \"testing\"",
-            "pytest>=6; extra == \"testing\"",
-            "rst.linker>=1.9; extra == \"docs\"",
-            "sphinx-lint; extra == \"docs\"",
-            "sphinx<7.2.5; extra == \"docs\"",
-            "sphinx>=3.5; extra == \"docs\"",
-            "zipp>=3.1.0; python_version < \"3.10\"",
-            "zipp>=3.17; extra == \"testing\""
-          ],
-          "requires_python": ">=3.8",
-          "version": "6.3.0"
         },
         {
           "artifacts": [
@@ -2102,49 +1951,39 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "847b4bc22edb1d77c992b5d56b19e1ab52e14687adb8bc3ed12a8a98fbd7e1ff",
-              "url": "https://files.pythonhosted.org/packages/92/40/519bb2082bf80ec1df9db6be714d07d49a9ac4096bfe04e9b5408884d0f5/pygame-2.1.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+              "hash": "03879ec299c9f4ba23901b2649a96b2143f0a5d787f0b6c39469989e2320caf1",
+              "url": "https://files.pythonhosted.org/packages/c8/c7/0d77e0e327bf09c12f445f92f5bad0b447375d7b836c5bac5255ead8436f/pygame-2.5.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "6efa3fa472acb97c784224b59a89e80da6231f0dbf54df8442ffa3352c0534d6",
-              "url": "https://files.pythonhosted.org/packages/40/c5/3e18ab106bfc450f9c8a9a072e09e79d7db133976944a9fd4b1fd162eb3a/pygame-2.1.0-cp310-cp310-manylinux_2_12_i686.manylinux2010_i686.whl"
+              "hash": "a0769eb628c818761755eb0a0ca8216b95270ea8cbcbc82227e39ac9644643da",
+              "url": "https://files.pythonhosted.org/packages/14/54/dc58f8b70e08b6706b158f0c70f86eb1594db6797cb89383f062ad6a304d/pygame-2.5.2-cp310-cp310-macosx_10_9_x86_64.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "02a26b3be6cc478f18f4efa506ee5a585f68350857ac5e68e187301e943e3d6d",
-              "url": "https://files.pythonhosted.org/packages/5e/85/5b93939204e0c99f12a7da5649fa9761caa623b77c36d2c97b8a58667bec/pygame-2.1.0-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl"
+              "hash": "f30d1618672a55e8c6669281ba264464b3ab563158e40d89e8c8b3faa0febebd",
+              "url": "https://files.pythonhosted.org/packages/5b/91/09f93d428b483c451eacee9ba1e04a1e9999751c80bf6236b2bdc8e19b1e/pygame-2.5.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "232e51104db0e573221660d172af8e6fc2c0fda183c5dbf2aa52170f29aa9ec9",
-              "url": "https://files.pythonhosted.org/packages/7c/c0/57f9709e2e542a6af8fe4623627a74329869cdc21f03486f521c7b90fc57/pygame-2.1.0.tar.gz"
+              "hash": "ed9a3d98adafa0805ccbaaff5d2996a2b5795381285d8437a4a5d248dbd12b4a",
+              "url": "https://files.pythonhosted.org/packages/65/b6/67e33add85b0f7ac901c6fb89a57f97fdfd67c8834f425a97abaf4a60191/pygame-2.5.2-cp310-cp310-macosx_11_0_arm64.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "a0842458b49257ab539b7b6622a242cabcddcb61178b8ae074aaceb890be75b6",
-              "url": "https://files.pythonhosted.org/packages/a1/e7/9dbe30eeb2555c48e32f0aade233a495067483ab9de5d06967452c903199/pygame-2.1.0-cp310-cp310-macosx_11_0_arm64.whl"
+              "hash": "c1b89eb5d539e7ac5cf75513125fb5f2f0a2d918b1fd6e981f23bf0ac1b1c24a",
+              "url": "https://files.pythonhosted.org/packages/c6/aa/2c0c867d6cff00966cfc2152b25f61599f87e88b239e4dcb8ad5357f0f69/pygame-2.5.2.tar.gz"
             },
             {
               "algorithm": "sha256",
-              "hash": "d5c62fbdb30082f7e1dcfa253da48e7b4be7342d275b34b2efa51f6cffc5942b",
-              "url": "https://files.pythonhosted.org/packages/a8/0b/64af978fc3d2ab4b319b3ec5f57c79e43ae143edb67154dfef4c5d88dd0a/pygame-2.1.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "7a305dcf44f03a8dd7baefb97dc24949d7e719fd686cd3211121639aec4ce464",
-              "url": "https://files.pythonhosted.org/packages/b6/e0/29e21b8430527228d42a79fcb71e202993ec1c6f6b979755fa18a489e804/pygame-2.1.0-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "c84a93e6d33dafce9e25080ac557342333e15ef7e378ba84cb6181c52a8fd663",
-              "url": "https://files.pythonhosted.org/packages/c6/0d/a34cfb8ecd37224b027884fd09488a458745dc9ce0b8743b05ec3d832c07/pygame-2.1.0-cp310-cp310-macosx_10_9_x86_64.whl"
+              "hash": "39690e9be9baf58b7359d1f3b2336e1fd6f92fedbbce42987be5df27f8d30718",
+              "url": "https://files.pythonhosted.org/packages/e8/6e/31d7a068edbb029e5a35d8fe4572b67e00705cb8f6dad650397bc417b6b3/pygame-2.5.2-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl"
             }
           ],
           "project_name": "pygame",
           "requires_dists": [],
           "requires_python": ">=3.6",
-          "version": "2.1.0"
+          "version": "2.5.2"
         },
         {
           "artifacts": [
@@ -3233,13 +3072,13 @@
     "atomicwrites>=1.4.0",
     "box2d-py>=2.3.5",
     "cloudpickle~=3.0",
-    "emote-rl[atari,wandb]",
     "gsutil>=4.66",
     "gymnasium>=0.27.1",
     "myst-parser~=2.0",
     "numpy<1.24",
     "onnx>=1.10",
     "opencv-python~=4.9",
+    "protobuf>=4.0",
     "psutil>=5.8.0",
     "pygame>=2.1.0",
     "pytest~=8.1",
