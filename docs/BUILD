@@ -1,6 +1,9 @@
 python_sources()
 
-resources(name = "index", sources = ["index.rst"])
+resources(
+    name="index",
+    sources=["index.rst"],
+)
 
 DOC_DEPS = [
     ":index",
@@ -31,13 +34,12 @@ SPHINX_DEPS = [
 
 pex_binary(
     name="sphinx-apidoc",
-    script="sphinx-apidoc",
     dependencies=SPHINX_DEPS,
+    script="sphinx-apidoc",
 )
 
 adhoc_tool(
     name="build-apidoc",
-    runnable=":sphinx-apidoc",
     args=[
         "--force",
         "--module-first",
@@ -45,26 +47,41 @@ adhoc_tool(
         "docs",
         "./../",
     ],
-    execution_dependencies = DOC_DEPS,
+    execution_dependencies=DOC_DEPS,
+    log_output=True,
     output_directories=["./"],
     root_output_directory="./",
-    log_output=True,
+    runnable=":sphinx-apidoc",
 )
 
 pex_binary(
     name="sphinx-build",
-    script="sphinx-build",
     dependencies=SPHINX_DEPS + DOC_DEPS,
+    script="sphinx-build",
 )
 
 adhoc_tool(
     name="build-html",
-    runnable=":sphinx-build",
-    args=["-M", "html", ".", "_build"],
+    args=[
+        "-M",
+        "html",
+        ".",
+        "_build",
+    ],
     execution_dependencies=[":build-apidoc"] + DOC_DEPS,
+    log_output=True,
     output_directories=["_build/html"],
     root_output_directory="./_build/html",
-    log_output=True,
+    runnable=":sphinx-build",
 )
 
-archive(name="docs-out", files=[":build-html"], format="zip")
+experimental_wrap_as_resources(
+    name="html-files",
+    inputs=[":build-html"],
+)
+
+archive(
+    name="docs-out",
+    files=[":build-html"],
+    format="zip",
+)

@@ -14,77 +14,32 @@ dependencies = [
   "onnx>=1.10",
   "atomicwrites>=1.4.0",
   "numpy<1.24",
+  "cloudpickle~=3.0",
+
+  "pytest~=8.1",
+  "Sphinx~=7.2",
+  "sphinxcontrib-apidoc~=0.5",
+  "sphinx-autodoc-typehints~=2.0",
+  "sphinx-rtd-theme~=2.0",
+  "myst-parser~=2.0",
 ]
 
 
-# [project.optional-dependencies]
-# torch = ["torch==1.12.0"]
-# atari = [
-#     "gymnasium>=0.27.1",
-#     "box2d-py>=2.3.5",
-#     "pygame>=2.1.0"
-# ]
-# wandb = ["wandb>=0.14.0"]
-# ci = ["gsutil>=4.66", "emote-rl[atari, wandb]"]
-
-# [tool.pdm.dev-dependencies]
-# tools = [
-#    "pytest~=6.0",
-#    "black~=22.1",
-#    "bandit~=1.7",
-#    "isort~=5.10",
-#    "flake8>=6,<7",
-# ]
-
-# docs = [
-#     "Sphinx~=4.4",
-#     "sphinxcontrib-apidoc~=0.3",
-#     "sphinx-autodoc-typehints~=1.17",
-#     "sphinx-rtd-theme~=1.0.0",
-#     "myst-parser~=0.18.0"
-# ]
+[project.optional-dependencies]
+torch = ["torch==1.12.0"]
+atari = ["gymnasium>=0.27.1", "box2d-py>=2.3.5", "pygame>=2.1.0"]
+wandb = ["wandb>=0.14.0"]
+ci = ["gsutil>=4.66", "emote-rl[atari, wandb]"]
 
 [project.urls]
 repository = "https://github.com/EmbarkStudios/emote"
 
-# [tool.pdm]
-# plugins = [
-#     "pdm-plugin-torch>=23.4.0"
-# ]
-
-# [tool.pdm.plugin.torch]
-# dependencies = [
-#    "torch==1.12.0"
-# ]
-# lockfile = "torch.lock"
-# enable-cpu = true
-
-# enable-rocm = false  # there's no +rocm variants for mac where it'd be useful, so this is a bit shot.
-# rocm-versions = ["5.0"]
-
-# enable-cuda = true
-# cuda-versions = ["cu116"]
-
 # [tool.pdm.scripts]
-# docs = "bash -c 'cd docs && rm -rf _build/dirhtml/ && make dirhtml'"
-# docs-serve = "python -m http.server --directory docs/_build/dirhtml"
-
-# test = "pytest tests"
-
 # flake8_ = "flake8 emote experiments tests"
 # bandit_ = "bandit --r -ll emote experiments tests"
 # lint.composite = ["bandit_", "flake8_"]
 
-# black_ = "black emote experiments tests"
-# isort_ = "isort emote experiments tests"
-# fmt.composite = ["black_", "isort_"]
-# foo = "pdm -V"
-
 # precommit.composite = ["fmt", "lint", "test"]
-
-# [build-system]
-# requires = ["pdm-backend>=2.0.0"]
-# build-backend = "pdm.backend"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
