@@ -6,7 +6,7 @@ from emote.memory.table import Table
 
 
 class MemoryImporterCallback(Callback):
-    """Load and validate a previously exported memory"""
+    """Load and validate a previously exported memory."""
 
     def __init__(
         self,

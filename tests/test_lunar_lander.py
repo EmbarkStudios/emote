@@ -148,7 +148,7 @@ def setup_lunar_lander():
 
 
 def test_lunar_lander_quick():
-    """Quick test that the code runs"""
+    """Quick test that the code runs."""
 
     experiment_name = "lunar_lander_test_" + str(time.time())
     logged_cbs, dataloader = setup_lunar_lander()

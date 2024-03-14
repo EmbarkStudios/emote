@@ -174,7 +174,7 @@ class ModelEnv:
         obs: torch.Tensor,
         len_rollout: int,
     ) -> dict[AgentId, DictObservation]:
-        """resets the model env.
+        """Resets the model env.
 
         Arguments:
             obs (torch.Tensor): the initial observations.

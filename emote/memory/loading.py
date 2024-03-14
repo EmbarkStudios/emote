@@ -1,6 +1,4 @@
-"""
-Utilities for loading files into memories.
-"""
+"""Utilities for loading files into memories."""
 
 import pickle
 
@@ -19,11 +17,11 @@ def fill_table_from_legacy_file(
 ):
     """Load a legacy memory dump into a new-style table memory.
 
-    :param table: The table to fill. Must contain 'obs', 'rewards', and 'actions' columns
-    :param path: The path to load from. Must be a pickle file. Extension is optional
-
-    :throws: OSError if file does not exist. KeyError if table or file do not
-    match the legacy format.
+    :param table: The table to fill. Must contain 'obs', 'rewards', and
+        'actions' columns
+    :param path: The path to load from. Must be a pickle file. Extension
+        is optional :throws: OSError if file does not exist. KeyError if
+        table or file do not match the legacy format.
     """
 
     if not path.endswith(".pickle"):

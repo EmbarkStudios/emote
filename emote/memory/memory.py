@@ -1,10 +1,12 @@
 """Sequence builder collates observations into sequences stored in the memory.
 
-The sequence builder is the API between "instant" based APIs such as the agent
-proxy and the episode-based functionality of the memory implementation. The goal
-of the sequence builder is to consume individual timesteps per agent and collate
-them into episodes before submission into the memory.
+The sequence builder is the API between "instant" based APIs such as the
+agent proxy and the episode-based functionality of the memory
+implementation. The goal of the sequence builder is to consume
+individual timesteps per agent and collate them into episodes before
+submission into the memory.
 """
+
 from __future__ import annotations
 
 import collections
@@ -37,7 +39,7 @@ from .table import Table
 
 @dataclass
 class Episode:
-    """An episode of data being constructed"""
+    """An episode of data being constructed."""
 
     data: Dict[str, List[Matrix]] = field(default_factory=lambda: defaultdict(list))
 
@@ -60,8 +62,10 @@ class Episode:
 
 
 class TableMemoryProxy:
-    """The sequence builder wraps a sequence-based memory to build full episodes
-    from [identity, observation] data. Not thread safe.
+    """The sequence builder wraps a sequence-based memory to build full
+    episodes from [identity, observation] data.
+
+    Not thread safe.
     """
 
     def __init__(
@@ -99,8 +103,11 @@ class TableMemoryProxy:
         return self._table.store(path)
 
     def is_initial(self, identity: int):
-        """Returns true if identity is not already used in a partial sequence. Does not
-        validate if the identity is associated with a complete episode."""
+        """Returns true if identity is not already used in a partial sequence.
+
+        Does not validate if the identity is associated with a complete
+        episode.
+        """
         return identity not in self._store
 
     def add(
@@ -168,6 +175,7 @@ class TableMemoryProxy:
 
 class MemoryProxyWrapper:
     """Base class for memory proxy wrappers.
+
     This class forwards non-existing method accessess to the inner
     MemoryProxy or MemoryProxyWrapper.
     """
@@ -385,7 +393,7 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
 
 
 class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
-    """Export the memory at regular intervals"""
+    """Export the memory at regular intervals."""
 
     def __init__(
         self,
@@ -422,10 +430,9 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         observations: Dict[AgentId, DictObservation],
         responses: Dict[AgentId, DictResponse],
     ):
-        """First add the new batch to the memory"""
+        """First add the new batch to the memory."""
         self._inner.add(observations, responses)
-
-        """Save the replay buffer if it has enough data and enough time"""
+        """Save the replay buffer if it has enough data and enough time."""
         has_enough_data = self._inf_step > self._next_export
         time_now = time.monotonic()
         has_enough_time = time_now > self._next_export_time
@@ -469,7 +476,7 @@ class MemoryLoader:
         self.timer = TimedBlock()
 
     def is_ready(self):
-        """True if the data loader has enough data to start providing data"""
+        """True if the data loader has enough data to start providing data."""
         return self.table.size() >= (self.rollout_count * self.rollout_length)
 
     def __iter__(self):
@@ -488,7 +495,8 @@ class MemoryLoader:
 
 
 class JointMemoryLoader:
-    """A memory loader capable of loading data from multiple `MemoryLoader`s."""
+    """A memory loader capable of loading data from multiple
+    `MemoryLoader`s."""
 
     def __init__(self, loaders: list[MemoryLoader], size_key: str = "batch_size"):
         self._loaders = loaders
@@ -525,7 +533,8 @@ class JointMemoryLoader:
 
 
 class JointMemoryLoaderWithDataGroup(JointMemoryLoader):
-    """A JointMemoryLoader that places its data inside of a user-specified datagroup."""
+    """A JointMemoryLoader that places its data inside of a user-specified
+    datagroup."""
 
     def __init__(self, loaders: list[MemoryLoader], data_group: str, size_key: str = "batch_size"):
         super().__init__(loaders, size_key)
@@ -541,11 +550,12 @@ class JointMemoryLoaderWithDataGroup(JointMemoryLoader):
 class MemoryWarmup(Callback):
     """A blocker to ensure memory has data.
 
-    This ensures the memory has enough data when training starts, as the memory
-    will panic otherwise. This is useful if you use an async data generator.
+    This ensures the memory has enough data when training starts, as the
+    memory will panic otherwise. This is useful if you use an async data
+    generator.
 
-    If you do not use an async data generator this can deadlock your training
-    loop and prevent progress.
+    If you do not use an async data generator this can deadlock your
+    training loop and prevent progress.
     """
 
     def __init__(

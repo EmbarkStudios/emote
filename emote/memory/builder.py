@@ -1,6 +1,4 @@
-"""
-
-"""
+""""""
 
 from typing import List
 
@@ -56,10 +54,9 @@ class DictTable(ArrayTable):
 
 
 class DictObsTable(DictTable):
-    """Create a memory suited for Reinforcement Learning Tasks with 1-Step Bellman
-    Backup with a single bootstrap value, and using dictionary observations as network
-    inputs.
-    """
+    """Create a memory suited for Reinforcement Learning Tasks with 1-Step
+    Bellman Backup with a single bootstrap value, and using dictionary
+    observations as network inputs."""
 
     def __init__(
         self,
@@ -134,10 +131,9 @@ class DictObsTable(DictTable):
 
 
 class DictObsNStepTable(DictTable):
-    """Create a memory suited for Reinforcement Learning Tasks with N-Step Bellman
-    Backup with a single bootstrap value, and using dictionary observations as network
-    inputs.
-    """
+    """Create a memory suited for Reinforcement Learning Tasks with N-Step
+    Bellman Backup with a single bootstrap value, and using dictionary
+    observations as network inputs."""
 
     def __init__(
         self,

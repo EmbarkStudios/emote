@@ -5,8 +5,8 @@ from emote.trainer import TrainingShutdownException
 class BackPropStepsTerminator(Callback):
     """Terminates training after a given number of backprops.
 
-    :param bp_steps (int): The total number of backprops that the trainer should run
-        for.
+    :param bp_steps (int): The total number of backprops that the
+        trainer should run for.
     """
 
     def __init__(self, bp_steps: int):

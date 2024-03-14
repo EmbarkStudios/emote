@@ -6,6 +6,7 @@ import torch
 
 def truncated_linear(min_x: float, max_x: float, min_y: float, max_y: float, x: float) -> float:
     """Truncated linear function.
+
     Implements the following function:
         f1(x) = min_y + (x - min_x) / (max_x - min_x) * (max_y - min_y)
         f(x) = min(max_y, max(min_y, f1(x)))

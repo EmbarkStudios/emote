@@ -1,4 +1,4 @@
-"""emote is a torch implementation of embarkrl
+"""Emote is a torch implementation of embarkrl.
 
 Emote
 ========
@@ -13,7 +13,6 @@ from that in a way which makes them accessible to the learning protocol.
 In Emote, data collection is done by Collectors, the protocol for the
 learning algorithm is built up of Callbacks, and they are tied together
 by a Trainer.
-
 """
 
 from . import nn, utils

@@ -13,14 +13,17 @@ from emote.callback import Callback
 class Checkpointer(Callback):
     """Checkpointer writes out a checkpoint every n steps.
 
-    Exactly what is written to the checkpoint is determined by the callbacks
-    supplied in the constructor.
+    Exactly what is written to the checkpoint is determined by the
+    callbacks supplied in the constructor.
 
-    :param callbacks (List[Callback]): A list of callbacks that should be saved.
-    :param run_root (str): The root path to where the run artifacts should be stored.
-    :param checkpoint_interval (int): Number of backprops between checkpoints.
-    :param storage_subdirectory (str): The subdirectory where the checkpoints are
-        stored.
+    :param callbacks (List[Callback]): A list of callbacks that should
+    be saved.
+    :param run_root (str): The root path to where the run artifacts
+        should be stored.
+    :param checkpoint_interval (int): Number of backprops between
+        checkpoints.
+    :param storage_subdirectory (str): The subdirectory where the
+        checkpoints are stored.
     """
 
     def __init__(
@@ -80,22 +83,27 @@ class Checkpointer(Callback):
 
 
 class CheckpointLoader(Callback):
-    """CheckpointLoader loads a checkpoint like the one created by Checkpointer.
+    """CheckpointLoader loads a checkpoint like the one created by
+    Checkpointer.
 
-    This is intended for resuming training given a specific checkpoint index. It also
-    enables you to load network weights, optimizer, or other callback hyper-params
-    independently.  If you want to do something more specific, like only restore a
-    specific network (outside a callback), it is probably easier to just do it
-    explicitly when the network is constructed.
+    This is intended for resuming training given a specific checkpoint
+    index. It also enables you to load network weights, optimizer, or
+    other callback hyper-params independently.  If you want to do
+    something more specific, like only restore a specific network
+    (outside a callback), it is probably easier to just do it explicitly
+    when the network is constructed.
 
-    :param callbacks (List[Callback]): A list of callbacks that should be restored.
-    :param run_root (str): The root path to where the run artifacts should be stored.
+    :param callbacks (List[Callback]): A list of callbacks that should
+    be restored.
+    :param run_root (str): The root path to where the run artifacts
+        should be stored.
     :param checkpoint_index (int): Which checkpoint to load.
     :param load_weights (bool): If True, it loads the network weights
     :param load_optimizers (bool): If True, it loads the optimizer state
-    :param load_hparams (bool): If True, it loads other callback hyper-params
-    :param storage_subdirectory (str): The subdirectory where the checkpoints are
-        stored.
+    :param load_hparams (bool): If True, it loads other callback hyper-
+        params
+    :param storage_subdirectory (str): The subdirectory where the
+        checkpoints are stored.
     """
 
     def __init__(

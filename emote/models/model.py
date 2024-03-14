@@ -12,10 +12,10 @@ from emote.utils.model import normal_init
 
 
 class DynamicModel(nn.Module):
-    """Wrapper class for model.
-    DynamicModel class functions as a wrapper for models including ensembles. It also provides
-    data manipulations that are common when using dynamics models with observations
-    and actions (e.g., predicting delta observations, input normalization).
+    """Wrapper class for model. DynamicModel class functions as a wrapper for
+    models including ensembles. It also provides data manipulations that are
+    common when using dynamics models with observations and actions (e.g.,
+    predicting delta observations, input normalization).
 
     Arguments:
         model: the model to wrap.
@@ -84,9 +84,9 @@ class DynamicModel(nn.Module):
         observation: torch.Tensor,
         rng: torch.Generator,
     ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Samples a simulated transition from the dynamics model. The function first
-        normalizes the inputs to the model, and then denormalize the model output as the
-        final output.
+        """Samples a simulated transition from the dynamics model. The function
+        first normalizes the inputs to the model, and then denormalize the
+        model output as the final output.
 
         Arguments:
             action (tensor): the action at.
@@ -121,16 +121,17 @@ class DynamicModel(nn.Module):
         obs: torch.Tensor,
         action: torch.Tensor,
     ) -> torch.Tensor:
-        """The function prepares the input to the neural network model by concatenating
-        observations and actions. In case, obs_process_fn is given, the observations are
-        processed by the function prior to the concatenation.
+        """The function prepares the input to the neural network model by
+        concatenating observations and actions. In case, obs_process_fn is
+        given, the observations are processed by the function prior to the
+        concatenation.
 
-            Arguments:
-                 obs (torch.Tensor): observation tensor
-                 action (torch.Tensor): action tensor
+        Arguments:
+             obs (torch.Tensor): observation tensor
+             action (torch.Tensor): action tensor
 
-            Returns:
-                (torch.Tensor): the concatenation of obs and actions
+        Returns:
+            (torch.Tensor): the concatenation of obs and actions
         """
         if self.obs_process_fn:
             obs = self.obs_process_fn(obs)
@@ -144,8 +145,8 @@ class DynamicModel(nn.Module):
         action: torch.Tensor,
         reward: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """The function processes the given batch, normalizes inputs and targets,
-         and prepares them for the training.
+        """The function processes the given batch, normalizes inputs and
+        targets, and prepares them for the training.
 
         Arguments:
             obs (torch.Tensor): the observations tensor
@@ -172,7 +173,7 @@ class DynamicModel(nn.Module):
         return model_in_normalized, target_normalized
 
     def save(self, save_dir: str) -> None:
-        """Saving the model
+        """Saving the model.
 
         Arguments:
             save_dir (str): the directory to save the model
@@ -180,7 +181,7 @@ class DynamicModel(nn.Module):
         self.model.save(save_dir)
 
     def load(self, load_dir: str) -> None:
-        """Loading the model
+        """Loading the model.
 
         Arguments:
             load_dir (str): the directory to load the model
@@ -241,7 +242,7 @@ class DeterministicModel(nn.Module):
         model_input: torch.Tensor,
         rng: torch.Generator = None,
     ) -> torch.Tensor:
-        """Samples next observation, reward and terminal from the model
+        """Samples next observation, reward and terminal from the model.
 
         Args:
             model_input (tensor): the observation and action.
@@ -255,7 +256,8 @@ class DeterministicModel(nn.Module):
 
 
 class Normalizer:
-    """Class that keeps a running mean and variance and normalizes data accordingly."""
+    """Class that keeps a running mean and variance and normalizes data
+    accordingly."""
 
     def __init__(self):
         self.mean = None
@@ -269,7 +271,6 @@ class Normalizer:
 
         Arguments:
             data (torch.Tensor): The data used to compute the statistics.
-
         """
         if self.mean is None:
             self.mean = data.mean(0, keepdim=True)
