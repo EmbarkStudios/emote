@@ -101,8 +101,8 @@ class ImageAugmentor:
 
 
 class CurlLoss(LossCallback):
-    """
-    Contrastive Unsupervised Representations for Reinforcement Learning (CURL).
+    """Contrastive Unsupervised Representations for Reinforcement Learning
+    (CURL).
 
     paper: https://arxiv.org/abs/2004.04136
 

@@ -9,10 +9,9 @@ import torch
 class LoggingMixin:
     """A Mixin that accepts logging calls.
 
-    Logged data is saved on this object and gets written by a
-    Logger. This therefore doesn't care how the data is logged, it
-    only provides a standard interface for storing the data to be
-    handled by a Logger.
+    Logged data is saved on this object and gets written by a Logger.
+    This therefore doesn't care how the data is logged, it only provides
+    a standard interface for storing the data to be handled by a Logger.
     """
 
     def __init__(self, *, default_window_length: int = 250, **kwargs):

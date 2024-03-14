@@ -1,6 +1,4 @@
-"""
-
-"""
+""""""
 
 import random
 
@@ -12,9 +10,11 @@ from .strategy import EjectionStrategy, SampleStrategy, Strategy
 
 
 class FifoStrategyBase(Strategy):
-    """A sampler intended to sample in a first-in-first-out style across the whole
-    set of experiences. This base class is used by both the fifo sample and
-    ejection strategies.
+    """A sampler intended to sample in a first-in-first-out style across the
+    whole set of experiences.
+
+    This base class is used by both the fifo sample and ejection
+    strategies.
     """
 
     def __init__(self):
@@ -49,14 +49,14 @@ class FifoStrategyBase(Strategy):
                 self.track(-abs(id) - 1, length)
 
     def state(self) -> dict:
-        """Serialize the strategy to a JSON-serializable dictionary"""
+        """Serialize the strategy to a JSON-serializable dictionary."""
         return {
             "identities": list(self._identities),
             "sequence_lengths": list(self._sequence_lengths.items()),
         }
 
     def load_state(self, state: dict):
-        """Load the strategy from a dictionary"""
+        """Load the strategy from a dictionary."""
         self._identities = deque(state["identities"])
         self._sequence_lengths = dict(state["sequence_lengths"])
 
@@ -68,9 +68,10 @@ class FifoSampleStrategy(FifoStrategyBase, SampleStrategy):
     def __init__(self, per_episode: bool = True, random_offset: bool = True):
         """Create a FIFO-based sample strategy.
 
-        :param per_episode: if true, will only sample each episode once in a single pass
-        :param random_offset: if true will sample at a random offset in each
-                              episode. Will be assumed true when sampling per episode
+        :param per_episode: if true, will only sample each episode once
+            in a single pass
+        :param random_offset: if true will sample at a random offset in
+            each episode. Will be assumed true when sampling per episode
         """
         super().__init__()
         self._per_episode = per_episode

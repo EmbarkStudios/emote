@@ -114,5 +114,6 @@ class LossCallback(LoggingMixin, Callback):
     def loss(self, *args, **kwargs) -> Tensor:
         """The loss method needs to be overwritten to implement a loss.
 
-        :return: A PyTorch tensor of shape (batch,)."""
+        :return: A PyTorch tensor of shape (batch,).
+        """
         raise NotImplementedError

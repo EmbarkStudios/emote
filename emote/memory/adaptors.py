@@ -1,6 +1,4 @@
-"""
-
-"""
+""""""
 
 from typing import Callable, List, Optional
 
@@ -13,14 +11,13 @@ Adaptor = Callable[[SampleResult, int, int], SampleResult]
 
 
 class DictObsAdaptor:
-    """
-    Converts multiple observation columns to a single dict observation.
+    """Converts multiple observation columns to a single dict observation.
 
     :param keys: The dictionary keys to extract
-    :param output_keys: The output names for the extracted keys. Defaults to the same
-        name.
-    :param with_next: If True, adds an extra column called "next_{key}" for each key
-        in keys.
+    :param output_keys: The output names for the extracted keys.
+        Defaults to the same name.
+    :param with_next: If True, adds an extra column called "next_{key}"
+        for each key in keys.
     """
 
     def __init__(
@@ -85,7 +82,8 @@ class TerminalAdaptor:
     """An adaptor to apply tags from detailed terminal tagging.
 
     :param memory: The table to adapt
-    :param value_key: the key containing the terminal mask value to apply
+    :param value_key: the key containing the terminal mask value to
+        apply
     :param target_key: the default mask data to override
     """
 

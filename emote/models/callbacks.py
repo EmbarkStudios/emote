@@ -19,7 +19,7 @@ from emote.typing import AgentId, DictObservation
 
 
 class ModelLoss(LossCallback):
-    """Trains a dynamic model by minimizing the model loss
+    """Trains a dynamic model by minimizing the model loss.
 
     Arguments:
         dynamic_model (DynamicModel): A dynamic model
@@ -121,18 +121,19 @@ class LossProgressCheck(LoggingMixin, BatchCallback):
 
 
 class BatchSampler(BatchCallback):
-    """BatchSampler class is used to provide batches of data for the RL training callbacks.
-    In every BP step, it samples one batch from either the gym buffer or the model buffer
-    based on a Bernoulli probability distribution. It outputs the batch to a separate
-    data-group which will be used by other RL training callbacks.
+    """BatchSampler class is used to provide batches of data for the RL
+    training callbacks. In every BP step, it samples one batch from either the
+    gym buffer or the model buffer based on a Bernoulli probability
+    distribution. It outputs the batch to a separate data-group which will be
+    used by other RL training callbacks.
 
-        Arguments:
-            dataloader (MemoryLoader): the dataloader to load data from the model buffer
-            prob_scheduler (BPStepScheduler): the scheduler to update the prob of data
-            samples to come from the model vs. the Gym buffer
-            data_group (str): the data_group to receive data
-            rl_data_group (str): the data_group to upload data for RL training
-            generator (torch.Generator (optional)): an optional random generator
+    Arguments:
+        dataloader (MemoryLoader): the dataloader to load data from the model buffer
+        prob_scheduler (BPStepScheduler): the scheduler to update the prob of data
+        samples to come from the model vs. the Gym buffer
+        data_group (str): the data_group to receive data
+        rl_data_group (str): the data_group to upload data for RL training
+        generator (torch.Generator (optional)): an optional random generator
     """
 
     def __init__(
@@ -192,18 +193,17 @@ class BatchSampler(BatchCallback):
 
 
 class ModelBasedCollector(LoggingMixin, BatchCallback):
-    """ModelBasedCollector class is used to sample rollouts from the trained dynamic model.
-    The rollouts are stored in a replay buffer memory.
+    """ModelBasedCollector class is used to sample rollouts from the trained
+    dynamic model. The rollouts are stored in a replay buffer memory.
 
-        Arguments:
-            model_env: The Gym-like dynamic model
-            agent: The policy used to sample actions
-            memory: The memory to store the new synthetic samples
-            rollout_scheduler: A scheduler used to set the rollout-length when unrolling the dynamic model
-            num_bp_to_retain_buffer: The number of BP steps to keep samples. Samples will be over-written (first in
-            first out) for bp steps larger than this.
-            data_group: The data group to receive data from. This must be set to get real (Gym) samples
-
+    Arguments:
+        model_env: The Gym-like dynamic model
+        agent: The policy used to sample actions
+        memory: The memory to store the new synthetic samples
+        rollout_scheduler: A scheduler used to set the rollout-length when unrolling the dynamic model
+        num_bp_to_retain_buffer: The number of BP steps to keep samples. Samples will be over-written (first in
+        first out) for bp steps larger than this.
+        data_group: The data group to receive data from. This must be set to get real (Gym) samples
     """
 
     def __init__(
@@ -217,9 +217,11 @@ class ModelBasedCollector(LoggingMixin, BatchCallback):
         input_key: str = "obs",
     ):
         super().__init__()
-        """ The data group is used to receive correct observation when collect_multiple is
-            called. The data group must be set such that real Gym samples (not model data)
-            are given to the function.
+        """The data group is used to receive correct observation when
+        collect_multiple is called.
+
+        The data group must be set such that real Gym samples (not model
+        data) are given to the function.
         """
         self.data_group = data_group
         self._input_key = input_key
@@ -248,7 +250,7 @@ class ModelBasedCollector(LoggingMixin, BatchCallback):
         return observation[self._input_key]
 
     def collect_sample(self):
-        """Collect a single rollout"""
+        """Collect a single rollout."""
         actions = self.agent(self.obs)
         next_obs, ep_info = self.model_env.dict_step(actions)
 

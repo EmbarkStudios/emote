@@ -19,8 +19,7 @@ cv2.ocl.setUseOpenCL(False)
 
 class WarpFrame(gymnasium.ObservationWrapper):
     def __init__(self, env, width: int = 84, height: int = 84):
-        """
-        Warp frames to width x height
+        """Warp frames to width x height.
 
         :param env: (Gym Environment) the environment
         """
@@ -35,8 +34,7 @@ class WarpFrame(gymnasium.ObservationWrapper):
         )
 
     def observation(self, frame):
-        """
-        returns the current observation from a frame
+        """Returns the current observation from a frame.
 
         :param frame: ([int] or [float]) environment frame
         :return: ([int] or [float]) the observation
@@ -101,12 +99,12 @@ class ScaledFloatFrame(gymnasium.ObservationWrapper):
 
 class LazyFrames(object):
     def __init__(self, frames):
-        """
-        This object ensures that common frames between the observations are only stored once.
-        It exists purely to optimize memory usage which can be huge for DQN's 1M frames replay
-        buffers.
+        """This object ensures that common frames between the observations are
+        only stored once. It exists purely to optimize memory usage which can
+        be huge for DQN's 1M frames replay buffers.
 
-        This object should only be converted to np.ndarray before being passed to the model.
+        This object should only be converted to np.ndarray before being
+        passed to the model.
 
         :param frames: ([int] or [float]) environment frames
         """

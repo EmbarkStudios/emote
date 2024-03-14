@@ -160,10 +160,8 @@ class OnnxExporter(LoggingMixin, Callback):
             self.log_scalar(f"onnx_export/{name}_var_ms", var * 1000.0)
 
     def process_pending_exports(self):
-        """
-        If you are using `export_threadsafe` the main thread must call
-        this method regularly to make sure things are actually exported.
-        """
+        """If you are using `export_threadsafe` the main thread must call this
+        method regularly to make sure things are actually exported."""
         while self.queued_exports.qsize() > 0:
             try:
                 item = self.queued_exports.get_nowait()
@@ -276,18 +274,19 @@ class OnnxExporter(LoggingMixin, Callback):
         return item.block_until_complete()
 
     def export_threadsafe(self, metadata=None) -> StorageItem:
-        """
-        Same as `export`, but it can be called in threads other than the main thread.
+        """Same as `export`, but it can be called in threads other than the
+        main thread.
+
         This method relies on the main thread calling `process_pending_exports` from time to time.
         You cannot call this method from the main thread. It will block indefinitely.
         """
         return self._export(metadata, False)
 
     def export(self, metadata=None) -> StorageItem:
-        """
-        Serializes a model to onnx and saves it to disk.
-        This must only be called from the main thread.
-        That is, the thread which has ownership over the model and that modifies it.
+        """Serializes a model to onnx and saves it to disk.
+
+        This must only be called from the main thread. That is, the
+        thread which has ownership over the model and that modifies it.
         This is usually the thread that has the training loop.
         """
         logging.info("Starting ONNX export...")

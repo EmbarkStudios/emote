@@ -28,7 +28,7 @@ from emote.utils.spaces import MDPSpace
 
 
 def _make_env():
-    """Making a Lunar Lander Gym environment
+    """Making a Lunar Lander Gym environment.
 
     Returns:
         (Gym.env): one Lunar Lander Gym environment
@@ -100,7 +100,7 @@ def create_memory(
     preload_buffer: bool = False,
     buffer_filename: str = None,
 ):
-    """Creates memory and data_loader for the RL training
+    """Creates memory and data_loader for the RL training.
 
     Arguments:
         space (MDPSpace): the MDP space
@@ -113,7 +113,6 @@ def create_memory(
         buffer_filename (str): the path to the replay buffer if preload_buffer is set to True
     Returns:
         (tuple[TableMemoryProxy, MemoryLoader]): A proxy for the memory and a dataloader
-
     """
     table = DictObsNStepTable(
         spaces=space,
@@ -141,7 +140,8 @@ def create_actor_critic_agents(
     num_actions: int,
     init_alpha: float = 0.01,
 ):
-    """The function to create the actor (policy) and the critics (two Q-functions)
+    """The function to create the actor (policy) and the critics (two
+    Q-functions)
 
     Arguments:
         args: the input arguments given by argparser
@@ -253,15 +253,15 @@ def create_complementary_callbacks(
     logged_cbs: list[LoggingMixin],
     cbs_name_to_checkpoint: list[str] = None,
 ):
-    """The function creates the supplementary callbacks for the training and adds them to the callback lists
-    and returns the list.
+    """The function creates the supplementary callbacks for the training and
+    adds them to the callback lists and returns the list.
 
-        Arguments:
-            args: input args
-            logged_cbs (list[Callback]): the list of callbacks
-            cbs_name_to_checkpoint (list[str]): the name of callbacks to checkpoint
-        Returns:
-            (list[Callback]): the full list of callbacks for the training
+    Arguments:
+        args: input args
+        logged_cbs (list[Callback]): the list of callbacks
+        cbs_name_to_checkpoint (list[str]): the name of callbacks to checkpoint
+    Returns:
+        (list[Callback]): the full list of callbacks for the training
     """
     if args.use_wandb:
         from emote.callbacks.wb_logger import WBLogger
@@ -325,13 +325,11 @@ if __name__ == "__main__":
 
     input_args = parser.parse_args()
     training_device = torch.device(input_args.device)
-
-    """Creating a vector of Gym environments """
+    """Creating a vector of Gym environments."""
     gym_wrapper = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(input_args.num_envs)]))
     number_of_actions = gym_wrapper.dict_space.actions.shape[0]
     number_of_obs = list(gym_wrapper.dict_space.state.spaces.values())[0].shape[0]
-
-    """Creating the memory and the dataloader"""
+    """Creating the memory and the dataloader."""
     gym_memory_proxy, dataloader = create_memory(
         space=gym_wrapper.dict_space,
         memory_size=4_000_000,
@@ -340,8 +338,7 @@ if __name__ == "__main__":
         data_group="default",
         device=training_device,
     )
-
-    """Create a memory exporter if needed"""
+    """Create a memory exporter if needed."""
     if input_args.export_memory:
         from emote.memory.memory import MemoryExporterProxyWrapper
 
@@ -357,8 +354,7 @@ if __name__ == "__main__":
     qnet1, qnet2, agent_proxy, ln_alpha, policy = create_actor_critic_agents(
         args=input_args, num_actions=number_of_actions, num_obs=number_of_obs
     )
-
-    """Creating the training callbacks """
+    """Creating the training callbacks."""
     train_callbacks = create_train_callbacks(
         args=input_args,
         q1=qnet1,
@@ -370,10 +366,9 @@ if __name__ == "__main__":
         memory_proxy=gym_memory_proxy,
         data_group="default",
     )
-
-    """Creating the supplementary callbacks and adding them to the training callbacks """
+    """Creating the supplementary callbacks and adding them to the training
+    callbacks."""
     all_callbacks = create_complementary_callbacks(args=input_args, logged_cbs=train_callbacks)
-
-    """Training """
+    """Training."""
     trainer = Trainer(all_callbacks, dataloader)
     trainer.train()

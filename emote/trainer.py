@@ -11,12 +11,11 @@ from .utils import WeakReference
 class StateDict(
     dict, MutableMapping[str, Any]
 ):  # TODO(singhblom) Split state dict into two - one persistable and one transient.
-    """Wrapped around a dict allowing usage in a weakref"""
+    """Wrapped around a dict allowing usage in a weakref."""
 
     def get_handle(self) -> WeakReference["StateDict"]:
-        """Retrieve a weak handle to this state dict, with no promise of ownership
-        or lifetime
-        """
+        """Retrieve a weak handle to this state dict, with no promise of
+        ownership or lifetime."""
         return ref(self)
 
 
@@ -27,7 +26,9 @@ class TrainingShutdownException(Exception):
 class Trainer:
     """The Trainer class manages the main training loop in emote.
 
-    It does so by invoking a bunch of callbacks in a number of different places."""
+    It does so by invoking a bunch of callbacks in a number of different
+    places.
+    """
 
     state: StateDict
     callbacks: List[Callback]
@@ -54,10 +55,12 @@ class Trainer:
     def train(self, shutdown_signal: Callable = None):
         """The main training loop.
 
-        This method will wait until the memory is full enough to start sampling, and then start
-        running cycles of backprops on batches sampled from the memory.
+        This method will wait until the memory is full enough to start
+        sampling, and then start running cycles of backprops on batches
+        sampled from the memory.
 
-        :param shutdown_signal: A function that returns True if training shut end, False otherwise.
+        :param shutdown_signal: A function that returns True if training
+            shut end, False otherwise.
         """
         shutdown_signal = shutdown_signal or (lambda: False)
 

@@ -8,15 +8,17 @@ from emote.nn.initialization import ortho_init_
 
 
 class Conv2dEncoder(nn.Module):
-    """
-    Multi-layer 2D convolutional encoder.
+    """Multi-layer 2D convolutional encoder.
 
-    :param input_shape: (tuple[int, int, int]) The input image shape, this should be consistent with channels_last.
-    :param channels: (list[int]) The number of channels for each conv layer.
+    :param input_shape: (tuple[int, int, int]) The input image shape,
+        this should be consistent with channels_last.
+    :param channels: (list[int]) The number of channels for each conv
+        layer.
     :param kernels: (list[int]) The kernel size for each conv layer.
     :param strides: (list[int]) The strides for each conv layer.
     :param padding: (list[int]]) The padding.
-    :param channels_last: (bool) Whether the input image has channels as the last dim, else first.
+    :param channels_last: (bool) Whether the input image has channels as
+        the last dim, else first.
     :param activation: (torch.nn.Module) The activation function.
     :param flatten: (bool) Flattens the output into a vector.
     """
@@ -77,7 +79,6 @@ class Conv2dEncoder(nn.Module):
 
     def get_encoder_output_size(self):
         curr_size_x, curr_size_y = self._img_shape_cwh[1], self._img_shape_cwh[2]
-
         """Calculate the outputs size of a conv encoder."""
         for k, s, p in zip(self._kernels, self._strides, self._padding):
             curr_size_x = ((curr_size_x - k + 2 * p) // s) + 1
@@ -92,18 +93,19 @@ class Conv2dEncoder(nn.Module):
 
 
 class Conv1dEncoder(nn.Module):
-    """
-    Multi-layer 1D convolutional encoder
+    """Multi-layer 1D convolutional encoder.
 
     :param input_shape: (tuple[int, int]) The input shape
-    :param channels: (list[int]) The number of channels for each conv layer.
+    :param channels: (list[int]) The number of channels for each conv
+        layer.
     :param kernels: (list[int]) The kernel size for each conv layer.
     :param strides: (list[int]) The strides for each conv layer.
     :param padding: (list[int]) The padding.
     :param activation: (torch.nn.Module) The activation function.
     :param flatten: (bool) Flattens the output into a vector.
     :param name: (str) Name of the encoder (default: "conv1d")
-    :param channels_last: (bool) Whether the input has channels as the last dim, else first.
+    :param channels_last: (bool) Whether the input has channels as the
+        last dim, else first.
     """
 
     def __init__(
