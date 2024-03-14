@@ -25,12 +25,7 @@ precommit = "fmt lint tailor test"
 root_patterns = ["/"]
 
 [python-bootstrap]
-search_path = [
-  # This will use all interpreters in `$(pyenv root)/versions`.
-  "<PYENV>",
-  # Brew usually installs Python here.
-  "/usr/local/bin",
-]
+search_path = ["<PYENV>", "/usr/local/bin"]
 
 [python]
 interpreter_constraints = [">=3.10,<3.11"]
