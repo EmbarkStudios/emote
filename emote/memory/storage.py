@@ -202,6 +202,48 @@ class NextElementMapper(VirtualStorage):
         return NextElementMapper(storage, shape, dtype, only_last=True)
 
 
+class NextNElementWrapper(VirtualStorage):
+    """Simple mapper that can be used to sample a specified N steps over"""
+
+    class Wrapper:
+        def __init__(self, item, n: int):
+            self._item = item
+            self._n = n
+
+        def __getitem__(self, key):
+            if isinstance(key, int):
+                key += self._n
+            elif isinstance(key, tuple):
+                key = tuple(k + self._n for k in key)
+            elif isinstance(key, slice):
+                key = slice(key.start + self._n, key.stop + self._n, key.step)
+
+            return self._item[key]
+
+        @property
+        def shape(self):
+            return self._item.shape
+
+    def __init__(self, storage, shape, dtype):
+        super().__init__(storage, shape, dtype)
+        self._wrapper = NextNElementWrapper.Wrapper
+
+    def __getitem__(self, key: int | Tuple[int, ...] | slice):
+        return self._wrapper(self._storage[key], self._n)
+
+    def sequence_length_transform(self, length):
+        return length
+
+    @staticmethod
+    def with_n(n):
+        class NextNElementW(NextNElementWrapper):
+            def __init__(self, storage, shape, dtype):
+                super().__init__(storage, shape, dtype)
+                self._n = n
+
+        return NextNElementW
+
+
 class SyntheticDones(VirtualStorage):
     """Generates done or masks based on sequence length."""
 
