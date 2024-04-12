@@ -217,6 +217,10 @@ class NextNElementWrapper(VirtualStorage):
                 key = tuple(k + self._n for k in key)
             elif isinstance(key, slice):
                 key = slice(key.start + self._n, key.stop + self._n, key.step)
+            else:
+                raise ValueError(
+                    f"Invalid indexing type '{type(key)}'. Only integer, tuple or slices supported."
+                )
 
             return self._item[key]
 
