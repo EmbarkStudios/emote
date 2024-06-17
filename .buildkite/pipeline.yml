@@ -1,105 +1,241 @@
-plugin_base: &plugin_base
-    service-account-name: monorepo-ci
-    image: gcr.io/embark-shared/ml/ci-runner@sha256:dac3595ade7e3e92ed006f6c29f461b71bb3a6b0ade8d3afb88ba8e55b9601d6
-    default-secret-name: buildkite-k8s-plugin
-    always-pull: false
-    use-agent-node-affinity: true
+# plugin_base: &plugin_base
+#     service-account-name: monorepo-ci
+#     image: gcr.io/embark-shared/ml/ci-runner@sha256:dac3595ade7e3e92ed006f6c29f461b71bb3a6b0ade8d3afb88ba8e55b9601d6
+#     default-secret-name: buildkite-k8s-plugin
+#     always-pull: false
+#     use-agent-node-affinity: true
 
-agents: &agent
-  cluster: builds-fi-2
-  queue: monorepo-ci
-  size: small
+# agents: &agent
+#   cluster: builds-fi-2
+#   queue: monorepo-ci
+#   size: small
 
-tiny: &tiny
-  agents: *agent
-  plugins:
-  - EmbarkStudios/k8s#1.2.10:
-      << : *plugin_base
-      resources-limit-cpu: 3
-      resources-limit-memory: 10Gi
+# tiny: &tiny
+#   agents: *agent
+#   plugins:
+#   - EmbarkStudios/k8s#1.2.10:
+#       << : *plugin_base
+#       resources-limit-cpu: 3
+#       resources-limit-memory: 10Gi
 
-  agents: *agent
+#   agents: *agent
 
-small: &small
-  agents: *agent
-  plugins:
-  - EmbarkStudios/k8s#1.2.10:
-      << : *plugin_base
-      resources-limit-cpu: 7
-      resources-limit-memory: 20Gi
+# small: &small
+#   agents: *agent
+#   plugins:
+#   - EmbarkStudios/k8s#1.2.10:
+#       << : *plugin_base
+#       resources-limit-cpu: 7
+#       resources-limit-memory: 20Gi
 
-large: &large
-  agents: *agent
-  plugins:
-  - EmbarkStudios/k8s#1.2.10:
-      << : *plugin_base
-      resources-limit-cpu: 14
-      resources-limit-memory: 35Gi
+# large: &large
+#   agents: *agent
+#   plugins:
+#   - EmbarkStudios/k8s#1.2.10:
+#       << : *plugin_base
+#       resources-limit-cpu: 14
+#       resources-limit-memory: 35Gi
 
+
+# env:
+#   PDM_COMMAND: pdm210
+#   PYTHON_VERSION: '3.10'
+
+
+# steps:
+#   - group: ":passport_control: Validating PR"
+#     steps:
+#       - label: ":hourglass: Validating branch age"
+#         command: bash .buildkite/validate-branch-age.sh
+#         << : *tiny
+
+#       - label: ":straight_ruler: Checking line-endings"
+#         command: bash .buildkite/check-line-endings.sh
+#         << : *tiny
+
+#       - label: ":lock: Checking lockfile"
+#         command: bash .buildkite/validate-lockfile.sh
+#         << : *tiny
+
+#   - wait
+
+#   - group: ":vertical_traffic_light: Validating changes"
+#     steps:
+#       - label: 📚 Publish docs
+#         command: bash .buildkite/publish-docs.sh
+#         << : *tiny
+
+#       - label: ":python-black: Validate black"
+#         command: bash .buildkite/run-black.sh
+#         << : *tiny
+
+#       - label: ":isort: Validate isort"
+#         command: bash .buildkite/run-isort.sh
+#         << : *tiny
+
+#       - label: ":bandit: Validate bandit"
+#         command: bash .buildkite/run-bandit.sh
+#         << : *tiny
+
+#       - label: ":lint-roller: Validate flake8"
+#         command: bash .buildkite/run-flake8.sh
+#         << : *tiny
+
+#       - label: ":pytest: Run tests"
+#         command: bash .buildkite/run-pytest.sh
+#         << : *large
+
+#   - wait
+
+#   - label: ":package: Validate packaging"
+#     command: bash .buildkite/run-package.sh
+#     << : *tiny
+
+#   - label: ":packagecloud: Triggering Cloud-Training build"
+#     trigger: erupt
+#     if: 'build.pull_request.labels includes "trigger: cloud" || build.branch == "main"'
+
+#     build:
+#       branch: main
+#       env:
+#         EMOTE_CREATOR: "${BUILDKITE_BUILD_CREATOR}"
+#         EMOTE_BRANCH:  "${BUILDKITE_BRANCH}"
+#         EMOTE_COMMIT:  "${BUILDKITE_COMMIT}"
+#         EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
+#         EMOTE_TAG:     "${BUILDKITE_TAG}"
+
+agent_kinds:
+  large_config: &large
+    agents:
+      cluster: builds-fi-2
+      queue: monorepo-ci
+      size: large
+    env:
+      PANTS_PROCESS_EXECUTION_LOCAL_PARALLELISM: 12
+      PANTS_RULE_THREADS_CORE: 6
+
+  small_config: &small
+    agents:
+      cluster: builds-fi-2
+      queue: monorepo-ci
+      size: small
+    env:
+      PANTS_PROCESS_EXECUTION_LOCAL_PARALLELISM: 6
+      PANTS_RULE_THREADS_CORE: 3
 
 env:
-  PDM_COMMAND: pdm210
-  PYTHON_VERSION: '3.10'
+  PY: "python3.10"
+  PANTS_PYTHON_INTERPRETER_CONSTRAINTS: "['==3.10.*']"
+  PANTS_CONFIG_FILES: "pants.ci.toml"
+  PYTHON_BIN_NAME: "python3.10"
+  PEX_PYTHON: "python3.10"
 
+
+
+
+#   - label: ":package: Validate packaging"
+#     command: bash .buildkite/run-package.sh
+#     << : *tiny
+
+#   - label: ":packagecloud: Triggering Cloud-Training build"
+#     trigger: erupt
+#     if: 'build.pull_request.labels includes "trigger: cloud" || build.branch == "main"'
+
+#     build:
+#       branch: main
+#       env:
+#         EMOTE_CREATOR: "${BUILDKITE_BUILD_CREATOR}"
+#         EMOTE_BRANCH:  "${BUILDKITE_BRANCH}"
+#         EMOTE_COMMIT:  "${BUILDKITE_COMMIT}"
+#         EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
+#         EMOTE_TAG:     "${BUILDKITE_TAG}"
 
 steps:
   - group: ":passport_control: Validating PR"
     steps:
       - label: ":hourglass: Validating branch age"
         command: bash .buildkite/validate-branch-age.sh
-        << : *tiny
+        <<: *small
 
       - label: ":straight_ruler: Checking line-endings"
         command: bash .buildkite/check-line-endings.sh
-        << : *tiny
-
-      - label: ":lock: Checking lockfile"
-        command: bash .buildkite/validate-lockfile.sh
-        << : *tiny
+        <<: *small
 
   - wait
 
   - group: ":vertical_traffic_light: Validating changes"
     steps:
-      - label: 📚 Publish docs
-        command: bash .buildkite/publish-docs.sh
-        << : *tiny
+      - label: ":package: Validating packages"
+        command: "pants package ::"
+        <<: *large
 
-      - label: ":python-black: Validate black"
-        command: bash .buildkite/run-black.sh
-        << : *tiny
+      - label: ":package: Packaging bases"
+        command: "pants package ::"
+        <<: *large
 
-      - label: ":isort: Validate isort"
-        command: bash .buildkite/run-isort.sh
-        << : *tiny
+      - label: "🐋 Packaging containers"
+        command: "pants package container::"
+        <<: *large
 
-      - label: ":bandit: Validate bandit"
-        command: bash .buildkite/run-bandit.sh
-        << : *tiny
+      - label: ":pants: Validating tailor"
+        command: "pants tailor --check ::"
+        <<: *small
 
-      - label: ":lint-roller: Validate flake8"
-        command: bash .buildkite/run-flake8.sh
-        << : *tiny
+      - label: ":python-black: :isort: Check-and-lint "
+        command: "pants update-build-files --check lint ::"
+        <<: *small
 
       - label: ":pytest: Run tests"
-        command: bash .buildkite/run-pytest.sh
-        << : *large
+        command: |
+          pants test ::
+          git fetch origin
+          pants run ci/coverage.py -- dist/coverage/python/coverage.json > comment.md
+          pants run ci:post-comment -- comment.md
+        <<: *small
 
+#   - group: ":vertical_traffic_light: Validating changes"
+#     steps:
+#       - label: 📚 Publish docs
+#         command: bash .buildkite/publish-docs.sh
+#         << : *tiny
+
+#       - label: ":python-black: Validate black"
+#         command: bash .buildkite/run-black.sh
+#         << : *tiny
+
+#       - label: ":isort: Validate isort"
+#         command: bash .buildkite/run-isort.sh
+#         << : *tiny
+
+#       - label: ":bandit: Validate bandit"
+#         command: bash .buildkite/run-bandit.sh
+#         << : *tiny
+
+#       - label: ":lint-roller: Validate flake8"
+#         command: bash .buildkite/run-flake8.sh
+#         << : *tiny
+
+#       - label: ":pytest: Run tests"
+#         command: bash .buildkite/run-pytest.sh
+#         << : *large
+
+#   - wait
   - wait
 
-  - label: ":package: Validate packaging"
-    command: bash .buildkite/run-package.sh
-    << : *tiny
+  - group: ":packagecloud: Publishing"
+    steps:
+      - label: ":docker: Publishing docker packages"
+        if: build.branch == "main"
+        command: |
+          . ci/init.sh yes
+          dist/ci/publish-docker-images_py.pex -v HEAD^ --pants.no-concurrent
 
-  - label: ":packagecloud: Triggering Cloud-Training build"
-    trigger: erupt
-    if: 'build.pull_request.labels includes "trigger: cloud" || build.branch == "main"'
+        <<: *large
 
-    build:
-      branch: main
-      env:
-        EMOTE_CREATOR: "${BUILDKITE_BUILD_CREATOR}"
-        EMOTE_BRANCH:  "${BUILDKITE_BRANCH}"
-        EMOTE_COMMIT:  "${BUILDKITE_COMMIT}"
-        EMOTE_MESSAGE: "${BUILDKITE_MESSAGE}"
-        EMOTE_TAG:     "${BUILDKITE_TAG}"
+      - label: ":docker: Publishing docker packages"
+        if: build.branch != "main"
+        command: |
+          . ci/init.sh yes
+          dist/ci/publish-docker-images_py.pex -v origin/main --pants.no-concurrent
+
+        <<: *large

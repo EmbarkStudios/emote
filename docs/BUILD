@@ -25,11 +25,11 @@ DOC_DEPS = [
 ]
 
 SPHINX_DEPS = [
-    "//:reqs-dev#myst-parser",
-    "//:reqs-dev#Sphinx",
-    "//:reqs-dev#sphinx-autodoc-typehints",
-    "//:reqs-dev#sphinx-rtd-theme",
-    "//:reqs-dev#sphinxcontrib-apidoc",
+    "//:emote-base#myst-parser",
+    "//:emote-base#Sphinx",
+    "//:emote-base#sphinx-autodoc-typehints",
+    "//:emote-base#sphinx-rtd-theme",
+    "//:emote-base#sphinxcontrib-apidoc",
 ]
 
 pex_binary(

@@ -1,3 +1,3 @@
 python_sources(
-    overrides={"onnx_exporter.py": {"dependencies": ["//:root#protobuf"]}},
+    overrides={"onnx_exporter.py": {"dependencies": ["//:emote-base#protobuf"]}},
 )

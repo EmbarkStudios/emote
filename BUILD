@@ -1,5 +1,5 @@
 python_requirements(
-    name="root",
+    name="emote-base",
     source="pyproject.toml",
 )
 

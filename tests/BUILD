@@ -1,10 +1,10 @@
 python_test_utils(
     name="test_utils",
     dependencies=[
-        "//:root#pytest",
-        "//:root#gymnasium",
-        "//:root#pygame",
-        "//:root#box2d-py",
+        "//:emote-base#pytest",
+        "//:emote-base#gymnasium",
+        "//:emote-base#pygame",
+        "//:emote-base#box2d-py",
     ],
 )
 
