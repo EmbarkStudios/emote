@@ -129,3 +129,20 @@ def test_qloss_checkpoints():
     t2 = Trainer(c2, nostep_dataloader())
     t2.train()
     assert torch.allclose(q1(test_act, test_obs), q2(test_act, test_obs))
+
+
+def test_duplicate_name_checkpoints():
+    chkpt_dir = mkdtemp()
+    run_root = join(chkpt_dir, "chkpt")
+    q1 = QNet(2, 1)
+    q2 = QNet(2, 1)
+    ql1 = QLoss(name="q1", q=q1, opt=Adam(q1.parameters()))
+    ql2 = QLoss(name="q2", q=q2, opt=Adam(q2.parameters()))
+
+    Checkpointer(restorees=[ql1, ql2], run_root=run_root, checkpoint_interval=1)
+
+    b1 = BackPropStepsTerminator(1)
+    b2 = BackPropStepsTerminator(1)
+
+    with pytest.raises(ValueError):
+        Checkpointer(restorees=[b1, b2], run_root=run_root, checkpoint_interval=1)

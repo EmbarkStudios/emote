@@ -193,18 +193,17 @@ class BatchSampler(BatchCallback):
 
 
 class ModelBasedCollector(LoggingMixin, BatchCallback):
-    """ModelBasedCollector class is used to sample rollouts from the trained dynamic model.
-    The rollouts are stored in a replay buffer memory.
+    """ModelBasedCollector class is used to sample rollouts from the trained
+    dynamic model. The rollouts are stored in a replay buffer memory.
 
-        Arguments:
-            model_env: The Gym-like dynamic model
-            agent: The policy used to sample actions
-            memory: The memory to store the new synthetic samples
-            rollout_scheduler: A scheduler used to set the rollout-length when unrolling the dynamic model
-            num_bp_to_retain_buffer: The number of BP steps to keep samples. Samples will be over-written (first in
-            first out) for bp steps larger than this.
-            data_group: The data group to receive data from. This must be set to get real (Gym) samples
-
+    Arguments:
+        model_env: The Gym-like dynamic model
+        agent: The policy used to sample actions
+        memory: The memory to store the new synthetic samples
+        rollout_scheduler: A scheduler used to set the rollout-length when unrolling the dynamic model
+        num_bp_to_retain_buffer: The number of BP steps to keep samples. Samples will be over-written (first in
+        first out) for bp steps larger than this.
+        data_group: The data group to receive data from. This must be set to get real (Gym) samples
     """
 
     def __init__(

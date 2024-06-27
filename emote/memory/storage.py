@@ -216,7 +216,13 @@ class NextNElementWrapper(VirtualStorage):
             elif isinstance(key, tuple):
                 key = tuple(k + self._n for k in key)
             elif isinstance(key, slice):
+                # slicing in numpy never bounds checks, it instead returns an empty array..
+                # so lets do the bound checking ourselves
                 key = slice(key.start + self._n, key.stop + self._n, key.step)
+                if key.start >= self._item.shape[0] or key.stop > self._item.shape[0]:
+                    raise IndexError(
+                        f"Slice out of bounds: {key}, item has shape {self._item.shape}"
+                    )
             else:
                 raise ValueError(
                     f"Invalid indexing type '{type(key)}'. Only integer, tuple or slices supported."

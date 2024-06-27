@@ -195,8 +195,8 @@ class CurlLoss(LossCallback):
         self._encoder = encoder_model
         self._target_encoder = target_encoder_model
 
-        self._W = torch.tensor(
-            torch.rand(size=[desired_zdim, desired_zdim]),
+        self._W = torch.rand(
+            size=[desired_zdim, desired_zdim],
             requires_grad=True,
             device=device,
         )

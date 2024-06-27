@@ -52,3 +52,42 @@ def test_next_n_element_tuple(batch_dim, n, storage):
     assert np.all(next_0_0 == storage[batch_dim][(n, n)])
     assert np.all(next_1_0 == storage[batch_dim][(1 + n, n)])
     assert np.all(next_1_1 == storage[batch_dim][(1 + n, 1 + n)])
+
+
+@pytest.mark.parametrize(("batch_dim", "n"), ((0, 2), (1, 2)))
+def test_next_n_element_access_single_out_of_bounds_raises(batch_dim, n, storage):
+    wrapper = NextNElementWrapper.with_n(n)(storage, (1,), np.float32)[batch_dim]
+    array_len = storage.shape[1]
+
+    with pytest.raises(IndexError):
+        wrapper[array_len - 2]
+    with pytest.raises(IndexError):
+        wrapper[array_len - 1]
+    with pytest.raises(IndexError):
+        wrapper[array_len]
+    with pytest.raises(IndexError):
+        wrapper[array_len + 1]
+
+
+@pytest.mark.parametrize(("batch_dim", "n"), ((0, 2), (1, 2)))
+def test_next_n_element_access_slice_out_of_bounds_raises(batch_dim, n, storage):
+    wrapper = NextNElementWrapper.with_n(n)(storage, (1,), np.float32)[batch_dim]
+    array_len = storage.shape[1]
+
+    with pytest.raises(IndexError):
+        wrapper[array_len - 2 : array_len]
+    with pytest.raises(IndexError):
+        wrapper[array_len + 2 : array_len + 4]
+
+
+@pytest.mark.parametrize(("batch_dim", "n"), ((0, 2), (1, 2)))
+def test_next_n_element_access_tuple_out_of_bounds_raises(batch_dim, n, storage):
+    storage = np.reshape(storage, (2, 4, 4))
+
+    wrapper = NextNElementWrapper.with_n(n)(storage, (1,), np.float32)[batch_dim]
+
+    with pytest.raises(IndexError):
+        wrapper[(3, 3)]
+
+    with pytest.raises(IndexError):
+        wrapper[(4, 4)]
