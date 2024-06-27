@@ -1,6 +1,4 @@
-"""
-
-"""
+""""""
 
 from dataclasses import dataclass
 from typing import Tuple, Type
@@ -15,7 +13,7 @@ class Column:
     """A typed column for data storage."""
 
     name: str
-    """The name of the column"""
+    """The name of the column."""
 
     shape: Tuple[int]
     dtype: type
@@ -55,7 +53,7 @@ class TagColumn(Column):
 
 @dataclass
 class VirtualColumn(Column):
-    """A column providing fake or transformed data via Mapper"""
+    """A column providing fake or transformed data via Mapper."""
 
     target_name: str
     mapper: Type[VirtualStorage]

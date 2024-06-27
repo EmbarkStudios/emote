@@ -56,7 +56,8 @@ def separate_modules_for_weight_decay(
 
 
 class ModifiedAdamW(torch.optim.AdamW):
-    """Modifies AdamW (Adam with weight decay) to not apply weight decay on the bias and layer normalization weights, and optionally additional modules.
+    """Modifies AdamW (Adam with weight decay) to not apply weight decay on the
+    bias and layer normalization weights, and optionally additional modules.
 
     Args:
         network (torch.nn.Module): network

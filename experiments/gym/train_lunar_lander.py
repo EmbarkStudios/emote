@@ -19,8 +19,8 @@ from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss
 from emote.callbacks import Checkpointer
 from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.logging import TensorboardLogger
-from emote.memory import MemoryLoader, TableMemoryProxy
-from emote.memory.builder import DictObsNStepTable
+from emote.memory import MemoryLoader, MemoryTableProxy
+from emote.memory.builder import DictObsNStepMemoryTable
 from emote.mixins.logging import LoggingMixin
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
@@ -28,7 +28,7 @@ from emote.utils.spaces import MDPSpace
 
 
 def _make_env():
-    """Making a Lunar Lander Gym environment
+    """Making a Lunar Lander Gym environment.
 
     Returns:
         (Gym.env): one Lunar Lander Gym environment
@@ -100,7 +100,7 @@ def create_memory(
     preload_buffer: bool = False,
     buffer_filename: str = None,
 ):
-    """Creates memory and data_loader for the RL training
+    """Creates memory and data_loader for the RL training.
 
     Arguments:
         space (MDPSpace): the MDP space
@@ -112,21 +112,20 @@ def create_memory(
         preload_buffer (bool): preload the buffer with some existing data
         buffer_filename (str): the path to the replay buffer if preload_buffer is set to True
     Returns:
-        (tuple[TableMemoryProxy, MemoryLoader]): A proxy for the memory and a dataloader
-
+        (tuple[MemoryTableProxy, MemoryLoader]): A proxy for the memory and a dataloader
     """
-    table = DictObsNStepTable(
+    memory_table = DictObsNStepMemoryTable(
         spaces=space,
         use_terminal_column=False,
         maxlen=memory_size,
         device=device,
     )
     if preload_buffer:
-        table.restore(buffer_filename)
-        print(f"memory populated with offline samples - size: {table.size()}")
-    memory_proxy = TableMemoryProxy(table=table, use_terminal=False)
+        memory_table.restore(buffer_filename)
+        print(f"memory populated with offline samples - size: {memory_table.size()}")
+    memory_proxy = MemoryTableProxy(memory_table=memory_table, use_terminal=False)
     data_loader = MemoryLoader(
-        table=table,
+        memory_table=memory_table,
         rollout_count=batch_size // len_rollout,
         rollout_length=len_rollout,
         size_key="batch_size",
@@ -141,7 +140,8 @@ def create_actor_critic_agents(
     num_actions: int,
     init_alpha: float = 0.01,
 ):
-    """The function to create the actor (policy) and the critics (two Q-functions)
+    """The function to create the actor (policy) and the critics (two
+    Q-functions)
 
     Arguments:
         args: the input arguments given by argparser
@@ -173,7 +173,7 @@ def create_train_callbacks(
     policy_proxy: FeatureAgentProxy,
     ln_alpha: torch.Tensor,
     env: DictGymWrapper,
-    memory_proxy: TableMemoryProxy,
+    memory_proxy: MemoryTableProxy,
     data_group: str,
 ):
     """The function creates the callbacks required for model-free SAC training.
@@ -186,7 +186,7 @@ def create_train_callbacks(
         policy_proxy (FeatureAgentProxy): the wrapper for the policy network
         ln_alpha (Tensor): the log of alpha parameters (trainable)
         env (DictGymWrapper): the Gym wrapper
-        memory_proxy (TableMemoryProxy): the proxy for the memory
+        memory_proxy (MemoryTableProxy): the proxy for the memory
         data_group (str): the data_group to receive data batches
     Returns:
         (list[Callback]): the callbacks for the SAC RL training
@@ -253,15 +253,15 @@ def create_complementary_callbacks(
     logged_cbs: list[LoggingMixin],
     cbs_name_to_checkpoint: list[str] = None,
 ):
-    """The function creates the supplementary callbacks for the training and adds them to the callback lists
-    and returns the list.
+    """The function creates the supplementary callbacks for the training and
+    adds them to the callback lists and returns the list.
 
-        Arguments:
-            args: input args
-            logged_cbs (list[Callback]): the list of callbacks
-            cbs_name_to_checkpoint (list[str]): the name of callbacks to checkpoint
-        Returns:
-            (list[Callback]): the full list of callbacks for the training
+    Arguments:
+        args: input args
+        logged_cbs (list[Callback]): the list of callbacks
+        cbs_name_to_checkpoint (list[str]): the name of callbacks to checkpoint
+    Returns:
+        (list[Callback]): the full list of callbacks for the training
     """
     if args.use_wandb:
         from emote.callbacks.wb_logger import WBLogger
@@ -291,7 +291,7 @@ def create_complementary_callbacks(
 
     if cbs_name_to_checkpoint:
         checkpointer = Checkpointer(
-            callbacks=[
+            restorees=[
                 cb for cb in logged_cbs if hasattr(cb, "name") and cb.name in cbs_name_to_checkpoint
             ],
             run_root=args.checkpoint_dir,
@@ -325,13 +325,11 @@ if __name__ == "__main__":
 
     input_args = parser.parse_args()
     training_device = torch.device(input_args.device)
-
-    """Creating a vector of Gym environments """
+    """Creating a vector of Gym environments."""
     gym_wrapper = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(input_args.num_envs)]))
     number_of_actions = gym_wrapper.dict_space.actions.shape[0]
     number_of_obs = list(gym_wrapper.dict_space.state.spaces.values())[0].shape[0]
-
-    """Creating the memory and the dataloader"""
+    """Creating the memory and the dataloader."""
     gym_memory_proxy, dataloader = create_memory(
         space=gym_wrapper.dict_space,
         memory_size=4_000_000,
@@ -340,8 +338,7 @@ if __name__ == "__main__":
         data_group="default",
         device=training_device,
     )
-
-    """Create a memory exporter if needed"""
+    """Create a memory exporter if needed."""
     if input_args.export_memory:
         from emote.memory.memory import MemoryExporterProxyWrapper
 
@@ -357,8 +354,7 @@ if __name__ == "__main__":
     qnet1, qnet2, agent_proxy, ln_alpha, policy = create_actor_critic_agents(
         args=input_args, num_actions=number_of_actions, num_obs=number_of_obs
     )
-
-    """Creating the training callbacks """
+    """Creating the training callbacks."""
     train_callbacks = create_train_callbacks(
         args=input_args,
         q1=qnet1,
@@ -370,10 +366,9 @@ if __name__ == "__main__":
         memory_proxy=gym_memory_proxy,
         data_group="default",
     )
-
-    """Creating the supplementary callbacks and adding them to the training callbacks """
+    """Creating the supplementary callbacks and adding them to the training
+    callbacks."""
     all_callbacks = create_complementary_callbacks(args=input_args, logged_cbs=train_callbacks)
-
-    """Training """
+    """Training."""
     trainer = Trainer(all_callbacks, dataloader)
     trainer.train()

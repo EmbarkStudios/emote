@@ -5,7 +5,7 @@ import torch
 from emote.memory.adaptors import TerminalAdaptor
 from emote.memory.fifo_strategy import FifoEjectionStrategy
 from emote.memory.storage import SyntheticDones
-from emote.memory.table import ArrayTable, Column, TagColumn, VirtualColumn
+from emote.memory.table import ArrayMemoryTable, Column, TagColumn, VirtualColumn
 from emote.memory.uniform_strategy import UniformSampleStrategy
 
 
@@ -25,7 +25,7 @@ def table():
         TagColumn(name="terminal", shape=(), dtype=np.float32),
     ]
 
-    table = ArrayTable(
+    memory_table = ArrayMemoryTable(
         columns=spec,
         maxlen=10_000,
         sampler=UniformSampleStrategy(),
@@ -35,10 +35,10 @@ def table():
         device="cpu",
     )
 
-    return table
+    return memory_table
 
 
-def test_sampled_data_is_always_copied(table: ArrayTable):
+def test_sampled_data_is_always_copied(table: ArrayMemoryTable):
     for ii in range(0, 600):
         table.add_sequence(
             ii,

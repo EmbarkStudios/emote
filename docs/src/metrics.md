@@ -21,12 +21,12 @@ Things behave slightly differently on the data-generation side. Our suggested (a
 method) is to wrap the memory with a [`LoggingProxyWrapper`](emote.memory.memory.LoggingProxyWrapper). Since all data going into the training loop passes through the memory, and all data has associated metadata, this will capture most metrics.
 
 Our suggestion is that users primarily rely on this mechanism for logging data associated with the
-agents, as it'll get smoothed across all agents to reduce noise.
+agents, as it will get smoothed across all agents to reduce noise.
 
 
 ```python
 env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-table = DictObsTable(spaces=env.dict_space, maxlen=1000, device="cpu")
-table_proxy = TableMemoryProxy(table, 0, True)
+table = DictObsMemoryTable(spaces=env.dict_space, maxlen=1000, device="cpu")
+table_proxy = MemoryTableProxy(table, 0, True)
 table_proxy = LoggingProxyWrapper(table, SummaryWriter("/tmp/output_dir"), 2000)
 ```

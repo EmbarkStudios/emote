@@ -26,19 +26,25 @@ def soft_update_from_to(source, target, tau):  # From rlkit
 class QLoss(LossCallback):
     r"""A MSE loss between the action value net and the target q.
 
-    The target q values are not calculated here and need to be added
-    to the state before the loss of this module runs.
+    The target q values are not calculated here and need to be added to
+    the state before the loss of this module runs.
 
     :param name (str): The name of the module. Used e.g. while logging.
-    :param q (torch.nn.Module): A deep neural net that outputs the discounted loss
-        given the current observations and a given action.
+    :param q (torch.nn.Module): A deep neural net that outputs the
+        discounted loss given the current observations and a given
+        action.
     :param opt (torch.optim.Optimizer): An optimizer for q.
-    :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning rate schedule
-        for the optimizer of q.
-    :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
-    :param data_group (str): The name of the data group from which this Loss takes its data.
-    :param log_per_param_weights (bool): If true, log each individual policy parameter that is optimized (norm and value histogram).
-    :param log_per_param_grads (bool): If true, log the gradients of each individual policy parameter that is optimized (norm and histogram).
+    :param lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning
+        rate schedule for the optimizer of q.
+    :param max_grad_norm (float): Clip the norm of the gradient during
+        backprop using this value.
+    :param data_group (str): The name of the data group from which this
+        Loss takes its data.
+    :param log_per_param_weights (bool): If true, log each individual
+        policy parameter that is optimized (norm and value histogram).
+    :param log_per_param_grads (bool): If true, log the gradients of
+        each individual policy parameter that is optimized (norm and
+        histogram).
     """
 
     def __init__(

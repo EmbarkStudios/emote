@@ -3,8 +3,7 @@ import operator
 
 class SegmentTree:
     def __init__(self, capacity, operation, neutral_element):
-        """
-        Build a Segment Tree data structure.
+        """Build a Segment Tree data structure.
 
         https://en.wikipedia.org/wiki/Segment_tree
 
@@ -45,9 +44,8 @@ class SegmentTree:
                 )
 
     def reduce(self, start=0, end=None):
-        """
-        Returns result of applying `self.operation`
-        to a contiguous subsequence of the array.
+        """Returns result of applying `self.operation` to a contiguous
+        subsequence of the array.
 
             self.operation(arr[start], operation(arr[start+1], operation(... arr[end])))
 
@@ -83,8 +81,7 @@ class SumSegmentTree(SegmentTree):
         )
 
     def sum(self, start=0, end=None):
-        """
-        Returns arr[start] + ... + arr[end]
+        """Returns arr[start] + ... + arr[end]
 
         :param start: (int) start position of the reduction (must be >= 0)
         :param end: (int) end position of the reduction (must be < len(arr), can be None for len(arr) - 1)
@@ -122,8 +119,7 @@ class MinSegmentTree(SegmentTree):
         )
 
     def min(self, start=0, end=None):
-        """
-        Returns min(arr[start], ...,  arr[end])
+        """Returns min(arr[start], ...,  arr[end])
 
         :param start: (int) start position of the reduction (must be >= 0)
         :param end: (int) end position of the reduction (must be < len(arr), can be None for len(arr) - 1)

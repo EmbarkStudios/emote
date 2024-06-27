@@ -1,0 +1,89 @@
+[GLOBAL]
+pants_version = "2.21.0"
+
+plugins = [
+    "pants_backend_mdbook==0.4.1",
+]
+backend_packages = [
+    "pants.backend.python",
+
+    "pants.backend.python.lint.black",
+    "pants.backend.python.lint.isort",
+    "pants.backend.python.lint.flake8",
+    "pants.backend.python.lint.docformatter",
+    "pants.backend.python.lint.bandit",
+
+    "pants.backend.shell",
+    "pants.backend.shell.lint.shellcheck",
+    "pants.backend.shell.lint.shfmt",
+
+    "pants.backend.tools.taplo",
+    "pants.backend.experimental.adhoc",
+
+    "pants_backend_mdbook",
+]
+
+build_file_prelude_globs = ["pants-plugins/macros.py"]
+
+[cli.alias]
+precommit = "fmt lint tailor test"
+--all-changed = "--changed-since=origin/main --changed-dependees=transitive"
+
+[source]
+root_patterns = ["/", "/docs/"]
+
+[python-bootstrap]
+search_path.add = ["<PYENV>"]
+
+[python]
+interpreter_constraints = [">=3.10,<3.11"]
+pip_version = "23.0.1"
+enable_resolves = true
+default_resolve = "base"
+
+[python.resolves]
+base = "locks/base.lock"
+cpu = "locks/cpu.lock"
+gpu = "locks/gpu.lock"
+
+apibook = "locks/tools/apibook.lock"
+pytest = "locks/tools/pytest.lock"
+isort = "locks/tools/isort.lock"
+ipython = "locks/tools/ipython.lock"
+black = "locks/tools/black.lock"
+docformatter = "locks/tools/docformatter.lock"
+bandit = "locks/tools/bandit.lock"
+
+[python-repos]
+indexes = [
+    "https://pypi.org/simple/",
+    "https://tgolsson.github.io/torch-index/cpu/",
+    "https://tgolsson.github.io/torch-index/cu116/",
+]
+
+[repl]
+shell = "ipython"
+
+[black]
+install_from_resolve = "black"
+interpreter_constraints = ["==3.10.*"]
+
+[ipython]
+install_from_resolve = "ipython"
+
+[isort]
+install_from_resolve = "isort"
+args = ['--resolve-all-configs']
+interpreter_constraints = ["==3.10.*"]
+
+[pytest]
+args = ["--no-header"]
+execution_slot_var = "TEST_EXECUTION_SLOT"
+install_from_resolve = "pytest"
+
+[docformatter]
+install_from_resolve = "docformatter"
+interpreter_constraints = ["==3.10.*"]
+
+[bandit]
+args = ["-r", "-ll", "--quiet"]

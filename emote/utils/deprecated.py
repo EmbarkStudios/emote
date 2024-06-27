@@ -1,6 +1,4 @@
-"""
-
-"""
+""""""
 
 import functools
 import warnings
@@ -11,17 +9,20 @@ from typing import Callable
 def deprecated(
     original_function: Callable = None,
     *,
-    reason: str = None,
+    reason: str,
     max_warn_count: int = 10,
     version: str = None,
 ) -> Callable:
-    """Function decorator to deprecate an annotated function. Can be used both as a
-    bare decorator, or with parameters to customize the display of the
+    """Function decorator to deprecate an annotated function. Can be used both
+    as a bare decorator, or with parameters to customize the display of the
     message. Writes to logging.warn.
 
-    :param original_function: Function to decorate. Automatically passed.
-    :param message: Message to show. Function name is automatically added.
-    :param max_warn_count: How many times we will warn for the same function
+    :param original_function: Function to decorate. Automatically
+        passed.
+    :param reason: Message to show. Function name is automatically
+        added.
+    :param max_warn_count: How many times we will warn for the same
+        function
     :returns: the wrapped function
     """
     reason = f": {reason}" if reason else ""

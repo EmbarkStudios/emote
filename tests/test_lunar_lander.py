@@ -14,8 +14,8 @@ from emote import Trainer
 from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 from emote.callbacks.logging import TensorboardLogger
 from emote.callbacks.testing import FinalLossTestCheck
-from emote.memory import MemoryLoader, TableMemoryProxy
-from emote.memory.builder import DictObsNStepTable
+from emote.memory import MemoryLoader, MemoryTableProxy
+from emote.memory.builder import DictObsNStepMemoryTable
 from emote.nn.gaussian_policy import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_
 
@@ -79,14 +79,14 @@ def setup_lunar_lander():
     max_grad_norm = 1
 
     env = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(n_env)]))
-    table = DictObsNStepTable(
+    memory_table = DictObsNStepMemoryTable(
         spaces=env.dict_space,
         use_terminal_column=True,
         maxlen=4_000_000,
         device=device,
     )
-    memory_proxy = TableMemoryProxy(table, use_terminal=True)
-    dataloader = MemoryLoader(table, batch_size // rollout_len, rollout_len, "batch_size")
+    memory_proxy = MemoryTableProxy(memory_table, use_terminal=True)
+    dataloader = MemoryLoader(memory_table, batch_size // rollout_len, rollout_len, "batch_size")
 
     num_actions = env.dict_space.actions.shape[0]
     num_obs = list(env.dict_space.state.spaces.values())[0].shape[0]
@@ -148,7 +148,7 @@ def setup_lunar_lander():
 
 
 def test_lunar_lander_quick():
-    """Quick test that the code runs"""
+    """Quick test that the code runs."""
 
     experiment_name = "lunar_lander_test_" + str(time.time())
     logged_cbs, dataloader = setup_lunar_lander()

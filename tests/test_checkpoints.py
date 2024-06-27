@@ -2,6 +2,7 @@ from os.path import join
 from tempfile import mkdtemp
 from typing import Generator
 
+import pytest
 import torch
 
 from torch import nn
@@ -57,7 +58,7 @@ def test_networks_checkpoint():
     )
     c1 = [
         Checkpointer(
-            callbacks=[loss_cb],
+            restorees=[loss_cb],
             run_root=run_root,
             checkpoint_interval=1,
         )
@@ -76,7 +77,7 @@ def test_networks_checkpoint():
 
     c2 = [
         CheckpointLoader(
-            callbacks=[loss_cb],
+            restorees=[loss_cb],
             run_root=run_root,
             checkpoint_index=0,
         ),
@@ -107,7 +108,7 @@ def test_qloss_checkpoints():
     ql1 = QLoss(name="q", q=q1, opt=Adam(q1.parameters()))
     c1 = [
         ql1,
-        Checkpointer(callbacks=[ql1], run_root=run_root, checkpoint_interval=1),
+        Checkpointer(restorees=[ql1], run_root=run_root, checkpoint_interval=1),
     ]
 
     t1 = Trainer(c1, random_onestep_dataloader())
@@ -123,7 +124,7 @@ def test_qloss_checkpoints():
     ql2 = QLoss(name="q", q=q2, opt=Adam(q1.parameters()))
     c2 = [
         ql2,
-        CheckpointLoader(callbacks=[ql2], run_root=run_root, checkpoint_index=0),
+        CheckpointLoader(restorees=[ql2], run_root=run_root, checkpoint_index=0),
     ]
     t2 = Trainer(c2, nostep_dataloader())
     t2.train()
