@@ -6,5 +6,5 @@ See the [mdBook markdown docs](https://rust-lang.github.io/mdBook/format/markdow
 
 ## Helpful commands
 
-* To build the docs: `pants package docs:docs`
-* To view the docs in your browser: `pants run docs:serve`
+* To build the docs: `pants package //docs:book`
+* To view the docs in your browser: `pants run //docs:serve` and then visit [http://localhost:8000](http://localhost:8000)

@@ -19,6 +19,7 @@ backend_packages = [
 
     "pants.backend.tools.taplo",
     "pants.backend.experimental.adhoc",
+    "pants.backend.experimental.python",
 
     "pants_backend_mdbook",
 ]

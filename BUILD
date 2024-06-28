@@ -83,6 +83,9 @@ python_distribution(
         version="0.1.0",
         long_description_content_type="markdown",
     ),
+    repositories=[
+        "@pypi",
+    ],
     long_description_path="./README.md",
     interpreter_constraints=[">=3.10,<3.11"],
 )

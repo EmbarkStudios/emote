@@ -1,0 +1,19 @@
+name: Build docs
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  PANTS_BACKEND_PACKAGES: '-["pants.backend.python.providers.experimental.pyenv"]'
+  PANTS_VERIFY_CONFIG: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Generate docs
+        uses: ./.github/workflows/docs
