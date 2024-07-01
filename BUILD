@@ -96,3 +96,7 @@ pex_binary(
     dependencies=["//:cpu#tensorboard"],
     resolve="cpu",
 )
+
+shell_sources(
+    name="root",
+)

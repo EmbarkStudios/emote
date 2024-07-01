@@ -25,4 +25,4 @@ runs:
       shell: bash
       run: |
         . ci/init.sh no
-        pants package docs:docs
+        pants package //docs:book

@@ -5,6 +5,7 @@ For each .dot file, generate a .png file into the output directory.
 
 import argparse
 import os
+import subprocess
 
 from dataclasses import dataclass
 
@@ -36,7 +37,8 @@ def main(input_dir: str, output_dir: str):
         input_file = os.path.join(input_dir, file)
         output_file = os.path.join(output_dir, file.replace(".dot", ".png"))
         print(f"Processing {input_file} into {output_file}")
-        os.system(f"dot -Tpng {input_file} -o {output_file}")
+
+        subprocess.run(["dot", "-Tpng", input_file, "-o", output_file])
 
 
 if __name__ == "__main__":

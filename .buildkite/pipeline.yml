@@ -55,7 +55,7 @@ steps:
       - label: ":package: Packaging bases"
         command: |
           . ci/init.sh yes
-          pants package --filter-address-regex='-.*@resolve=.*' src/py::
+          pants package --filter-address-regex='-.*@resolve=.*' emote::
 
         <<: *large
 
