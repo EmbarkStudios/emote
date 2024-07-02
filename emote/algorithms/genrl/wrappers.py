@@ -27,16 +27,14 @@ class DecoderWrapper(nn.Module):
             param.requires_grad = False
 
     def forward(self, latent: torch.Tensor, observation: torch.Tensor = None) -> torch.Tensor:
+        """Running decoder.
 
-        """
-        Running decoder
+        Arguments:
+            latent (torch.Tensor): batch x latent_size
+            observation (torch.Tensor): batch x obs_size
 
-            Arguments:
-                latent (torch.Tensor): batch x latent_size
-                observation (torch.Tensor): batch x obs_size
-
-            Returns:
-                torch.Tensor: the sample (batch x data_size)
+        Returns:
+            torch.Tensor: the sample (batch x data_size)
         """
         latent = latent * self._latent_multiplier
 
@@ -77,15 +75,14 @@ class EncoderWrapper(nn.Module):
             param.requires_grad = False
 
     def forward(self, action: torch.Tensor, observation: torch.Tensor = None) -> torch.Tensor:
-        """
-        Running encoder
+        """Running encoder.
 
-            Arguments:
-                action (torch.Tensor): batch x data_size
-                observation (torch.Tensor): batch x obs_size
+        Arguments:
+            action (torch.Tensor): batch x data_size
+            observation (torch.Tensor): batch x obs_size
 
-            Returns:
-                torch.Tensor: the mean (batch x data_size)
+        Returns:
+            torch.Tensor: the mean (batch x data_size)
         """
         action = action.to(self.device)
         condition = None

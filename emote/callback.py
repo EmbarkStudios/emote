@@ -96,7 +96,8 @@ def _wrap_callback_function(obj, func, *, group: str = None, use_group: bool = T
 
 
 class CallbackMeta(ABCMeta):
-    """The CallbackMeta metaclass modifies the callbacks so that they accept data groups."""
+    """The CallbackMeta metaclass modifies the callbacks so that they accept
+    data groups."""
 
     def __init__(self, cls, bases, fields):
         self._callbacks = {}
@@ -168,11 +169,13 @@ class CallbackMeta(ABCMeta):
 class Callback(metaclass=CallbackMeta):
     """The principal modular building block of emote.
 
-    Callbacks are modular pieces of code that together build up the training loop.  They contain
-    hooks that are executed at different points during training.  These can consume values from
-    other callbacks, and generate their own for others to consume. This allows a very loosely
-    coupled flow of data between different parts of the code. The most important examples of
-    callbacks in emote are the Losses.
+    Callbacks are modular pieces of code that together build up the
+    training loop.  They contain hooks that are executed at different
+    points during training.  These can consume values from other
+    callbacks, and generate their own for others to consume. This allows
+    a very loosely coupled flow of data between different parts of the
+    code. The most important examples of callbacks in emote are the
+    Losses.
 
     The concept has been borrowed from Keras and FastAI.
     """
@@ -181,16 +184,20 @@ class Callback(metaclass=CallbackMeta):
         super().__init__()
         self._order = 0
         self.cycle = cycle
+        self.name = type(self).__name__
 
     def restore_state(self, *args, **kwargs):
-        """Called before training starts to allow loader modules to import state. At this point, no
-        assumptions can be made for other modules state.
+        """Called before training starts to allow loader modules to import
+        state.
 
+        At this point, no assumptions can be made for other modules
+        state.
         """
         pass
 
     def begin_training(self, *args, **kwargs):
-        """Called when training starts, both from scratch and when restoring from a checkpoint."""
+        """Called when training starts, both from scratch and when restoring
+        from a checkpoint."""
         pass
 
     def begin_cycle(self, *args, **kwargs):
@@ -198,7 +205,8 @@ class Callback(metaclass=CallbackMeta):
         pass
 
     def begin_batch(self, *args, **kwargs):
-        """Called at the start of each batch, immediately after data has been sampled."""
+        """Called at the start of each batch, immediately after data has been
+        sampled."""
         pass
 
     def backward(self, *args, **kwargs):
@@ -218,7 +226,8 @@ class Callback(metaclass=CallbackMeta):
         pass
 
     def state_dict(self) -> Dict[str, Any]:
-        """Called by checkpointers primarily to capture state for on-disk saving."""
+        """Called by checkpointers primarily to capture state for on-disk
+        saving."""
         return {}
 
     def load_state_dict(
@@ -228,7 +237,8 @@ class Callback(metaclass=CallbackMeta):
         load_optimizer: bool = True,
         load_hparams: bool = True,
     ):
-        """Called from checkpoint-loaders during the `restore_state` phase, primarily."""
+        """Called from checkpoint-loaders during the `restore_state` phase,
+        primarily."""
         pass
 
 

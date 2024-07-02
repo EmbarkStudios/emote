@@ -9,10 +9,9 @@ import torch
 class LoggingMixin:
     """A Mixin that accepts logging calls.
 
-    Logged data is saved on this object and gets written by a
-    Logger. This therefore doesn't care how the data is logged, it
-    only provides a standard interface for storing the data to be
-    handled by a Logger.
+    Logged data is saved on this object and gets written by a Logger.
+    This therefore doesn't care how the data is logged, it only provides
+    a standard interface for storing the data to be handled by a Logger.
     """
 
     def __init__(self, *, default_window_length: int = 250, **kwargs):
@@ -90,7 +89,15 @@ class LoggingMixin:
             self.hist_logs[key].append(value)
 
     def state_dict(self):
-        state_dict = super().state_dict()
+        try:
+            state_dict = super().state_dict()
+        except AttributeError:
+            print(f"Error getting the state dict for {self.__class__.__name__}.")
+            print("This sometimes happens when the LoggingMixin is inherited from after")
+            print(
+                f"the other mixins. The current method resolution order is {self.__class__.__mro__}"
+            )
+            raise
         state_dict["scalar_logs"] = self.scalar_logs
         state_dict["hist_logs"] = self.hist_logs
         state_dict["image_logs"] = self.image_logs

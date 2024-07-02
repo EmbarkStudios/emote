@@ -1,10 +1,10 @@
 from collections import deque
 
 import cv2
-import gym
+import gymnasium
 import numpy as np
 
-from gym import spaces
+from gymnasium import spaces
 
 
 cv2.ocl.setUseOpenCL(False)
@@ -17,14 +17,13 @@ cv2.ocl.setUseOpenCL(False)
 # Copyright (c) 2017 OpenAI (http://openai.com), used under the MIT license
 
 
-class WarpFrame(gym.ObservationWrapper):
+class WarpFrame(gymnasium.ObservationWrapper):
     def __init__(self, env, width: int = 84, height: int = 84):
-        """
-        Warp frames to width x height
+        """Warp frames to width x height.
 
         :param env: (Gym Environment) the environment
         """
-        gym.ObservationWrapper.__init__(self, env)
+        gymnasium.ObservationWrapper.__init__(self, env)
         self.width = width
         self.height = height
         self.observation_space = spaces.Box(
@@ -35,8 +34,7 @@ class WarpFrame(gym.ObservationWrapper):
         )
 
     def observation(self, frame):
-        """
-        returns the current observation from a frame
+        """Returns the current observation from a frame.
 
         :param frame: ([int] or [float]) environment frame
         :return: ([int] or [float]) the observation
@@ -46,7 +44,7 @@ class WarpFrame(gym.ObservationWrapper):
         return frame[:, :, None]
 
 
-class FrameStack(gym.Wrapper):
+class FrameStack(gymnasium.Wrapper):
     def __init__(self, env, n_frames: int):
         """Stack n_frames last frames.
 
@@ -59,7 +57,7 @@ class FrameStack(gym.Wrapper):
         :param env: (Gym Environment) the environment
         :param n_frames: (int) the number of frames to stack
         """
-        gym.Wrapper.__init__(self, env)
+        gymnasium.Wrapper.__init__(self, env)
         self.n_frames = n_frames
         self.frames = deque([], maxlen=n_frames)
         shp = env.observation_space.shape
@@ -86,9 +84,9 @@ class FrameStack(gym.Wrapper):
         return LazyFrames(list(self.frames))
 
 
-class ScaledFloatFrame(gym.ObservationWrapper):
+class ScaledFloatFrame(gymnasium.ObservationWrapper):
     def __init__(self, env):
-        gym.ObservationWrapper.__init__(self, env)
+        gymnasium.ObservationWrapper.__init__(self, env)
         self.observation_space = spaces.Box(
             low=0, high=1.0, shape=env.observation_space.shape, dtype=np.float32
         )
@@ -101,12 +99,12 @@ class ScaledFloatFrame(gym.ObservationWrapper):
 
 class LazyFrames(object):
     def __init__(self, frames):
-        """
-        This object ensures that common frames between the observations are only stored once.
-        It exists purely to optimize memory usage which can be huge for DQN's 1M frames replay
-        buffers.
+        """This object ensures that common frames between the observations are
+        only stored once. It exists purely to optimize memory usage which can
+        be huge for DQN's 1M frames replay buffers.
 
-        This object should only be converted to np.ndarray before being passed to the model.
+        This object should only be converted to np.ndarray before being
+        passed to the model.
 
         :param frames: ([int] or [float]) environment frames
         """

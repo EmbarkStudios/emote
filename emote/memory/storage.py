@@ -1,6 +1,4 @@
-"""
-
-"""
+""""""
 
 from typing import Sequence, Tuple
 
@@ -10,8 +8,8 @@ from .core_types import Number
 
 
 class BaseStorage(dict):
-    """A simple dictionary-based storage with support for a temporary workspace for
-    sampled data"""
+    """A simple dictionary-based storage with support for a temporary workspace
+    for sampled data."""
 
     def __init__(self, shape, dtype):
         self._shape = shape
@@ -19,9 +17,10 @@ class BaseStorage(dict):
         self._temp_storage = None
 
     def get_empty_storage(self, count, length):
-        """A workspace that can be reused to skip reallocating the same numpy buffer
-        each time the memory is sampled. Will *not* work if the memory is
-        sampled from multiple threads.
+        """A workspace that can be reused to skip reallocating the same numpy
+        buffer each time the memory is sampled.
+
+        Will *not* work if the memory is sampled from multiple threads.
         """
         total_size = count * length
         if self._temp_storage is None or self._temp_storage.shape[0] < total_size:
@@ -65,9 +64,10 @@ class TagStorage(dict):
         self._temp_storage = None
 
     def get_empty_storage(self, count, length):
-        """A workspace that can be reused to skip reallocating the same numpy buffer
-        each time the memory is sampled. Will *not* work if the memory is
-        sampled from multiple threads.
+        """A workspace that can be reused to skip reallocating the same numpy
+        buffer each time the memory is sampled.
+
+        Will *not* work if the memory is sampled from multiple threads.
         """
         total_size = count * length
         if self._temp_storage is None or self._temp_storage.shape[0] < total_size:
@@ -105,7 +105,7 @@ class TagStorage(dict):
 
 
 class VirtualStorage:
-    """A virtual storage uses a simple storage to generate data"""
+    """A virtual storage uses a simple storage to generate data."""
 
     def __init__(self, storage, shape, dtype):
         self._storage = storage
@@ -142,8 +142,8 @@ class VirtualStorage:
 
 
 class NextElementMapper(VirtualStorage):
-    """Simple mapper that can be used to sample a specified one step over, which is
-    useful to sample transitions for RL."""
+    """Simple mapper that can be used to sample a specified one step over,
+    which is useful to sample transitions for RL."""
 
     class Wrapper:
         def __init__(self, item):
@@ -203,7 +203,7 @@ class NextElementMapper(VirtualStorage):
 
 
 class NextNElementWrapper(VirtualStorage):
-    """Simple mapper that can be used to sample a specified N steps over"""
+    """Simple mapper that can be used to sample a specified N steps over."""
 
     class Wrapper:
         def __init__(self, item, n: int):
@@ -216,7 +216,13 @@ class NextNElementWrapper(VirtualStorage):
             elif isinstance(key, tuple):
                 key = tuple(k + self._n for k in key)
             elif isinstance(key, slice):
+                # slicing in numpy never bounds checks, it instead returns an empty array..
+                # so lets do the bound checking ourselves
                 key = slice(key.start + self._n, key.stop + self._n, key.step)
+                if key.start >= self._item.shape[0] or key.stop > self._item.shape[0]:
+                    raise IndexError(
+                        f"Slice out of bounds: {key}, item has shape {self._item.shape}"
+                    )
             else:
                 raise ValueError(
                     f"Invalid indexing type '{type(key)}'. Only integer, tuple or slices supported."

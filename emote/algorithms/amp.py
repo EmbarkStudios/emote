@@ -31,10 +31,7 @@ def gradient_loss_function(model_output: Tensor, model_input: Tensor) -> Tensor:
 
 
 class DiscriminatorLoss(LossCallback):
-    """
-    This loss is used to train a discriminator for
-    adversarial training.
-    """
+    """This loss is used to train a discriminator for adversarial training."""
 
     def __init__(
         self,
@@ -117,8 +114,8 @@ class DiscriminatorLoss(LossCallback):
         return loss
 
 
-class AMPReward(Callback, LoggingMixin):
-    """Adversarial rewarding with AMP"""
+class AMPReward(LoggingMixin, Callback):
+    """Adversarial rewarding with AMP."""
 
     def __init__(
         self,

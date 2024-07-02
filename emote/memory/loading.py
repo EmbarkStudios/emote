@@ -1,16 +1,14 @@
-"""
-Utilities for loading files into memories.
-"""
+"""Utilities for loading files into memories."""
 
 import pickle
 
 import numpy as np
 
-from .table import ArrayTable
+from .table import ArrayMemoryTable
 
 
 def fill_table_from_legacy_file(
-    table: ArrayTable,
+    memory_table: ArrayMemoryTable,
     path: str,
     *,
     read_obs: bool = False,
@@ -19,11 +17,11 @@ def fill_table_from_legacy_file(
 ):
     """Load a legacy memory dump into a new-style table memory.
 
-    :param table: The table to fill. Must contain 'obs', 'rewards', and 'actions' columns
-    :param path: The path to load from. Must be a pickle file. Extension is optional
-
-    :throws: OSError if file does not exist. KeyError if table or file do not
-    match the legacy format.
+    :param table: The table to fill. Must contain 'obs', 'rewards', and
+        'actions' columns
+    :param path: The path to load from. Must be a pickle file. Extension
+        is optional :throws: OSError if file does not exist. KeyError if
+        table or file do not match the legacy format.
     """
 
     if not path.endswith(".pickle"):
@@ -65,7 +63,7 @@ def fill_table_from_legacy_file(
         if read_rewards:
             outs["rewards"] = rewards
 
-        table.add_sequence(agent_idx, outs)
+        memory_table.add_sequence(agent_idx, outs)
 
         previous_idx = done_idx + 1
         agent_idx -= 1

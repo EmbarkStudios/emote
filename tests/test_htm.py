@@ -9,8 +9,8 @@ from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss
 from emote.callbacks.logging import TerminalLogger
 from emote.callbacks.testing import FinalRewardTestCheck
 from emote.extra.onnx_exporter import OnnxExporter
-from emote.memory import MemoryLoader, TableMemoryProxy
-from emote.memory.builder import DictObsTable
+from emote.memory import MemoryLoader, MemoryTableProxy
+from emote.memory.builder import DictObsMemoryTable
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
 
 from .gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
@@ -38,9 +38,9 @@ class QNet(nn.Module):
 def test_htm():
     device = torch.device("cpu")
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-    table = DictObsTable(spaces=env.dict_space, maxlen=1000, device=device)
-    memory_proxy = TableMemoryProxy(table)
-    dataloader = MemoryLoader(table, 100, 2, "batch_size")
+    memory_table = DictObsMemoryTable(spaces=env.dict_space, maxlen=1000, device=device)
+    memory_proxy = MemoryTableProxy(memory_table)
+    dataloader = MemoryLoader(memory_table, 100, 2, "batch_size")
 
     q1 = QNet(2, 1)
     q2 = QNet(2, 1)
@@ -71,9 +71,9 @@ def test_htm():
 def test_htm_onnx(tmpdir):
     device = torch.device("cpu")
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-    table = DictObsTable(spaces=env.dict_space, maxlen=1000, device=device)
-    memory_proxy = TableMemoryProxy(table)
-    dataloader = MemoryLoader(table, 100, 2, "batch_size")
+    memory_table = DictObsMemoryTable(spaces=env.dict_space, maxlen=1000, device=device)
+    memory_proxy = MemoryTableProxy(memory_table)
+    dataloader = MemoryLoader(memory_table, 100, 2, "batch_size")
 
     q1 = QNet(2, 1)
     q2 = QNet(2, 1)

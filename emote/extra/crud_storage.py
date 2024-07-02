@@ -1,6 +1,5 @@
-"""
-Generic CRUD-based storage on disk.
-"""
+"""Generic CRUD-based storage on disk."""
+
 import os
 
 from dataclasses import dataclass
@@ -28,8 +27,8 @@ class StorageItemHandle(Generic[T]):
 
     @staticmethod
     def from_string(value: str) -> Optional["StorageItemHandle"]:
-        """
-        Parses a handle from its string representation.
+        """Parses a handle from its string representation.
+
         Returns None if the handle is invalid.
         """
         try:
@@ -54,9 +53,8 @@ class StorageItem(Generic[T]):
 
 
 class CRUDStorage(Generic[T]):
-    """
-    Manages a set of files on disk in a simple CRUD way.
-    All files will be stored to a single directory with a name on the format
+    """Manages a set of files on disk in a simple CRUD way. All files will be
+    stored to a single directory with a name on the format
     `{prefix}{timestamp}_{index}.{extension}`.
 
     This class is thread-safe.
@@ -81,7 +79,7 @@ class CRUDStorage(Generic[T]):
         self._prefix = prefix
 
     def create_with_data(self, data: bytearray) -> StorageItem[T]:
-        """Creates a new file with the given data"""
+        """Creates a new file with the given data."""
 
         def save(filepath):
             with open(filepath, "wb") as f:
@@ -90,10 +88,11 @@ class CRUDStorage(Generic[T]):
         return self.create_with_saver(save)
 
     def create_from_filepath(self, filepath: str) -> StorageItem[T]:
-        """
-        Creates a new entry for an existing file.
-        The file must already be in the directory that this storage manages.
-        It does not need to conform to the naming convention that the CRUDStorage normally uses.
+        """Creates a new entry for an existing file.
+
+        The file must already be in the directory that this storage
+        manages. It does not need to conform to the naming convention
+        that the CRUDStorage normally uses.
         """
         assert os.path.isfile(filepath), "File does not exist"
         if os.path.dirname(os.path.abspath(filepath)) != self._directory:
@@ -111,9 +110,10 @@ class CRUDStorage(Generic[T]):
         return item
 
     def create_with_saver(self, saver: Callable[[str], None]) -> StorageItem[T]:
-        """
-        Creates a new file by saving it via the provided function.
-        The function will be called with the path at which the file should be saved.
+        """Creates a new file by saving it via the provided function.
+
+        The function will be called with the path at which the file
+        should be saved.
         """
         if not os.path.isdir(self._directory):
             raise Exception(f"The storage directory ({self._directory}) has been deleted")
@@ -149,9 +149,7 @@ class CRUDStorage(Generic[T]):
         return item
 
     def update(self, handle: StorageItemHandle[T], data: bytearray):
-        """
-        Updates an existing file with the given contents
-        """
+        """Updates an existing file with the given contents."""
         item = self.get(handle)
         assert item is not None, "Invalid handle"
         with open(item.filepath, "wb") as f:
@@ -167,11 +165,13 @@ class CRUDStorage(Generic[T]):
             return items[:]
 
     def delete(self, handle: StorageItemHandle[T]) -> bool:
-        """
-        Deletes an existing file owned by this storage.
-        :returns: True if a file was deleted, and false if the file was not owned by this storage.
-        :raises: Exception if this storage contains an entry for the file,
-                 but it has been deleted on disk without going through the CRUDStorage.
+        """Deletes an existing file owned by this storage.
+
+        :returns: True if a file was deleted, and false if the file was
+            not owned by this storage.
+        :raises: Exception if this storage contains an entry for the
+            file, but it has been deleted on disk without going through
+            the CRUDStorage.
         """
         with self._items as items:
             for item in items:
@@ -200,9 +200,10 @@ class CRUDStorage(Generic[T]):
             return next((item for item in items if item.handle == handle), None)
 
     def latest(self) -> Optional[StorageItem[T]]:
-        """
-        The last storage item that was added to the storage.
-        If items have been deleted, this is the last item of the ones that remain.
+        """The last storage item that was added to the storage.
+
+        If items have been deleted, this is the last item of the ones
+        that remain.
         """
         with self._items as items:
             if items:

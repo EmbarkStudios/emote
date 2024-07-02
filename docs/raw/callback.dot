@@ -1,0 +1,32 @@
+    digraph foo {
+      rankdir=LR;
+      node [shape=rectangle,style="rounded"]
+
+      newrank=true;
+      { rank=same;  begin_cycle;  begin_batch; }
+      { rank=same;  end_batch; end_cycle; }
+
+	  restore_state;
+      begin_training;
+      subgraph cluster_cycle {
+        label = "while cycles left"
+        begin_cycle;
+
+        subgraph cluster_batch {
+          label = "while batches left";
+          begin_batch;
+          backward;
+          end_batch;
+        }
+        end_cycle;
+      }
+	  end_training;
+
+      restore_state -> begin_training -> begin_cycle -> begin_batch -> backward -> end_batch;
+
+      end_batch -> begin_batch [constraint=no];
+      end_cycle -> begin_cycle [constraint=no];
+
+      end_batch -> end_cycle [style=dashed]
+      end_cycle -> end_training [style=dashed]
+   }

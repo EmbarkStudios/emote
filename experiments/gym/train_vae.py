@@ -18,7 +18,6 @@ space is 2-dimensional.
 
 """
 
-
 import argparse
 import os
 
@@ -88,8 +87,8 @@ if __name__ == "__main__":
         ),
     )
     condition_fn = get_conditioning_fn(arg.condition_size)
-
-    """Create the memory and pre-load it with some expert policy trajectories"""
+    """Create the memory and pre-load it with some expert policy
+    trajectories."""
     _, dataloader = create_memory(
         space=spaces,
         memory_size=4_000_000,
@@ -100,8 +99,7 @@ if __name__ == "__main__":
         buffer_filename=os.path.join(arg.buffer_dir, arg.buffer_filename),
         device=training_device,
     )
-
-    """Create the vae model """
+    """Create the vae model."""
     encoder = FullyConnectedEncoder(
         input_size=arg.action_size,
         output_size=arg.latent_size,
@@ -133,14 +131,13 @@ if __name__ == "__main__":
             input_key=arg.observation_key,
         )
     ]
-
-    """Creating the supplementary callbacks and adding them to the training callbacks """
+    """Creating the supplementary callbacks and adding them to the training
+    callbacks."""
     all_callbacks = create_complementary_callbacks(
         args=arg,
         logged_cbs=cbs,
         cbs_name_to_checkpoint=["vae"],
     )
-
-    """Training """
+    """Training."""
     trainer = Trainer(all_callbacks, dataloader)
     trainer.train()

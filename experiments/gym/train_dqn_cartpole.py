@@ -19,16 +19,18 @@ from emote.algorithms.dqn import QLoss, QTarget
 from emote.callbacks.checkpointing import Checkpointer
 from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.logging import TensorboardLogger
-from emote.memory import MemoryLoader, TableMemoryProxy
-from emote.memory.builder import DictObsNStepTable
+from emote.memory import MemoryLoader, MemoryTableProxy
+from emote.memory.builder import DictObsNStepMemoryTable
 from emote.mixins.logging import LoggingMixin
 from emote.proxies import GenericAgentProxy
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
 
 def _make_env():
-    """Create the environment for the experiment, the environment is created in a thunk to avoid
-    creating multiple environments in the same process. This is important for the vectorized
+    """Create the environment for the experiment, the environment is created in
+    a thunk to avoid creating multiple environments in the same process.
+
+    This is important for the vectorized
     environments.
     Returns:
         (Callable[[], gym.Env]): The thunk that creates the environment
@@ -44,8 +46,8 @@ def _make_env():
 
 
 class QNet(nn.Module):
-    """
-    Q-Network class for Q-Learning. It takes observations and returns Q-values for actions.
+    """Q-Network class for Q-Learning. It takes observations and returns
+    Q-values for actions.
 
     Attributes:
         network (nn.Sequential): Neural network for computing Q-values.
@@ -72,8 +74,7 @@ class QNet(nn.Module):
         self.network = nn.Sequential(*layers)
 
     def forward(self, obs):
-        """
-        Forward pass for the Q-Network.
+        """Forward pass for the Q-Network.
 
         Args:
             obs (Tensor): Observations.
@@ -85,8 +86,8 @@ class QNet(nn.Module):
 
 
 class DQNPolicy(nn.Module):
-    """
-    DQN Policy class to handle action selection with epsilon-greedy strategy.
+    """DQN Policy class to handle action selection with epsilon-greedy
+    strategy.
 
     Attributes:
         q_net (QNet): Q-Network to evaluate Q-values.
@@ -117,8 +118,7 @@ class DQNPolicy(nn.Module):
 
     # Returns the index of the chosen action
     def forward(self, state):
-        """
-        Forward pass for action selection.
+        """Forward pass for action selection.
 
         Args:
             state (Tensor): The state observations.
@@ -160,7 +160,7 @@ def create_memory(
     data_group: str,
     device: torch.device,
 ):
-    """Creates memory and data_loader for the RL training
+    """Creates memory and data_loader for the RL training.
 
     Arguments:
         space (MDPSpace): the MDP space
@@ -172,21 +172,20 @@ def create_memory(
         preload_buffer (bool): preload the buffer with some existing data
         buffer_filename (str): the path to the replay buffer if preload_buffer is set to True
     Returns:
-        (tuple[TableMemoryProxy, MemoryLoader]): A proxy for the memory and a dataloader
-
+        (tuple[MemoryTableProxy, MemoryLoader]): A proxy for the memory and a dataloader
     """
     # Create the memory
-    table = DictObsNStepTable(
+    memory_table = DictObsNStepMemoryTable(
         spaces=space,
         use_terminal_column=False,
         maxlen=memory_size,
         device=device,
     )
     # The memory proxy is used to upload the data to the memory
-    memory_proxy = TableMemoryProxy(table=table, use_terminal=False)
+    memory_proxy = MemoryTableProxy(memory_table=memory_table, use_terminal=False)
     # The data loader is used to sample the data from the memory
     data_loader = MemoryLoader(
-        table=table,
+        memory_table=memory_table,
         rollout_count=batch_size // len_rollout,
         rollout_length=len_rollout,
         size_key="batch_size",
@@ -200,15 +199,15 @@ def create_complementary_callbacks(
     logged_cbs: list[LoggingMixin],
     cbs_name_to_checkpoint: list[str] = None,
 ):
-    """The function creates the supplementary callbacks for the training and adds them to the callback lists
-    and returns the list.
+    """The function creates the supplementary callbacks for the training and
+    adds them to the callback lists and returns the list.
 
-        Arguments:
-            args: input args
-            logged_cbs (list[Callback]): the list of callbacks
-            cbs_name_to_checkpoint (list[str]): the name of callbacks to checkpoint
-        Returns:
-            (list[Callback]): the full list of callbacks for the training
+    Arguments:
+        args: input args
+        logged_cbs (list[Callback]): the list of callbacks
+        cbs_name_to_checkpoint (list[str]): the name of callbacks to checkpoint
+    Returns:
+        (list[Callback]): the full list of callbacks for the training
     """
     # The logger callback is used for logging the training progress
     logger = TensorboardLogger(
@@ -225,7 +224,7 @@ def create_complementary_callbacks(
     if cbs_name_to_checkpoint:
         # The checkpointer exports the model weights to the checkpoint directory
         checkpointer = Checkpointer(
-            callbacks=[
+            restorees=[
                 cb for cb in logged_cbs if hasattr(cb, "name") and cb.name in cbs_name_to_checkpoint
             ],
             run_root=args.checkpoint_dir,
@@ -263,8 +262,7 @@ def main(args):
         data_group="default",
         device=device,
     )
-
-    """Create a memory exporter if needed"""
+    """Create a memory exporter if needed."""
     if args.export_memory:
         from emote.memory.memory import MemoryExporterProxyWrapper
 

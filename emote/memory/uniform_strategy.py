@@ -1,6 +1,4 @@
-"""
-
-"""
+""""""
 
 import random
 
@@ -14,8 +12,11 @@ from .strategy import EjectionStrategy, SampleStrategy, Strategy
 
 class UniformStrategyBase(Strategy):
     """A sampler intended to sample uniformly across the whole set of
-    experiences. This base class is used by both the uniform sample and ejection
-    strategies."""
+    experiences.
+
+    This base class is used by both the uniform sample and ejection
+    strategies.
+    """
 
     def __init__(self):
         super().__init__()

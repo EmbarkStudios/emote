@@ -7,7 +7,7 @@ import pytest
 from emote.memory.column import Column, VirtualColumn
 from emote.memory.fifo_strategy import FifoEjectionStrategy
 from emote.memory.storage import SyntheticDones
-from emote.memory.table import ArrayTable, TableSerializationVersion
+from emote.memory.table import ArrayMemoryTable, TableSerializationVersion
 from emote.memory.uniform_strategy import UniformSampleStrategy
 
 
@@ -32,7 +32,7 @@ def memory():
         ),
     ]
 
-    memory = ArrayTable(
+    memory_table = ArrayMemoryTable(
         columns=spec,
         maxlen=10_000,
         sampler=UniformSampleStrategy(),
@@ -41,7 +41,7 @@ def memory():
         device="cpu",
     )
 
-    return memory
+    return memory_table
 
 
 def test_export_base(memory, tmpdir):

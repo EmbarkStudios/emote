@@ -15,7 +15,6 @@ reinforcement learning
 [![Embark](https://img.shields.io/badge/discord-ark-%237289da.svg?logo=discord)](https://discord.gg/dAuKfZS)
 [![Build status](https://badge.buildkite.com/968ac3c0bb075fb878f9f973ed91406c8b257b0f050c197542.svg?theme=github&branch=main)](https://buildkite.com/embark-studios/emote)
 [![Docs status](https://img.shields.io/badge/Docs-latest-brightgreen)](https://embarkstudios.github.io/emote/)
-[![pdm-managed](https://img.shields.io/badge/PDM-v2.10.1-blueviolet)](https://pdm.fming.dev)
 
 🚧 This project is a  **work in progress**. Things can and will change. 🚧
 
@@ -45,7 +44,7 @@ Using the components provided with Emote, we can write this as
 device = torch.device("cpu")
 env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
 table = DictObsTable(spaces=env.dict_space, maxlen=1000, device=device)
-memory_proxy = TableMemoryProxy(table)
+memory_proxy = MemoryTableProxy(table)
 dataloader = MemoryLoader(table, 100, 2, "batch_size")
 
 q1 = QNet(2, 1)
@@ -110,26 +109,13 @@ class PolicyLoss(LossCallback):
 
 ## Installation
 
-For installation and environment handling we use `pdm`. Install it from [pdm](https://pdm.fming.dev/latest/#installation). After `pdm` is set up, set up and activate the emote environment by running
+For package management and environment handling we use `pants`. Install it from [pants](https://v1.pantsbuild.org/install.html). After `pants` is set up, verify that it is setup by running
 
 ```bash
-pdm install
-```
-
-or for a full developer installation with all the extra dependencies:
-
-```bash
-pdm install -d -G :all
+pants tailor ::
 ```
 
 ### Common problems
-
-**Torch won't install:** Check that your python version is correct. Try deleting your `.venv` and recreating it with
-
-```bash
-pdm venv create 3.10
-pdm install -G :all
-```
 
 **Box2d complains:** Box2d needs swig and python bindings. On apt-based systems try
 

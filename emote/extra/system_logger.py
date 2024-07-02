@@ -1,6 +1,5 @@
-"""
-Logger that logs the memory consumption and memory consumption growth rate.
-"""
+"""Logger that logs the memory consumption and memory consumption growth
+rate."""
 
 import os
 

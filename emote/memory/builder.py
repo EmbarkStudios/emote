@@ -1,6 +1,4 @@
-"""
-
-"""
+""""""
 
 from typing import List
 
@@ -14,11 +12,11 @@ from .adaptors import DictObsAdaptor, TerminalAdaptor
 from .column import Column, TagColumn, VirtualColumn
 from .fifo_strategy import FifoEjectionStrategy
 from .storage import NextElementMapper, SyntheticDones
-from .table import ArrayTable
+from .table import ArrayMemoryTable
 from .uniform_strategy import UniformSampleStrategy
 
 
-class DictTable(ArrayTable):
+class DictMemoryTable(ArrayMemoryTable):
     def __init__(
         self,
         *,
@@ -55,11 +53,10 @@ class DictTable(ArrayTable):
         )
 
 
-class DictObsTable(DictTable):
-    """Create a memory suited for Reinforcement Learning Tasks with 1-Step Bellman
-    Backup with a single bootstrap value, and using dictionary observations as network
-    inputs.
-    """
+class DictObsMemoryTable(DictMemoryTable):
+    """Create a memory suited for Reinforcement Learning Tasks with 1-Step
+    Bellman Backup with a single bootstrap value, and using dictionary
+    observations as network inputs."""
 
     def __init__(
         self,
@@ -133,11 +130,10 @@ class DictObsTable(DictTable):
         )
 
 
-class DictObsNStepTable(DictTable):
-    """Create a memory suited for Reinforcement Learning Tasks with N-Step Bellman
-    Backup with a single bootstrap value, and using dictionary observations as network
-    inputs.
-    """
+class DictObsNStepMemoryTable(DictMemoryTable):
+    """Create a memory suited for Reinforcement Learning Tasks with N-Step
+    Bellman Backup with a single bootstrap value, and using dictionary
+    observations as network inputs."""
 
     def __init__(
         self,

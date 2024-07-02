@@ -12,7 +12,8 @@ from emote.utils.math import truncated_normal_
 
 
 def truncated_normal_init(m: nn.Module):
-    """Initializes the weights of the given module using a truncated normal distribution."""
+    """Initializes the weights of the given module using a truncated normal
+    distribution."""
     if isinstance(m, nn.Linear):
         input_dim = m.weight.data.shape[0]
         stddev = 1 / (2 * np.sqrt(input_dim))
@@ -158,7 +159,8 @@ class EnsembleOfGaussian(nn.Module):
         model_input: torch.Tensor,
         rng: torch.Generator,
     ) -> torch.Tensor:
-        """Samples next observation, reward and terminal from the model using the ensemble.
+        """Samples next observation, reward and terminal from the model using
+        the ensemble.
 
         Args:
             model_input (tensor): the observation and action.

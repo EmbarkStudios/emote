@@ -2,6 +2,7 @@ from os.path import join
 from tempfile import mkdtemp
 from typing import Generator
 
+import pytest
 import torch
 
 from torch import nn
@@ -57,7 +58,7 @@ def test_networks_checkpoint():
     )
     c1 = [
         Checkpointer(
-            callbacks=[loss_cb],
+            restorees=[loss_cb],
             run_root=run_root,
             checkpoint_interval=1,
         )
@@ -76,7 +77,7 @@ def test_networks_checkpoint():
 
     c2 = [
         CheckpointLoader(
-            callbacks=[loss_cb],
+            restorees=[loss_cb],
             run_root=run_root,
             checkpoint_index=0,
         ),
@@ -107,7 +108,7 @@ def test_qloss_checkpoints():
     ql1 = QLoss(name="q", q=q1, opt=Adam(q1.parameters()))
     c1 = [
         ql1,
-        Checkpointer(callbacks=[ql1], run_root=run_root, checkpoint_interval=1),
+        Checkpointer(restorees=[ql1], run_root=run_root, checkpoint_interval=1),
     ]
 
     t1 = Trainer(c1, random_onestep_dataloader())
@@ -123,8 +124,25 @@ def test_qloss_checkpoints():
     ql2 = QLoss(name="q", q=q2, opt=Adam(q1.parameters()))
     c2 = [
         ql2,
-        CheckpointLoader(callbacks=[ql2], run_root=run_root, checkpoint_index=0),
+        CheckpointLoader(restorees=[ql2], run_root=run_root, checkpoint_index=0),
     ]
     t2 = Trainer(c2, nostep_dataloader())
     t2.train()
     assert torch.allclose(q1(test_act, test_obs), q2(test_act, test_obs))
+
+
+def test_duplicate_name_checkpoints():
+    chkpt_dir = mkdtemp()
+    run_root = join(chkpt_dir, "chkpt")
+    q1 = QNet(2, 1)
+    q2 = QNet(2, 1)
+    ql1 = QLoss(name="q1", q=q1, opt=Adam(q1.parameters()))
+    ql2 = QLoss(name="q2", q=q2, opt=Adam(q2.parameters()))
+
+    Checkpointer(restorees=[ql1, ql2], run_root=run_root, checkpoint_interval=1)
+
+    b1 = BackPropStepsTerminator(1)
+    b2 = BackPropStepsTerminator(1)
+
+    with pytest.raises(ValueError):
+        Checkpointer(restorees=[b1, b2], run_root=run_root, checkpoint_interval=1)

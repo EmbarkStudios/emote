@@ -1,0 +1,45 @@
+name: Deploy docs to Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+env:
+  PANTS_BACKEND_PACKAGES: '-["pants.backend.python.providers.experimental.pyenv"]'
+  PANTS_VERIFY_CONFIG: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Generate docs
+        uses: ./.github/workflows/docs
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          # Upload entire repository
+          path: 'dist/docs/book'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

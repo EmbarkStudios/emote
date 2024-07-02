@@ -17,8 +17,8 @@ from emote import Trainer
 from emote.algorithms.sac import AlphaLoss, FeatureAgentProxy, PolicyLoss, QLoss, QTarget
 from emote.callbacks.generic import BackPropStepsTerminator
 from emote.callbacks.wb_logger import WBLogger
-from emote.memory import MemoryLoader, TableMemoryProxy
-from emote.memory.builder import DictObsNStepTable
+from emote.memory import MemoryLoader, MemoryTableProxy
+from emote.memory.builder import DictObsNStepMemoryTable
 from emote.nn import GaussianPolicyHead
 from emote.nn.initialization import ortho_init_, xavier_uniform_init_
 
@@ -103,14 +103,14 @@ def train_lunar_lander(args):
     learning_rate = wandb.config.learning_rate
 
     env = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(n_env)]))
-    table = DictObsNStepTable(
+    memory_table = DictObsNStepMemoryTable(
         spaces=env.dict_space,
         use_terminal_column=False,
         maxlen=4_000_000,
         device=device,
     )
-    memory_proxy = TableMemoryProxy(table, use_terminal=False)
-    dataloader = MemoryLoader(table, batch_size // rollout_len, rollout_len, "batch_size")
+    memory_proxy = MemoryTableProxy(memory_table, use_terminal=False)
+    dataloader = MemoryLoader(memory_table, batch_size // rollout_len, rollout_len, "batch_size")
 
     num_actions = env.dict_space.actions.shape[0]
     num_obs = list(env.dict_space.state.spaces.values())[0].shape[0]

@@ -8,7 +8,7 @@ from typing import Tuple
 import numpy as np
 import torch
 
-from gym.vector import AsyncVectorEnv
+from gymnasium.vector import AsyncVectorEnv
 from tests.gym import DictGymWrapper
 from tests.gym.collector import ThreadedGymCollector
 from torch import nn
@@ -20,8 +20,8 @@ from emote.algorithms.sac import AlphaLoss, PolicyLoss, QLoss, QTarget, VisionAg
 from emote.callback import Callback
 from emote.callbacks.logging import TensorboardLogger
 from emote.env.box2d import make_vision_box2d_env
-from emote.memory import MemoryLoader, TableMemoryProxy
-from emote.memory.builder import DictObsNStepTable
+from emote.memory import MemoryLoader, MemoryTableProxy
+from emote.memory.builder import DictObsNStepMemoryTable
 from emote.mixins.logging import LoggingMixin
 from emote.nn import GaussianPolicyHead
 from emote.nn.action_value_mlp import SharedEncoderActionValueNet
@@ -168,7 +168,7 @@ def train_carracing(args):
         ImageLoggerCallback(),
     ]
 
-    memory_table = DictObsNStepTable(
+    memory_table = DictObsNStepMemoryTable(
         spaces=env.dict_space,
         use_terminal_column=False,
         maxlen=cfg.max_memory_size,
@@ -180,7 +180,7 @@ def train_carracing(args):
         ThreadedGymCollector(
             env,
             VisionAgentProxy(policy, device=device),
-            TableMemoryProxy(memory_table, use_terminal=False),
+            MemoryTableProxy(memory_table, use_terminal=False),
             warmup_steps=cfg.batch_size * 3,
             render=False,
         ),

@@ -6,7 +6,7 @@ from torch import nn
 
 from emote.algorithms.genrl.proxies import MemoryProxyWithEncoder
 from emote.algorithms.genrl.wrappers import DecoderWrapper, EncoderWrapper, PolicyWrapper
-from emote.memory.builder import DictObsTable
+from emote.memory.builder import DictObsMemoryTable
 from emote.nn.action_value_mlp import ActionValueMlp
 from emote.nn.gaussian_policy import GaussianMlpPolicy
 from emote.typing import DictObservation, DictResponse, EpisodeState
@@ -59,7 +59,6 @@ class FullyConnectedEncoder(nn.Module):
     def forward(
         self, data: torch.Tensor, condition: torch.Tensor = None
     ) -> tuple[torch.Tensor, torch.Tensor]:
-
         if condition is not None:
             data = torch.cat((data, condition), dim=len(data.shape) - 1)
 
@@ -129,7 +128,6 @@ HIDDEN_SIZES = [256] * 2
 
 
 def test_genrl():
-
     cfn = get_conditioning_fn(CONDITION_SIZE)
     device = torch.device("cpu")
 
@@ -154,7 +152,6 @@ def test_genrl():
 
 
 def test_memory_proxy():
-
     cfn = get_conditioning_fn(CONDITION_SIZE)
     device = torch.device("cpu")
 
@@ -167,10 +164,10 @@ def test_memory_proxy():
         state=DictSpace(spaces={"obs": BoxSpace(dtype=np.float32, shape=(OBSERVATION_SIZE,))}),
     )
 
-    table = DictObsTable(spaces=space, maxlen=1000, device=device)
+    memory_table = DictObsMemoryTable(spaces=space, maxlen=1000, device=device)
 
     proxy = MemoryProxyWithEncoder(
-        table=table,
+        memory_table=memory_table,
         encoder=encoder_wrapper,
         minimum_length_threshold=1,
         use_terminal=True,

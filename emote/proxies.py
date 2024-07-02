@@ -1,7 +1,5 @@
-"""
-Proxies are bridges between the world the agent acts in and the algorithm training loop.
-"""
-
+"""Proxies are bridges between the world the agent acts in and the algorithm
+training loop."""
 
 from __future__ import annotations
 
@@ -17,13 +15,15 @@ from emote.utils.spaces import MDPSpace
 
 
 class AgentProxy(Protocol):
-    """The interface between the agent in the game and the network used during training."""
+    """The interface between the agent in the game and the network used during
+    training."""
 
     def __call__(
         self,
         obserations: Dict[AgentId, DictObservation],
     ) -> Dict[AgentId, DictResponse]:
-        """Take observations for the active agents and returns the relevant network output."""
+        """Take observations for the active agents and returns the relevant
+        network output."""
         ...
 
     @property
@@ -40,7 +40,8 @@ class AgentProxy(Protocol):
 
 
 class MemoryProxy(Protocol):
-    """The interface between the agent in the game and the memory buffer the network trains from."""
+    """The interface between the agent in the game and the memory buffer the
+    network trains from."""
 
     def add(
         self,
@@ -49,8 +50,9 @@ class MemoryProxy(Protocol):
     ):
         """Store episodes in the memory buffer used for training.
 
-        This is useful e.g. if the data collection is running from a checkpointed model running on
-        another machine."""
+        This is useful e.g. if the data collection is running from a
+        checkpointed model running on another machine.
+        """
         ...
 
 
@@ -58,9 +60,9 @@ class GenericAgentProxy(AgentProxy):
     """Observations are dicts that contain multiple input and output keys.
 
     For example, we might have a policy that takes in both "obs" and
-    "goal" and outputs "actions". In order to be able to properly
-    invoke the network it is the responsibility of this proxy to
-    collate the inputs and decollate the outputs per agent.
+    "goal" and outputs "actions". In order to be able to properly invoke
+    the network it is the responsibility of this proxy to collate the
+    inputs and decollate the outputs per agent.
     """
 
     def __init__(

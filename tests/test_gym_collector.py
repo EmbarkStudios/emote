@@ -7,8 +7,8 @@ from torch import nn
 from emote import Trainer
 from emote.algorithms.sac import FeatureAgentProxy
 from emote.callback import BatchCallback
-from emote.memory import MemoryLoader, TableMemoryProxy
-from emote.memory.builder import DictObsTable
+from emote.memory import MemoryLoader, MemoryTableProxy
+from emote.memory.builder import DictObsMemoryTable
 from emote.trainer import TrainingShutdownException
 
 
@@ -85,15 +85,15 @@ def test_gym_collector():
     batch_size = 5
     rollout_length = 1  # The test only works for rollout_length = 1
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-    table = DictObsTable(
+    memory_table = DictObsMemoryTable(
         spaces=env.dict_space,
         use_terminal_column=False,
         maxlen=1000000,
         device=device,
     )
-    memory_proxy = TableMemoryProxy(table)
+    memory_proxy = MemoryTableProxy(memory_table)
     dataloader = MemoryLoader(
-        table=table,
+        memory_table=memory_table,
         rollout_count=batch_size // rollout_length,
         rollout_length=rollout_length,
         size_key="batch_size",

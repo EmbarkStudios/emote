@@ -72,7 +72,6 @@ class VAELoss(LossCallback):
         self._input_key = input_key
 
     def loss(self, observation, actions):
-
         condition = self.conditioning_func(observation[self._input_key])
         samples, dist_mean, dist_log_std, _ = self.vae.forward(actions, condition)
         loss, info = self.vae.loss(actions, samples, dist_mean, dist_log_std)

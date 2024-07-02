@@ -2,22 +2,22 @@ import logging
 import os
 
 from emote.callback import Callback
-from emote.memory.table import Table
+from emote.memory.table import MemoryTable
 
 
 class MemoryImporterCallback(Callback):
-    """Load and validate a previously exported memory"""
+    """Load and validate a previously exported memory."""
 
     def __init__(
         self,
-        memory: Table,
+        memory_table: MemoryTable,
         target_memory_name: str,
         experiment_load_dir: str,
         load_fname_override=None,
     ):
         super().__init__()
         self._order = -1  # this is to ensure that this callback is called before the others
-        self.memory = memory
+        self.memory_table = memory_table
         self._target_memory_name = target_memory_name
         self._load_fname_override = load_fname_override
         self._load_dir = experiment_load_dir
@@ -31,5 +31,5 @@ class MemoryImporterCallback(Callback):
         if not os.path.exists(restore_path + ".zip"):
             raise FileNotFoundError(f"Failed to load memory dump: {restore_path} does not exist.")
 
-        self.memory.restore(restore_path)
+        self.memory_table.restore(restore_path)
         logging.info(f"Loading memory dump {restore_path}")

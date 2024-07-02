@@ -26,7 +26,6 @@ def state_map_fn(obs: Tensor):
 
 
 def test_gradient_loss():
-
     x = torch.ones(10, 3, requires_grad=True)
     x = x * torch.rand(10, 3)
     y = torch.sum(4 * x * x + torch.sin(x), dim=1)

@@ -1,6 +1,4 @@
-"""
-
-"""
+""""""
 
 from emote.callbacks.checkpointing import Checkpointer, CheckpointLoader
 from emote.callbacks.generic import BackPropStepsTerminator

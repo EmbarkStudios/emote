@@ -1,32 +1,50 @@
 import logging
 import os
 import time
-import warnings
 
-from typing import List
+from typing import Any, Protocol
 
 import torch
 
 from emote.callback import Callback
 
 
+class Restoree(Protocol):
+    name: str
+
+    def state_dict(self) -> dict[str, Any]:
+        ...
+
+    def load_state_dict(
+        self,
+        state_dict: dict[str, Any],
+        load_network: bool = True,
+        load_optimizer: bool = True,
+        load_hparams: bool = True,
+    ):
+        ...
+
+
 class Checkpointer(Callback):
     """Checkpointer writes out a checkpoint every n steps.
 
-    Exactly what is written to the checkpoint is determined by the callbacks
-    supplied in the constructor.
+    Exactly what is written to the checkpoint is determined by the
+    restorees supplied in the constructor.
 
-    :param callbacks (List[Callback]): A list of callbacks that should be saved.
-    :param run_root (str): The root path to where the run artifacts should be stored.
-    :param checkpoint_interval (int): Number of backprops between checkpoints.
-    :param storage_subdirectory (str): The subdirectory where the checkpoints are
-        stored.
+    :param restorees (list[Restoree]): A list of restorees that should
+    be saved.
+    :param run_root (str): The root path to where the run artifacts
+        should be stored.
+    :param checkpoint_interval (int): Number of backprops between
+        checkpoints.
+    :param storage_subdirectory (str): The subdirectory where the
+        checkpoints are stored.
     """
 
     def __init__(
         self,
         *,
-        callbacks: List[Callback],
+        restorees: list[Restoree],
         run_root: str,
         checkpoint_interval: int,
         checkpoint_index: int = 0,
@@ -36,23 +54,17 @@ class Checkpointer(Callback):
         self._run_root = run_root
         self._checkpoint_index = checkpoint_index
         self._folder_path = os.path.join(run_root, storage_subdirectory)
+        self._restorees = restorees
 
-        self._cbs = []
-        names = []
-        for cb in callbacks:
-            if hasattr(cb, "name"):
-                self._cbs.append(cb)
-                names.append(cb.name)
-            else:
-                warnings.warn(
-                    f"Checkpointer ignored {cb} because of not having the 'name' field.",
-                    UserWarning,
-                )
-
-        if len(names) != len(set(names)):
+        names = [r.name for r in restorees]
+        unique_names = set(names)
+        if len(names) != len(unique_names):
+            duplicates = {n for n in unique_names if names.count(n) > 1}
+            dupe_string = ", ".join(duplicates)
             raise ValueError(
-                "Checkpointer is given a list of callbacks with at least"
-                "two callbacks with identical names"
+                "Checkpointer is given a list of restorees where\n"
+                f"[{dupe_string}]\n"
+                "occur multiple times"
             )
 
     def begin_training(self):
@@ -62,7 +74,7 @@ class Checkpointer(Callback):
         name = f"checkpoint_{self._checkpoint_index}.tar"
         final_path = os.path.join(self._folder_path, name)
         state_dict = {
-            "callback_state_dicts": {cb.name: cb.state_dict() for cb in self._cbs},
+            "callback_state_dicts": {r.name: r.state_dict() for r in self._restorees},
             "training_state": {
                 "latest_checkpoint": final_path,
                 "bp_step": bp_step,
@@ -71,6 +83,7 @@ class Checkpointer(Callback):
             },
         }
         torch.save(state_dict, final_path)
+        logging.info(f"Saved checkpoint {self._checkpoint_index} at {final_path}.")
         self._checkpoint_index += 1
 
         return {
@@ -80,28 +93,33 @@ class Checkpointer(Callback):
 
 
 class CheckpointLoader(Callback):
-    """CheckpointLoader loads a checkpoint like the one created by Checkpointer.
+    """CheckpointLoader loads a checkpoint like the one created by
+    Checkpointer.
 
-    This is intended for resuming training given a specific checkpoint index. It also
-    enables you to load network weights, optimizer, or other callback hyper-params
-    independently.  If you want to do something more specific, like only restore a
-    specific network (outside a callback), it is probably easier to just do it
-    explicitly when the network is constructed.
+    This is intended for resuming training given a specific checkpoint
+    index. It also enables you to load network weights, optimizer, or
+    other callback hyper-params independently.  If you want to do
+    something more specific, like only restore a specific network
+    (outside a callback), it is probably easier to just do it explicitly
+    when the network is constructed.
 
-    :param callbacks (List[Callback]): A list of callbacks that should be restored.
-    :param run_root (str): The root path to where the run artifacts should be stored.
+    :param restorees (list[Restoree]): A list of restorees that should
+    be restored.
+    :param run_root (str): The root path to where the run artifacts
+        should be stored.
     :param checkpoint_index (int): Which checkpoint to load.
     :param load_weights (bool): If True, it loads the network weights
     :param load_optimizers (bool): If True, it loads the optimizer state
-    :param load_hparams (bool): If True, it loads other callback hyper-params
-    :param storage_subdirectory (str): The subdirectory where the checkpoints are
-        stored.
+    :param load_hparams (bool): If True, it loads other callback hyper-
+        params
+    :param storage_subdirectory (str): The subdirectory where the
+        checkpoints are stored.
     """
 
     def __init__(
         self,
         *,
-        callbacks: List[Callback],
+        restorees: list[Restoree],
         run_root: str,
         checkpoint_index: int,
         load_weights: bool = True,
@@ -117,23 +135,17 @@ class CheckpointLoader(Callback):
         self._load_weights = load_weights
         self._load_optimizers = load_optimizers
         self._load_hparams = load_hparams
+        self._restorees = restorees
 
-        self._cbs = []
-        names = []
-        for cb in callbacks:
-            if hasattr(cb, "name"):
-                self._cbs.append(cb)
-                names.append(cb.name)
-            else:
-                warnings.warn(
-                    f"CheckpointLoader ignored {cb} because of not having the 'name' field.",
-                    UserWarning,
-                )
-
-        if len(names) != len(set(names)):
+        names = [r.name for r in restorees]
+        unique_names = set(names)
+        if len(names) != len(unique_names):
+            duplicates = {n for n in unique_names if names.count(n) > 1}
+            dupe_string = ", ".join(duplicates)
             raise ValueError(
-                "CheckpointLoader is given a list of callbacks with at least"
-                "two callbacks with identical names"
+                "Checkpointer is given a list of restorees where\n"
+                f"[{dupe_string}]\n"
+                "occur multiple times"
             )
 
     def restore_state(self):
@@ -147,9 +159,11 @@ class CheckpointLoader(Callback):
         logging.info(f"Loading checkpoints from {self._folder_path}")
         state_dict: dict = torch.load(final_path)
 
-        for cb in self._cbs:
-            state = state_dict["callback_state_dicts"][cb.name]
-            cb.load_state_dict(state, self._load_weights, self._load_optimizers, self._load_hparams)
+        for restoree in self._restorees:
+            state = state_dict["callback_state_dicts"][restoree.name]
+            restoree.load_state_dict(
+                state, self._load_weights, self._load_optimizers, self._load_hparams
+            )
 
         return_value = {}
         if self._load_hparams:

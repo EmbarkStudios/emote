@@ -4,22 +4,22 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from emote.memory.memory import TableMemoryProxy
-from emote.memory.table import Table
+from emote.memory.memory import MemoryTableProxy
+from emote.memory.table import MemoryTable
 from emote.typing import AgentId, DictObservation, DictResponse
 
 
-class MemoryProxyWithEncoder(TableMemoryProxy):
+class MemoryProxyWithEncoder(MemoryTableProxy):
     def __init__(
         self,
-        table: Table,
+        memory_table: MemoryTable,
         encoder: nn.Module,
         minimum_length_threshold: Optional[int] = None,
         use_terminal: bool = False,
         input_key: str = "obs",
         action_key: str = "actions",
     ):
-        super().__init__(table, minimum_length_threshold, use_terminal)
+        super().__init__(memory_table, minimum_length_threshold, use_terminal)
         self.encoder = encoder
         self._input_key = input_key
         self._action_key = action_key

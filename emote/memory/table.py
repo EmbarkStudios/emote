@@ -29,37 +29,42 @@ class TableSerializationVersion(enum.Enum):
     """The version of the memory serialization format."""
 
     Legacy = 0
-    """The legacy memory table format using pickling, which leads to portability issues and risks
-    when refactoring."""
+    """The legacy memory table format using pickling, which leads to
+    portability issues and risks when refactoring."""
 
     V1 = 1
-    """Memory table format using a zip file with a JSON metadata file and raw numpy data files. Note
-    that this version only restores data, but will not affect the types of ejectors, adaptors, and
-    so on."""
+    """Memory table format using a zip file with a JSON metadata file and raw
+    numpy data files.
+
+    Note that this version only restores data, but will not affect the
+    types of ejectors, adaptors, and so on.
+    """
 
     LATEST = V1
 
 
-class Table(Protocol):
+class MemoryTable(Protocol):
     adaptors: List[Adaptor]
 
     def sample(self, count: int, sequence_length: int) -> SampleResult:
-        """sample COUNT traces from the memory, each consisting of SEQUENCE_LENGTH
-        frames. The data is transposed in a SoA fashion (since this is
-        both easier to store and easier to consume).
+        """Sample COUNT traces from the memory, each consisting of
+        SEQUENCE_LENGTH frames.
+
+        The data is transposed in a SoA fashion (since this is both
+        easier to store and easier to consume).
         """
         ...
 
     def size(self) -> int:
-        """query the number of elements currently in the memory"""
+        """Query the number of elements currently in the memory."""
         ...
 
     def full(self) -> bool:
-        """query whether the memory is filled"""
+        """Query whether the memory is filled."""
         ...
 
     def add_sequence(self, identity: int, sequence):
-        """add a fully terminated sequence to the memory"""
+        """Add a fully terminated sequence to the memory."""
         ...
 
     def store(
@@ -67,15 +72,19 @@ class Table(Protocol):
         path: str,
         version: TableSerializationVersion = TableSerializationVersion.LATEST,
     ) -> bool:
-        """Persist the whole table and all metadata into the designated name"""
+        """Persist the whole table and all metadata into the designated
+        name."""
         ...
 
     def restore(self, path: str, override_version: TableSerializationVersion | None = None) -> bool:
-        """Restore the data table from the provided path. This also clears the data stores."""
+        """Restore the data table from the provided path.
+
+        This also clears the data stores.
+        """
         ...
 
 
-class ArrayTable:
+class ArrayMemoryTable:
     def __init__(
         self,
         *,
@@ -87,7 +96,7 @@ class ArrayTable:
         adaptors: Optional[Adaptor] = None,
         device: torch.device,
     ):
-        """Create the table with the specified configuration"""
+        """Create the table with the specified configuration."""
         self._sampler = sampler
         self._ejector = ejector
         self._length_key = length_key
@@ -109,12 +118,12 @@ class ArrayTable:
             self._maxlen = new_size
 
     def clear(self):
-        """Clear and reset all data"""
+        """Clear and reset all data."""
         with self._lock:
             self._clear()
 
     def _clear(self):
-        """Clear and reset all data"""
+        """Clear and reset all data."""
 
         self._data = {}
 
@@ -185,9 +194,12 @@ class ArrayTable:
         return out
 
     def sample(self, count: int, sequence_length: int) -> SampleResult:
-        """sample COUNT traces from the memory, each consisting of SEQUENCE_LENGTH
-        transitions. The transitions are returned in a SoA fashion (since this is both
-        easier to store and easier to consume)"""
+        """Sample COUNT traces from the memory, each consisting of
+        SEQUENCE_LENGTH transitions.
+
+        The transitions are returned in a SoA fashion (since this is
+        both easier to store and easier to consume)
+        """
 
         with self._lock:
             with self._timers.scope("points"):
@@ -199,7 +211,7 @@ class ArrayTable:
         return result
 
     def size(self) -> int:
-        """query the number of elements currently in the memory"""
+        """Query the number of elements currently in the memory."""
         with self._lock:
             return self._internal_size()
 
@@ -207,13 +219,12 @@ class ArrayTable:
         return self._total_length
 
     def full(self) -> bool:
-        """Returns true if the memory has reached saturation, e.g., where new adds may
-        cause ejection.
+        """Returns true if the memory has reached saturation, e.g., where new
+        adds may cause ejection.
 
         .. warning:: This does not necessarily mean that `size() == maxlen`, as
            we store and eject full sequences. The memory only guarantees we will
            have *fewer* samples than maxlen.
-
         """
         with self._lock:
             return self._filled
@@ -226,7 +237,7 @@ class ArrayTable:
             self._add_sequence_internal(identity, sequence)
 
     def _add_sequence_internal(self, identity: int, sequence: dict):
-        """add a fully terminated sequence to the memory"""
+        """Add a fully terminated sequence to the memory."""
         sequence_length = len(sequence[self._length_key])
 
         # unsigned extend: all Ids that are added as sequences must be positive int64 values
@@ -251,7 +262,8 @@ class ArrayTable:
             self._ejector.track(identity, sequence_length)
 
     def _eject_count(self, count: int):
-        """Request ejection of *at least* the specified number of transitions"""
+        """Request ejection of *at least* the specified number of
+        transitions."""
         self._filled = True
 
         identities = self._ejector.sample(count)
@@ -337,7 +349,10 @@ class ArrayTable:
             os.chmod(f"{path}.zip", stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
 
     def _deserialize(self, zip_: "zipfile.ZipFile") -> bool:
-        """Restore the data table from the provided path. This currently implies a "clear" of the data stores."""
+        """Restore the data table from the provided path.
+
+        This currently implies a "clear" of the data stores.
+        """
 
         with self._lock:
             self._clear()
@@ -438,7 +453,8 @@ class ArrayTable:
         version="23.1.0",
     )
     def _store_legacy(self, path: str) -> bool:
-        """Persist the whole table and all metadata into the designated name"""
+        """Persist the whole table and all metadata into the designated
+        name."""
 
         import cloudpickle
 
@@ -476,7 +492,10 @@ class ArrayTable:
         version="23.1.0",
     )
     def _restore_legacy(self, zip_: zipfile.ZipFile) -> bool:
-        """Restore the data table from the provided path. This currently implies a "clear" of the data stores."""
+        """Restore the data table from the provided path.
+
+        This currently implies a "clear" of the data stores.
+        """
 
         import cloudpickle
 
@@ -521,7 +540,7 @@ class ArrayTable:
         """Persist the whole table and all metadata into the designated name.
 
         :param path: The path to store the data to.
-        :param use_legacy_format: Whether to use the legacy format for storing the data.
+        :param version: The serialization version to use.
         """
 
         if version is None:

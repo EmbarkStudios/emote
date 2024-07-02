@@ -1,0 +1,33 @@
+[book]
+title = "Emote"
+authors = ["Embark Studios <python@embark-studios.com"]
+description = "A modular reinforcement learning library"
+
+[rust]
+edition = "2021"
+
+[build]
+build-dir = "book"
+create-missing = false
+
+[preprocessor.index]
+
+[preprocessor.links]
+
+[output.html]
+no-section-label = true
+git-repository-url = "https://github.com/EmbarkStudios/emote"
+
+[output.html.search]
+limit-results = 15
+
+[output.html.fold]
+enable = true
+level = 1
+
+[preprocessor.adr]
+command = "/usr/bin/python3 docs/adr.py"
+
+[[preprocessor.adr.section]]
+title = "Architecture Decision Records"
+path = "./adr"
