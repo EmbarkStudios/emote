@@ -31,3 +31,10 @@ installation_extra_env_vars = [
     "PYTHON_CONFIGURE_OPTS=--with-lto=thin",
     "PYTHON_CFLAGS=-march=native -mtune=native",
 ]
+
+[python-repos]
+indexes = [
+    "https://pypi.org/simple/",
+    "https://tgolsson.github.io/torch-index/cpu/",
+    "https://tgolsson.github.io/torch-index/cu116/",
+]
