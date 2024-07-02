@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-set -euxo pipefail
+set -exo pipefail
 
-if [[ ! -v "GITHUB_ACTIONS" ]]; then
-	apt update
-	apt install -y build-essential \
+if [[ -n "$GITHUB_ACTIONS" ]]; then
+	sudo apt update
+	sudo apt install -y \
+		build-essential \
 		libssl-dev \
 		zlib1g-dev \
 		libbz2-dev \

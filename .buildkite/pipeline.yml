@@ -42,7 +42,7 @@ steps:
     steps:
       - label: ":package: Validating {{matrix}} packages"
         command: |
-          . ci/init.sh yes
+          . ci/init.sh
           pants package --filter-address-regex='.*@resolve={{matrix}}' emote::
 
         matrix:
@@ -54,28 +54,28 @@ steps:
 
       - label: ":package: Packaging bases"
         command: |
-          . ci/init.sh yes
+          . ci/init.sh
           pants package --filter-address-regex='-.*@resolve=.*' emote::
 
         <<: *large
 
       - label: ":pants: Validating tailor"
         command: |
-          . ci/init.sh yes
+          . ci/init.sh
           pants tailor --check ::
 
         <<: *small
 
       - label: ":python-black: :isort: Check-and-lint "
         command: |
-          . ci/init.sh yes
+          . ci/init.sh
           pants update-build-files --check lint ::
 
         <<: *small
 
       - label: ":pytest: Run tests"
         command: |
-          . ci/init.sh yes
+          . ci/init.sh
           pants test ::
           git fetch origin
           pants run ci/coverage.py -- dist/coverage/python/coverage.json > comment.md
