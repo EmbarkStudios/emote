@@ -77,9 +77,6 @@ steps:
         command: |
           . ci/init.sh
           pants test ::
-          git fetch origin
-          pants run ci/coverage.py -- dist/coverage/python/coverage.json > comment.md
-          pants run ci:post-comment -- comment.md
 
         <<: *small
 
