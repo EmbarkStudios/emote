@@ -10,8 +10,8 @@ from tests.gym import DictGymWrapper, HitTheMiddle, SimpleGymCollector
 from emote import Trainer
 from emote.algorithms.sac import FeatureAgentProxy
 from emote.callbacks import BackPropStepsTerminator
-from emote.memory import MemoryExporterProxyWrapper, MemoryLoader, TableMemoryProxy
-from emote.memory.builder import DictObsTable
+from emote.memory import MemoryExporterProxyWrapper, MemoryLoader, MemoryTableProxy
+from emote.memory.builder import DictObsMemoryTable
 from emote.memory.callbacks import MemoryImporterCallback
 from emote.memory.storage import BaseStorage
 from emote.nn.gaussian_policy import GaussianMlpPolicy as Policy
@@ -24,8 +24,8 @@ N_HIDDEN = 10
 def test_memory_export(tmpdir):
     device = torch.device("cpu")
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-    table = DictObsTable(spaces=env.dict_space, maxlen=10000, device=device)
-    memory_proxy = TableMemoryProxy(table)
+    memory_table = DictObsMemoryTable(spaces=env.dict_space, maxlen=10000, device=device)
+    memory_proxy = MemoryTableProxy(memory_table)
     memory_proxy = MemoryExporterProxyWrapper(
         memory=memory_proxy,
         target_memory_name="memory",
@@ -33,7 +33,7 @@ def test_memory_export(tmpdir):
         experiment_root_path=tmpdir,
         min_time_per_export=1,
     )
-    dataloader = MemoryLoader(table, 100, 2, "batch_size")
+    dataloader = MemoryLoader(memory_table, 100, 2, "batch_size")
     policy = Policy(2, 1, [N_HIDDEN, N_HIDDEN])
     agent_proxy = FeatureAgentProxy(policy, device)
 
@@ -46,18 +46,18 @@ def test_memory_export(tmpdir):
     trainer.train()
 
     importer = MemoryImporterCallback(
-        memory=DictObsTable(spaces=env.dict_space, maxlen=10000, device=device),
+        memory_table=DictObsMemoryTable(spaces=env.dict_space, maxlen=10000, device=device),
         target_memory_name="memory",
         experiment_load_dir=tmpdir,
     )
 
-    importer.memory.restore(os.path.join(tmpdir, "memory_export"))
+    importer.memory_table.restore(os.path.join(tmpdir, "memory_export"))
 
-    for column in importer.memory._columns.values():
-        if isinstance(importer.memory._data[column.name], BaseStorage):
-            for key in importer.memory._data[column.name]:
+    for column in importer.memory_table._columns.values():
+        if isinstance(importer.memory_table._data[column.name], BaseStorage):
+            for key in importer.memory_table._data[column.name]:
                 assert (
-                    importer.memory._data[column.name][key].all()
+                    importer.memory_table._data[column.name][key].all()
                     == memory_proxy._inner._table._data[column.name][key].all()
                 )
 
@@ -68,8 +68,8 @@ def test_memory_export(tmpdir):
 def test_memory_export_permissions(tmpdir):
     device = torch.device("cpu")
     env = DictGymWrapper(AsyncVectorEnv(10 * [HitTheMiddle]))
-    table = DictObsTable(spaces=env.dict_space, maxlen=10000, device=device)
-    memory_proxy = TableMemoryProxy(table)
+    memory_table = DictObsMemoryTable(spaces=env.dict_space, maxlen=10000, device=device)
+    memory_proxy = MemoryTableProxy(memory_table)
     memory_proxy = MemoryExporterProxyWrapper(
         memory=memory_proxy,
         target_memory_name="memory",
@@ -77,7 +77,7 @@ def test_memory_export_permissions(tmpdir):
         experiment_root_path=tmpdir,
         min_time_per_export=1,
     )
-    dataloader = MemoryLoader(table, 100, 2, "batch_size")
+    dataloader = MemoryLoader(memory_table, 100, 2, "batch_size")
     policy = Policy(2, 1, [N_HIDDEN, N_HIDDEN])
     agent_proxy = FeatureAgentProxy(policy, device)
 

@@ -1,95 +1,86 @@
-plugin_base: &plugin_base
-    service-account-name: monorepo-ci
-    image: gcr.io/embark-shared/ml/ci-runner@sha256:dac3595ade7e3e92ed006f6c29f461b71bb3a6b0ade8d3afb88ba8e55b9601d6
-    default-secret-name: buildkite-k8s-plugin
-    always-pull: false
-    use-agent-node-affinity: true
+agent_kinds:
+  large_config: &large
+    agents:
+      cluster: builds-fi-2
+      queue: monorepo-ci
+      size: large
+    env:
+      PANTS_PROCESS_EXECUTION_LOCAL_PARALLELISM: 12
+      PANTS_RULE_THREADS_CORE: 6
 
-agents: &agent
-  cluster: builds-fi-2
-  queue: monorepo-ci
-  size: small
-
-tiny: &tiny
-  agents: *agent
-  plugins:
-  - EmbarkStudios/k8s#1.2.10:
-      << : *plugin_base
-      resources-limit-cpu: 3
-      resources-limit-memory: 10Gi
-
-  agents: *agent
-
-small: &small
-  agents: *agent
-  plugins:
-  - EmbarkStudios/k8s#1.2.10:
-      << : *plugin_base
-      resources-limit-cpu: 7
-      resources-limit-memory: 20Gi
-
-large: &large
-  agents: *agent
-  plugins:
-  - EmbarkStudios/k8s#1.2.10:
-      << : *plugin_base
-      resources-limit-cpu: 14
-      resources-limit-memory: 35Gi
-
+  small_config: &small
+    agents:
+      cluster: builds-fi-2
+      queue: monorepo-ci
+      size: small
+    env:
+      PANTS_PROCESS_EXECUTION_LOCAL_PARALLELISM: 6
+      PANTS_RULE_THREADS_CORE: 3
 
 env:
-  PDM_COMMAND: pdm210
   PYTHON_VERSION: '3.10'
-
+  PY: "python3.10"
+  PANTS_PYTHON_INTERPRETER_CONSTRAINTS: "['==3.10.*']"
+  PANTS_CONFIG_FILES: "pants.ci.toml"
+  PYTHON_BIN_NAME: "python3.10"
+  PEX_PYTHON: "python3.10"
 
 steps:
   - group: ":passport_control: Validating PR"
     steps:
       - label: ":hourglass: Validating branch age"
         command: bash .buildkite/validate-branch-age.sh
-        << : *tiny
+        <<: *small
 
       - label: ":straight_ruler: Checking line-endings"
         command: bash .buildkite/check-line-endings.sh
-        << : *tiny
-
-      - label: ":lock: Checking lockfile"
-        command: bash .buildkite/validate-lockfile.sh
-        << : *tiny
+        <<: *small
 
   - wait
 
   - group: ":vertical_traffic_light: Validating changes"
     steps:
-      - label: 📚 Publish docs
-        command: bash .buildkite/publish-docs.sh
-        << : *tiny
+      - label: ":package: Validating {{matrix}} packages"
+        command: |
+          . ci/init.sh
+          pants package --filter-address-regex='.*@resolve={{matrix}}' emote::
 
-      - label: ":python-black: Validate black"
-        command: bash .buildkite/run-black.sh
-        << : *tiny
+        matrix:
+          - "cpu"
+          - "gpu"
+          - "base"
 
-      - label: ":isort: Validate isort"
-        command: bash .buildkite/run-isort.sh
-        << : *tiny
+        <<: *large
 
-      - label: ":bandit: Validate bandit"
-        command: bash .buildkite/run-bandit.sh
-        << : *tiny
+      - label: ":package: Packaging bases"
+        command: |
+          . ci/init.sh
+          pants package --filter-address-regex='-.*@resolve=.*' emote::
 
-      - label: ":lint-roller: Validate flake8"
-        command: bash .buildkite/run-flake8.sh
-        << : *tiny
+        <<: *large
+
+      - label: ":pants: Validating tailor"
+        command: |
+          . ci/init.sh
+          pants tailor --check ::
+
+        <<: *small
+
+      - label: ":python-black: :isort: Check-and-lint "
+        command: |
+          . ci/init.sh
+          pants update-build-files --check lint ::
+
+        <<: *small
 
       - label: ":pytest: Run tests"
-        command: bash .buildkite/run-pytest.sh
-        << : *large
+        command: |
+          . ci/init.sh
+          pants test ::
+
+        <<: *small
 
   - wait
-
-  - label: ":package: Validate packaging"
-    command: bash .buildkite/run-package.sh
-    << : *tiny
 
   - label: ":packagecloud: Triggering Cloud-Training build"
     trigger: erupt

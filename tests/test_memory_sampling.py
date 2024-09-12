@@ -1,5 +1,6 @@
-"""
-Test to validate the behavior of `CoverageBasedSampleStrategy`. Tests how the `alpha` parameter influences the sampling distribution between two waves of data.
+"""Test to validate the behavior of `CoverageBasedSampleStrategy`. Tests how
+the `alpha` parameter influences the sampling distribution between two waves of
+data.
 
 Wave 1 and Wave 2: Two separate sets of data points added to the memory. After each wave, a series of samples are drawn from the memory.
 
@@ -14,7 +15,7 @@ Intended Behavior:
 import numpy as np
 import torch
 
-from emote.memory.builder import DictObsNStepTable
+from emote.memory.builder import DictObsNStepMemoryTable
 from emote.memory.coverage_based_strategy import CoverageBasedSampleStrategy
 from emote.utils.spaces import BoxSpace, DictSpace, MDPSpace
 
@@ -34,7 +35,7 @@ def create_sample_space() -> MDPSpace:
     return MDPSpace(rewards=reward_space, actions=action_space, state=state_space)
 
 
-def populate_table(table: DictObsNStepTable, sequence_len: int, start: int, end: int):
+def populate_table(memory_table: DictObsNStepMemoryTable, sequence_len: int, start: int, end: int):
     for i in range(start, end):
         sequence = {
             "obs": [np.random.rand(2) for _ in range(sequence_len + 1)],
@@ -42,22 +43,24 @@ def populate_table(table: DictObsNStepTable, sequence_len: int, start: int, end:
             "rewards": [np.random.rand(1) for _ in range(sequence_len)],
         }
 
-        table.add_sequence(
+        memory_table.add_sequence(
             identity=i,
             sequence=sequence,
         )
 
 
-def sample_table(table: DictObsNStepTable, sample_amount: int, count: int, sequence_length: int):
+def sample_table(
+    memory_table: DictObsNStepMemoryTable, sample_amount: int, count: int, sequence_length: int
+):
     for _ in range(sample_amount):
-        table.sample(count, sequence_length)
+        memory_table.sample(count, sequence_length)
 
 
 def test_memory_export():
     device = torch.device("cpu")
     space = create_sample_space()
     for alpha in ALPHAS:
-        table = DictObsNStepTable(
+        memory_table = DictObsNStepMemoryTable(
             spaces=space,
             use_terminal_column=False,
             maxlen=TABLE_MAX_LEN,
@@ -68,23 +71,32 @@ def test_memory_export():
         wave_length = int(TABLE_MAX_LEN / (2 * SEQUENCE_LEN))
 
         # Wave 1
-        populate_table(table=table, sequence_len=SEQUENCE_LEN, start=0, end=wave_length)
-        sample_table(table=table, sample_amount=SAMPLE_AMOUNT, count=5, sequence_length=8)
-        pre_second_wave_sample_counts = table._sampler._sample_count.copy()
+        populate_table(
+            memory_table=memory_table, sequence_len=SEQUENCE_LEN, start=0, end=wave_length
+        )
+        sample_table(
+            memory_table=memory_table, sample_amount=SAMPLE_AMOUNT, count=5, sequence_length=8
+        )
+        pre_second_wave_sample_counts = memory_table._sampler._sample_count.copy()
 
         # Wave 2
         populate_table(
-            table=table, sequence_len=SEQUENCE_LEN, start=wave_length, end=wave_length * 2
+            memory_table=memory_table,
+            sequence_len=SEQUENCE_LEN,
+            start=wave_length,
+            end=wave_length * 2,
         )
-        sample_table(table=table, sample_amount=SAMPLE_AMOUNT, count=5, sequence_length=8)
+        sample_table(
+            memory_table=memory_table, sample_amount=SAMPLE_AMOUNT, count=5, sequence_length=8
+        )
 
         second_wave_samples = sum(
-            table._sampler._sample_count[id] - pre_second_wave_sample_counts.get(id, 0)
+            memory_table._sampler._sample_count[id] - pre_second_wave_sample_counts.get(id, 0)
             for id in range(wave_length, wave_length * 2)
         )
         total_new_samples = sum(
-            table._sampler._sample_count[id] - pre_second_wave_sample_counts.get(id, 0)
-            for id in table._sampler._sample_count.keys()
+            memory_table._sampler._sample_count[id] - pre_second_wave_sample_counts.get(id, 0)
+            for id in memory_table._sampler._sample_count.keys()
         )
 
         proportion_second_wave = second_wave_samples / total_new_samples

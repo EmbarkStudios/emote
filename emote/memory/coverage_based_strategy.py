@@ -1,6 +1,4 @@
-"""
-
-"""
+""""""
 
 import random
 
@@ -13,9 +11,12 @@ from .strategy import EjectionStrategy, SampleStrategy, Strategy
 
 
 class CoverageBasedStrategy(Strategy):
-    """A sampler intended to sample based on coverage of experiences,
-    favoring less-visited states. This base class can be used for implementing
-    various coverage-based sampling strategies."""
+    """A sampler intended to sample based on coverage of experiences, favoring
+    less-visited states.
+
+    This base class can be used for implementing various coverage-based
+    sampling strategies.
+    """
 
     def __init__(self, alpha=0.5):
         super().__init__()

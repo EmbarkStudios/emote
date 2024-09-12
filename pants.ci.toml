@@ -1,0 +1,40 @@
+[GLOBAL]
+colors = true
+print_stacktrace = true
+plugins.add = [
+    "hdrhistogram",
+]
+
+backend_packages.add = [
+    "pants.backend.python.providers.experimental.pyenv",
+    "pants.backend.experimental.python",
+]
+
+[stats]
+log = true
+
+[test]
+use_coverage = true
+
+[coverage-py]
+report = ["json"]
+global_report = true
+
+[pytest]
+args = ["-vv", "--no-header", "--benchmark-disable"]
+
+[python]
+default_resolve = "cpu"
+
+[pyenv-python-provider]
+installation_extra_env_vars = [
+    "PYTHON_CONFIGURE_OPTS=--with-lto=thin",
+    "PYTHON_CFLAGS=-march=native -mtune=native",
+]
+
+[python-repos]
+indexes = [
+    "https://pypi.org/simple/",
+    "https://tgolsson.github.io/torch-index/cpu/",
+    "https://tgolsson.github.io/torch-index/cu116/",
+]

@@ -1,9 +1,8 @@
-"""
-
-This is an example training with GenRL algorithm. GenRL training requires a generative model as an input. The generative
-model should be trained prior to the GenRL training using VAE training as an example. One can use train_vae.py as an
-example way to train a generative model. Please follow the instruction given by 'train_vae.py' to train a vae model for
-the lunar lander environment.
+"""This is an example training with GenRL algorithm. GenRL training requires a
+generative model as an input. The generative model should be trained prior to
+the GenRL training using VAE training as an example. One can use train_vae.py
+as an example way to train a generative model. Please follow the instruction
+given by 'train_vae.py' to train a vae model for the lunar lander environment.
 
 Policy training with GenRL can be done using the following:
 
@@ -12,7 +11,6 @@ Policy training with GenRL can be done using the following:
 
 The above example assumes a pre-trained generative model exists in the directory defined by '--vae-checkpoint-dir' at
 the index defined by '--vae-checkpoint-index'.
-
 """
 
 import argparse
@@ -37,7 +35,7 @@ from emote.algorithms.genrl.proxies import MemoryProxyWithEncoder
 from emote.algorithms.genrl.wrappers import DecoderWrapper, EncoderWrapper, PolicyWrapper
 from emote.algorithms.sac import FeatureAgentProxy
 from emote.memory import MemoryLoader
-from emote.memory.builder import DictObsNStepTable
+from emote.memory.builder import DictObsNStepMemoryTable
 from emote.utils.spaces import BoxSpace, MDPSpace
 
 
@@ -51,10 +49,9 @@ def create_memory(
     device: torch.device,
     observation_key: str = "obs",
 ):
-
     use_terminal_masking = True
 
-    table = DictObsNStepTable(
+    memory_table = DictObsNStepMemoryTable(
         spaces=space,
         use_terminal_column=use_terminal_masking,
         maxlen=memory_size,
@@ -62,22 +59,22 @@ def create_memory(
     )
 
     memory_proxy = MemoryProxyWithEncoder(
-        table=table,
+        memory_table=memory_table,
         encoder=encoder,
         minimum_length_threshold=len_rollout,
         use_terminal=use_terminal_masking,
         input_key=observation_key,
     )
 
-    data_loader = MemoryLoader(
-        table=table,
+    memory_loader = MemoryLoader(
+        memory_table=memory_table,
         rollout_count=batch_size // len_rollout,
         rollout_length=len_rollout,
         size_key="batch_size",
         data_group=data_group,
     )
 
-    return memory_proxy, data_loader
+    return memory_proxy, memory_loader
 
 
 def create_actor_critic_agents(
@@ -87,7 +84,6 @@ def create_actor_critic_agents(
     decoder_wrapper: DecoderWrapper,
     init_alpha: float = 0.01,
 ):
-
     device = args.device
 
     hidden_dims = [args.hidden_layer_size] * arg.num_hidden_layer
@@ -127,16 +123,14 @@ if __name__ == "__main__":
     arg = parser.parse_args()
 
     training_device = torch.device(arg.device)
-
-    """Creating a vector of Gym environments """
+    """Creating a vector of Gym environments."""
     gym_wrapper = DictGymWrapper(AsyncVectorEnv([_make_env() for _ in range(arg.num_envs)]))
 
     number_of_actions = gym_wrapper.dict_space.actions.shape[0]
     number_of_obs = list(gym_wrapper.dict_space.state.spaces.values())[0].shape[0]
 
     condition_func = get_conditioning_fn(arg.condition_size)
-
-    """Create the decoder wrapper"""
+    """Create the decoder wrapper."""
     action_latent_size = arg.vae_latent_size
 
     decoder = FullyConnectedDecoder(
@@ -176,16 +170,14 @@ if __name__ == "__main__":
         actions=BoxSpace(dtype=np.float32, shape=(action_latent_size,)),
         state=gym_wrapper.dict_space.state,
     )
-
-    """Creating agent and the Q-functions"""
+    """Creating agent and the Q-functions."""
     qnet1, qnet2, policy, agent_proxy, ln_alpha = create_actor_critic_agents(
         decoder_wrapper=decoder_wrapper,
         args=arg,
         num_latent=action_latent_size,
         num_obs=number_of_obs,
     )
-
-    """Creating the memory"""
+    """Creating the memory."""
     gym_memory, dataloader = create_memory(
         space=spaces,
         encoder=encoder_wrapper,
@@ -196,8 +188,7 @@ if __name__ == "__main__":
         device=training_device,
         observation_key=arg.observation_key,
     )
-
-    """Creating the train callbacks"""
+    """Creating the train callbacks."""
     train_callbacks = create_train_callbacks(
         args=arg,
         q1=qnet1,
@@ -209,13 +200,11 @@ if __name__ == "__main__":
         memory_proxy=gym_memory,
         data_group="rl_buffer",
     )
-
-    """Creating the complementary callbacks"""
+    """Creating the complementary callbacks."""
     callbacks = create_complementary_callbacks(
         args=arg,
         logged_cbs=train_callbacks,
     )
-
-    """Start the training"""
+    """Start the training."""
     trainer = Trainer(callbacks, dataloader)
     trainer.train()

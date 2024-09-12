@@ -1,6 +1,4 @@
-"""
-Collectors for running OpenAI gym environments
-"""
+"""Collectors for running OpenAI gym environments."""
 
 import threading
 
@@ -34,7 +32,7 @@ class GymCollector(LoggingMixin, Callback):
         self._warmup_steps = warmup_steps
 
     def collect_data(self):
-        """Collect a single rollout"""
+        """Collect a single rollout."""
         if self._render:
             self._env.render()
         actions = self._agent(self._obs)
@@ -47,7 +45,7 @@ class GymCollector(LoggingMixin, Callback):
             self.log_scalar("episode/reward", ep_info["reward"])
 
     def collect_multiple(self, count: int):
-        """Collect multiple rollouts
+        """Collect multiple rollouts.
 
         :param count: Number of rollouts to collect
         """
@@ -82,7 +80,7 @@ class ThreadedGymCollector(GymCollector):
         self._thread = None
 
     def collect_forever(self):
-        """Collect rollouts forever
+        """Collect rollouts forever.
 
         .. warning::
 
@@ -90,7 +88,6 @@ class ThreadedGymCollector(GymCollector):
             signal, internal or external, that'll cause this loop to end. You
             probably want to implement a loop that calls `collect_data` or
             `collect_multiple` while checking exit conditions.
-
         """
         # FIXME[tsolberg]: Works OK when subprocs are not involved, might want
         # to signal this (somehow). Responsibility of parent to wrap somehow?

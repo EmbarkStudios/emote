@@ -1,13 +1,19 @@
+"""
+emote.typing
+============
+"""
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, TypeAlias
 
 import torch
 
 from numpy.typing import ArrayLike
 
 
-RewardFnType = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+RewardFnType: TypeAlias = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 TermFnType = Callable[[torch.Tensor], torch.Tensor]
 
 # The AgentId is an application-defined integer

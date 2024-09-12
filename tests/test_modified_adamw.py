@@ -58,7 +58,8 @@ def num_groups(param_groups):
 
 
 def test_module_separation():
-    """Validate that all parameters are added to either "decay" or "no_decay"."""
+    """Validate that all parameters are added to either "decay" or
+    "no_decay"."""
     q = QNet(2, 2, [2, 2])
 
     decay, no_decay = separate_modules_for_weight_decay(

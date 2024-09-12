@@ -18,14 +18,16 @@ class BasePolicy(nn.Module):
         super().__init__()
 
     def post_process(self, actions):
-        """Post-process a pre-action into a post-action"""
+        """Post-process a pre-action into a post-action."""
         return actions
 
     def infer(self, x: Tensor):
-        """
-        Samples pre-actions and associated post-actions (actual decisions) from the policy given the
-        encoder input. Only for use at inference time; defaults to identity transformation. Crucial to reimplement for
-        discrete reparametrized policies.
+        """Samples pre-actions and associated post-actions (actual decisions)
+        from the policy given the encoder input.
+
+        Only for use at inference time; defaults to identity
+        transformation. Crucial to reimplement for discrete
+        reparametrized policies.
         """
         p_samp, _ = self(x)
         return p_samp, self.post_process(p_samp)
@@ -44,12 +46,10 @@ class GaussianPolicyHead(nn.Module):
         self.log_std = nn.Linear(hidden_dim, action_dim)
 
     def forward(self, x: Tensor, epsilon: Tensor | None = None) -> Tensor | Tuple[Tensor]:
-        """
-        Sample pre-actions and associated log-probabilities.
+        """Sample pre-actions and associated log-probabilities.
 
-        :return:
-            Direct samples (pre-actions) from the policy
-            log-probabilities associated to those samples
+        :return: Direct samples (pre-actions) from the policy log-
+            probabilities associated to those samples
         """
         bsz, _ = x.shape
 

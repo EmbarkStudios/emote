@@ -26,19 +26,25 @@ def soft_update_from_to(source, target, tau):  # From rlkit
 class QLoss(LossCallback):
     r"""A MSE loss between the action value net and the target q.
 
-    The target q values are not calculated here and need to be added
-    to the state before the loss of this module runs.
+    The target q values are not calculated here and need to be added to
+    the state before the loss of this module runs.
 
     :param name (str): The name of the module. Used e.g. while logging.
-    :param q (torch.nn.Module): A deep neural net that outputs the discounted loss
-        given the current observations and a given action.
+    :param q (torch.nn.Module): A deep neural net that outputs the
+        discounted loss given the current observations and a given
+        action.
     :param opt (torch.optim.Optimizer): An optimizer for q.
-    :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning rate schedule
-        for the optimizer of q.
-    :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
-    :param data_group (str): The name of the data group from which this Loss takes its data.
-    :param log_per_param_weights (bool): If true, log each individual policy parameter that is optimized (norm and value histogram).
-    :param log_per_param_grads (bool): If true, log the gradients of each individual policy parameter that is optimized (norm and histogram).
+    :param lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning
+        rate schedule for the optimizer of q.
+    :param max_grad_norm (float): Clip the norm of the gradient during
+        backprop using this value.
+    :param data_group (str): The name of the data group from which this
+        Loss takes its data.
+    :param log_per_param_weights (bool): If true, log each individual
+        policy parameter that is optimized (norm and value histogram).
+    :param log_per_param_grads (bool): If true, log the gradients of
+        each individual policy parameter that is optimized (norm and
+        histogram).
     """
 
     def __init__(
@@ -73,28 +79,36 @@ class QLoss(LossCallback):
 
 
 class QTarget(LoggingMixin, Callback):
-    r"""Creates rolling averages of the Q nets, and predicts q values using these.
+    r"""Creates rolling averages of the Q nets, and predicts q values using
+    these.
 
-    The module is responsible both for keeping the averages correct in the target q
-    networks and supplying q-value predictions using the target q networks.
+    The module is responsible both for keeping the averages correct in
+    the target q networks and supplying q-value predictions using the
+    target q networks.
 
-    :param pi (torch.nn.Module): A deep neural net that outputs actions and their log
-        probability given a state.
-    :param ln_alpha (torch.tensor): The current weight for the entropy part of the
-        soft Q.
-    :param q1 (torch.nn.Module): A deep neural net that outputs the discounted loss
-        given the current observations and a given action.
-    :param q2 (torch.nn.Module): A deep neural net that outputs the discounted loss
-        given the current observations and a given action.
-    :param q1t (torch.nn.Module, optional): target Q network.  (default: None)
-    :param q2t (torch.nn.Module, optional): target Q network. (default: None)
-    :param gamma (float, optional): Discount factor for the rewards in time. (default: 0.99)
-    :param reward_scale (float, optional): Scale factor for the rewards. (default: 1.0)
-    :param target_q_tau (float, optional): The weight given to the latest network in the
-        exponential moving average. So NewTargetQ = OldTargetQ * (1-tau) + Q*tau. (default: 0.005)
-    :param data_group (str, optional): The name of the data group from which this Loss takes its data. (default: "default")
-    :param roll_length (int, optional): Rollout length. (default: 1)
-    :param use_terminal_masking (bool, optional): Whether to use terminal masking  for the next values. (default: False)
+    :param pi (torch.nn.Module): A deep neural net that outputs actions
+        and their log probability given a state.
+    :param ln_alpha (torch.tensor): The current weight for the entropy
+        part of the soft Q.
+    :param q1 (torch.nn.Module): A deep neural net that outputs the
+        discounted loss given the current observations and a given
+        action.
+    :param q2 (torch.nn.Module): A deep neural net that outputs the
+        discounted loss given the current observations and a given
+        action. :param q1t (torch.nn.Module, optional): target Q
+        network. (default: None) :param q2t (torch.nn.Module,
+        optional): target Q network. (default: None) :param gamma
+        (float, optional): Discount factor for the rewards in time.
+        (default: 0.99) :param reward_scale (float, optional): Scale
+        factor for the rewards. (default: 1.0) :param target_q_tau
+        (float, optional): The weight given to the latest network in the
+        exponential moving average. So NewTargetQ = OldTargetQ * (1-tau)
+        + Q*tau. (default: 0.005) :param data_group (str, optional): The
+        name of the data group from which this Loss takes its data.
+        (default: "default") :param roll_length (int, optional): Rollout
+        length. (default: 1) :param use_terminal_masking (bool,
+        optional): Whether to use terminal masking for the next values.
+        (default: False)
     """
 
     def __init__(
@@ -165,26 +179,33 @@ class QTarget(LoggingMixin, Callback):
 class PolicyLoss(LossCallback):
     r"""Maximize the soft Q-value for the policy.
 
-    This loss modifies the policy to select the action that gives the highest soft q-value.
+    This loss modifies the policy to select the action that gives the
+    highest soft q-value.
 
-    :param pi (torch.nn.Module): A deep neural net that outputs actions and their log
-        probability given a state.
-    :param ln_alpha (torch.tensor): The current weight for the entropy part of the
-        soft Q.
-    :param q (torch.nn.Module): A deep neural net that outputs the discounted loss
-        given the current observations and a given action.
-    :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning rate schedule
-        for the optimizer of policy.
+    :param pi (torch.nn.Module): A deep neural net that outputs actions
+        and their log probability given a state.
+    :param ln_alpha (torch.tensor): The current weight for the entropy
+        part of the soft Q.
+    :param q (torch.nn.Module): A deep neural net that outputs the
+        discounted loss given the current observations and a given
+        action.
+    :param lr_schedule (torch.optim.lr_scheduler._LRSchedule): Learning
+        rate schedule for the optimizer of policy.
     :param opt (torch.optim.Optimizer): An optimizer for pi.
-    :param q2 (torch.nn.Module): A second deep neural net that outputs the discounted
-        loss given the current observations and a given action. This is not necessary
-        since it is fine if the policy isn't pessimistic, but can be nice for symmetry
-        with the Q-loss.
-    :param max_grad_norm (float): Clip the norm of the gradient during backprop using this value.
+    :param q2 (torch.nn.Module): A second deep neural net that outputs
+        the discounted loss given the current observations and a given
+        action. This is not necessary since it is fine if the policy
+        isn't pessimistic, but can be nice for symmetry with the Q-loss.
+    :param max_grad_norm (float): Clip the norm of the gradient during
+        backprop using this value.
     :param name (str): The name of the module. Used e.g. while logging.
-    :param data_group (str): The name of the data group from which this Loss takes its data.
-    :param log_per_param_weights (bool): If true, log each individual policy parameter that is optimized (norm and value histogram).
-    :param log_per_param_grads (bool): If true, log the gradients of each individual policy parameter that is optimized (norm and histogram).
+    :param data_group (str): The name of the data group from which this
+        Loss takes its data.
+    :param log_per_param_weights (bool): If true, log each individual
+        policy parameter that is optimized (norm and value histogram).
+    :param log_per_param_grads (bool): If true, log the gradients of
+        each individual policy parameter that is optimized (norm and
+        histogram).
     """
 
     def __init__(
@@ -238,24 +259,24 @@ class PolicyLoss(LossCallback):
 class AlphaLoss(LossCallback):
     r"""Tweaks the alpha so that a specific target entropy is kept.
 
-    The target entropy is scaled with the number of actions and a provided entropy
-    scaling factor.
+    The target entropy is scaled with the number of actions and a
+    provided entropy scaling factor.
 
-    :param pi (torch.nn.Module): A deep neural net that outputs actions and their log
-        probability given a state.
-    :param ln_alpha (torch.tensor): The current weight for the entropy part of the
-        soft Q.
-    :param  lr_schedule (torch.optim.lr_scheduler._LRSchedule | None): Learning rate schedule
-        for the optimizer of alpha.
+    :param pi (torch.nn.Module): A deep neural net that outputs actions
+        and their log probability given a state.
+    :param ln_alpha (torch.tensor): The current weight for the entropy
+        part of the soft Q. :param lr_schedule
+        (torch.optim.lr_scheduler._LRSchedule | None): Learning rate
+        schedule for the optimizer of alpha.
     :param opt (torch.optim.Optimizer): An optimizer for ln_alpha.
-    :param n_actions (int): The dimension of the action space. Scales the target
-        entropy.
-    :param max_grad_norm (float): Clip the norm of the gradient during backprop using
-        this value.
+    :param n_actions (int): The dimension of the action space. Scales
+        the target entropy.
+    :param max_grad_norm (float): Clip the norm of the gradient during
+        backprop using this value.
     :param name (str): The name of the module. Used e.g. while logging.
-    :param data_group (str): The name of the data group from which this Loss takes its
-        data.
-    :param t_entropy (float | Schedule | None): Value or schedule for the target entropy.
+    :param data_group (str): The name of the data group from which this
+        Loss takes its data. :param t_entropy (float | Schedule | None):
+        Value or schedule for the target entropy.
     """
 
     def __init__(
@@ -361,7 +382,8 @@ class AgentProxyWrapper:
 class FeatureAgentProxy(GenericAgentProxy):
     """An agent proxy for basic MLPs.
 
-    This AgentProxy assumes that the observations will contain a single flat array of features.
+    This AgentProxy assumes that the observations will contain a single
+    flat array of features.
     """
 
     @deprecated(reason="Use GenericAgentProxy instead", version="23.1.0")
@@ -382,7 +404,8 @@ class FeatureAgentProxy(GenericAgentProxy):
 
 
 class VisionAgentProxy(FeatureAgentProxy):
-    """This AgentProxy assumes that the observations will contain image observations 'obs'"""
+    """This AgentProxy assumes that the observations will contain image
+    observations 'obs'."""
 
     @deprecated(reason="Use GenericAgentProxy instead", version="23.1.0")
     def __init__(self, policy: nn.Module, device: torch.device):
@@ -392,7 +415,8 @@ class VisionAgentProxy(FeatureAgentProxy):
 class MultiKeyAgentProxy(GenericAgentProxy):
     """Handles multiple input keys.
 
-    Observations are dicts that contain multiple input keys (e.g. both "features" and "images").
+    Observations are dicts that contain multiple input keys (e.g. both
+    "features" and "images").
     """
 
     @deprecated(reason="Use GenericAgentProxy instead", version="23.1.0")

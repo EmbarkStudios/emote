@@ -1,10 +1,12 @@
 """Sequence builder collates observations into sequences stored in the memory.
 
-The sequence builder is the API between "instant" based APIs such as the agent
-proxy and the episode-based functionality of the memory implementation. The goal
-of the sequence builder is to consume individual timesteps per agent and collate
-them into episodes before submission into the memory.
+The sequence builder is the API between "instant" based APIs such as the
+agent proxy and the episode-based functionality of the memory
+implementation. The goal of the sequence builder is to consume
+individual timesteps per agent and collate them into episodes before
+submission into the memory.
 """
+
 from __future__ import annotations
 
 import collections
@@ -32,12 +34,12 @@ from emote.trainer import TrainingShutdownException
 from ..typing import AgentId, DictObservation, DictResponse, EpisodeState
 from ..utils import BlockTimers, TimedBlock
 from .core_types import Matrix
-from .table import Table
+from .table import MemoryTable
 
 
 @dataclass
 class Episode:
-    """An episode of data being constructed"""
+    """An episode of data being constructed."""
 
     data: Dict[str, List[Matrix]] = field(default_factory=lambda: defaultdict(list))
 
@@ -59,25 +61,27 @@ class Episode:
 ################################################################################
 
 
-class TableMemoryProxy:
-    """The sequence builder wraps a sequence-based memory to build full episodes
-    from [identity, observation] data. Not thread safe.
+class MemoryTableProxy:
+    """The sequence builder wraps a sequence-based memory to build full
+    episodes from [identity, observation] data.
+
+    Not thread safe.
     """
 
     def __init__(
         self,
-        table: Table,
+        memory_table: MemoryTable,
         minimum_length_threshold: Optional[int] = None,
         use_terminal: bool = False,
         *,
-        name: str = "default",
+        name: str = "memproxy",
     ):
         self._store: Dict[AgentId, Episode] = {}
-        self._table = table
+        self._table = memory_table
         if minimum_length_threshold is None:
             self._min_length_filter = lambda _: True
         else:
-            key = table._length_key
+            key = memory_table._length_key
             self._min_length_filter = lambda ep: len(ep[key]) >= minimum_length_threshold
 
         self._completed_episodes: set[AgentId] = set()
@@ -99,8 +103,11 @@ class TableMemoryProxy:
         return self._table.store(path)
 
     def is_initial(self, identity: int):
-        """Returns true if identity is not already used in a partial sequence. Does not
-        validate if the identity is associated with a complete episode."""
+        """Returns true if identity is not already used in a partial sequence.
+
+        Does not validate if the identity is associated with a complete
+        episode.
+        """
         return identity not in self._store
 
     def add(
@@ -168,6 +175,7 @@ class TableMemoryProxy:
 
 class MemoryProxyWrapper:
     """Base class for memory proxy wrappers.
+
     This class forwards non-existing method accessess to the inner
     MemoryProxy or MemoryProxyWrapper.
     """
@@ -206,19 +214,31 @@ class MemoryProxyWrapper:
 
         return attr
 
+    def state_dict(self) -> dict[str, Any]:
+        return {}
 
-class TableMemoryProxyWrapper(MemoryProxyWrapper):
-    def __init__(self, *, inner: TableMemoryProxy, **kwargs):
+    def load_state_dict(
+        self,
+        state_dict: dict[str, Any],
+        load_network: bool = True,
+        load_optimizer: bool = True,
+        load_hparams: bool = True,
+    ):
+        pass
+
+
+class MemoryTableProxyWrapper(MemoryProxyWrapper):
+    def __init__(self, *, inner: MemoryTableProxy, **kwargs):
         super().__init__(inner=inner, **kwargs)
 
     def store(self, path: str):
         return self._inner.store(path)
 
 
-class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
+class LoggingProxyWrapper(LoggingMixin, MemoryTableProxyWrapper):
     def __init__(
         self,
-        inner: TableMemoryProxy,
+        inner: MemoryTableProxy,
         writer: SummaryWriter,
         log_interval: int,
     ):
@@ -240,22 +260,20 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         return {
             "completed_inferences": self.completed_inferences,
             "completed_episodes": self.completed_episodes,
-            "inference_steps": self._total_infs,
         }
 
     def load_state_dict(
         self,
-        state_dict: Dict[str, Any],
+        state_dict: dict[str, Any],
         load_network: bool = True,
         load_optimizer: bool = True,
         load_hparams: bool = True,
-    ) -> dict[str, Any]:
+    ):
         if load_hparams:
             self.completed_inferences = state_dict.get(
                 "completed_inferences", self.completed_inferences
             )
             self.completed_episodes = state_dict.get("completed_episodes", self.completed_episodes)
-            self._total_infs = state_dict.get("inference_steps", self._total_infs)
             self._infs_at_start = self.completed_inferences
 
     def add(
@@ -384,12 +402,12 @@ class LoggingProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         self._cycle_start_time = now_time
 
 
-class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
-    """Export the memory at regular intervals"""
+class MemoryExporterProxyWrapper(LoggingMixin, MemoryTableProxyWrapper):
+    """Export the memory at regular intervals."""
 
     def __init__(
         self,
-        memory: TableMemoryProxy | TableMemoryProxyWrapper,
+        memory: MemoryTableProxy | MemoryTableProxyWrapper,
         target_memory_name,
         inf_steps_per_memory_export,
         experiment_root_path: str,
@@ -422,10 +440,9 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
         observations: Dict[AgentId, DictObservation],
         responses: Dict[AgentId, DictResponse],
     ):
-        """First add the new batch to the memory"""
+        """First add the new batch to the memory."""
         self._inner.add(observations, responses)
-
-        """Save the replay buffer if it has enough data and enough time"""
+        """Save the replay buffer if it has enough data and enough time."""
         has_enough_data = self._inf_step > self._next_export
         time_now = time.monotonic()
         has_enough_time = time_now > self._next_export_time
@@ -455,21 +472,21 @@ class MemoryExporterProxyWrapper(TableMemoryProxyWrapper, LoggingMixin):
 class MemoryLoader:
     def __init__(
         self,
-        table: Table,
+        memory_table: MemoryTable,
         rollout_count: int,
         rollout_length: int,
         size_key: str,
         data_group: str = "default",
     ):
         self.data_group = data_group
-        self.table = table
+        self.table = memory_table
         self.rollout_count = rollout_count
         self.rollout_length = rollout_length
         self.size_key = size_key
         self.timer = TimedBlock()
 
     def is_ready(self):
-        """True if the data loader has enough data to start providing data"""
+        """True if the data loader has enough data to start providing data."""
         return self.table.size() >= (self.rollout_count * self.rollout_length)
 
     def __iter__(self):
@@ -488,7 +505,8 @@ class MemoryLoader:
 
 
 class JointMemoryLoader:
-    """A memory loader capable of loading data from multiple `MemoryLoader`s."""
+    """A memory loader capable of loading data from multiple
+    `MemoryLoader`s."""
 
     def __init__(self, loaders: list[MemoryLoader], size_key: str = "batch_size"):
         self._loaders = loaders
@@ -525,7 +543,8 @@ class JointMemoryLoader:
 
 
 class JointMemoryLoaderWithDataGroup(JointMemoryLoader):
-    """A JointMemoryLoader that places its data inside of a user-specified datagroup."""
+    """A JointMemoryLoader that places its data inside of a user-specified
+    datagroup."""
 
     def __init__(self, loaders: list[MemoryLoader], data_group: str, size_key: str = "batch_size"):
         super().__init__(loaders, size_key)
@@ -541,11 +560,12 @@ class JointMemoryLoaderWithDataGroup(JointMemoryLoader):
 class MemoryWarmup(Callback):
     """A blocker to ensure memory has data.
 
-    This ensures the memory has enough data when training starts, as the memory
-    will panic otherwise. This is useful if you use an async data generator.
+    This ensures the memory has enough data when training starts, as the
+    memory will panic otherwise. This is useful if you use an async data
+    generator.
 
-    If you do not use an async data generator this can deadlock your training
-    loop and prevent progress.
+    If you do not use an async data generator this can deadlock your
+    training loop and prevent progress.
     """
 
     def __init__(

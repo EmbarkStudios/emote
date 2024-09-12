@@ -1,6 +1,4 @@
-"""
-Supporting types used for working with the memory
-"""
+"""Supporting types used for working with the memory."""
 
 from typing import Dict, Generic, Tuple, TypeVar
 

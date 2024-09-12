@@ -6,10 +6,16 @@ import torch
 
 def truncated_linear(min_x: float, max_x: float, min_y: float, max_y: float, x: float) -> float:
     """Truncated linear function.
+
     Implements the following function:
-        f1(x) = min_y + (x - min_x) / (max_x - min_x) * (max_y - min_y)
+
+    \\[
+    \\begin{cases}
+        f1(x) = \\frac{min_y + (x - min_x)}{ (max_x - min_x) * (max_y - min_y)} \\\\
         f(x) = min(max_y, max(min_y, f1(x)))
-    If max_x - min_x < 1e-10, then it behaves as the constant f(x) = max_y
+    \\end{cases}
+    \\]
+    If max_x - min_x < 1e-10, then it behaves as the constant \\(f(x) = max_y\\)
     """
     if max_x - min_x < 1e-10:
         return max_y

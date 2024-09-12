@@ -3,6 +3,8 @@ import time
 
 from typing import List
 
+import tensorboard  # noqa
+
 from torch.utils.tensorboard import SummaryWriter
 
 from emote.callback import Callback
@@ -102,8 +104,8 @@ class TerminalLogger(Callback):
     def log_scalars(self, step, suffix=None):
         """Logs scalar logs adding optional suffix on the first level.
 
-        **Example:** If k='training/loss' and suffix='bp_step', k will be renamed to
-        'training_bp_step/loss'.
+        **Example:** If k='training/loss' and suffix='bp_step', k will
+        be renamed to 'training_bp_step/loss'.
         """
         for log in self._logs:
             for k, v in log.scalar_logs.items():
