@@ -55,7 +55,7 @@ class TensorboardLogger(Callback):
 
             for k, v in cb.windowed_scalar_cumulative.items():
                 k_split = k.split("/")
-                k_split[0] = k_split[0] + "_" + suffix
+                k_split[0] = f"cumulative/{k_split[0]}_{suffix}"
                 k = "/".join(k_split)
 
                 self._writer.add_scalar(f"{k}/cumulative", v, bp_step)
